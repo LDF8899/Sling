@@ -1,0 +1,3 @@
+@echo off
+echo Starting User Service...
+mvn spring-boot:run

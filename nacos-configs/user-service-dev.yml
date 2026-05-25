@@ -1,0 +1,24 @@
+spring:
+  profiles:
+    include: 
+      - common-dev
+      - feign
+      - sentinel
+      - seata
+  datasource:
+    url: jdbc:mysql://127.0.0.1:3306/sl?useSSL=false&useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&allowMultiQueries=true
+    username: root
+    password: root123
+
+server:
+  port: 7001
+
+spring:
+  application:
+    name: user-service
+    
+  cloud:
+    nacos:
+      discovery:
+        service: user-service
+        group: SLING_GROUP

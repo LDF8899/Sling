@@ -1,0 +1,73 @@
+/* ===== 杉林溪水 · Element Plus SCSS 主题覆盖 ===== */
+
+@forward 'element-plus/theme-chalk/src/common/var.scss' with (
+  $colors: (
+    'primary': (
+      'base': #059669,
+      'light-1': #34D399,
+      'light-2': #6EE7B7,
+      'light-3': #A7F3D0,
+      'light-4': #D1FAE5,
+      'light-5': #ECFDF5,
+      'dark-1': #10B981,
+      'dark-2': #047857,
+    ),
+    'success': (
+      'base': #059669,
+      'light-1': #34D399,
+      'light-2': #A7F3D0,
+      'light-3': #D1FAE5,
+      'light-4': #ECFDF5,
+      'light-5': #F5FAF7,
+      'dark-1': #047857,
+      'dark-2': #065F46,
+    ),
+    'info': (
+      'base': #0891B2,
+      'light-1': #22D3EE,
+      'light-2': #67E8F9,
+      'light-3': #A5F3FC,
+      'light-4': #CFFAFE,
+      'light-5': #ECFEFF,
+      'dark-1': #0E7490,
+      'dark-2': #0C4A6E,
+    ),
+    'warning': (
+      'base': #D97706,
+      'light-1': #E6A817,
+      'light-2': #FDE68A,
+      'light-3': #FEF3C7,
+      'light-4': #FFFBEB,
+      'dark-1': #B45309,
+      'dark-2': #92400E,
+    ),
+    'danger': (
+      'base': #DC2626,
+      'light-1': #EF4444,
+      'light-2': #FCA5A5,
+      'light-3': #FECACA,
+      'light-4': #FEF2F2,
+      'dark-1': #B91C1C,
+      'dark-2': #991B1B,
+    ),
+  ),
+
+  $font-family: (
+    '': #{'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif},
+  ),
+
+  $border-radius: (
+    'base': 10px,
+    'small': 6px,
+    'round': 24px,
+    'circle': 9999px,
+  ),
+
+  $common-component-size: (
+    'default': 40px,
+    'large': 48px,
+    'small': 32px,
+  ),
+);
+
+@use 'element-plus/theme-chalk/src/index.scss' as *;

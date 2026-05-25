@@ -1,0 +1,16 @@
+com\sling\warning\mapper\WarningAreaMapper.class
+com\sling\warning\service\WarningRecordService.class
+com\sling\warning\entity\WarningArea.class
+com\sling\warning\entity\ActiveArea.class
+com\sling\warning\mapper\ActiveAreaMapper.class
+com\sling\warning\controller\WarningController.class
+com\sling\warning\entity\SnakeInfo.class
+com\sling\warning\service\SnakeInfoService.class
+com\sling\warning\service\impl\WarningRecordServiceImpl.class
+com\sling\warning\WarningApplication.class
+com\sling\warning\service\ActiveAreaService.class
+com\sling\warning\service\impl\SnakeInfoServiceImpl.class
+com\sling\warning\service\impl\ActiveAreaServiceImpl.class
+com\sling\warning\mapper\SnakeInfoMapper.class
+com\sling\warning\mapper\WarningRecordMapper.class
+com\sling\warning\entity\WarningRecord.class

@@ -1,0 +1,32 @@
+{
+    "files.associations": {
+        "*.bat": "bat",
+        "*.cmd": "bat"
+    },
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/CVS": true,
+        "**/.DS_Store": true,
+        "**/target": true,
+        "**/node_modules": true,
+        "**/__pycache__": true
+    },
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "[bat]": {
+        "editor.defaultFormatter": "ms-vscode.vscode-js-debug"
+    },
+    "workbench.iconTheme": "material-icon-theme",
+    "claudeCode.useTerminal": true,
+    "workbench.editor.autoLockGroups": {
+        "workbench.editorinputs.searchEditorInput": true,
+        "workbench.input.interactive": true,
+        "imagePreview.previewEditor": true,
+        "vscode.audioPreview": true,
+        "vscode.videoPreview": true
+    },
+    "java.compile.nullAnalysis.mode": "automatic",
+    "java.configuration.updateBuildConfiguration": "interactive"
+}

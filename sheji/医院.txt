@@ -1,0 +1,873 @@
+医院服务（Hospital-Service）设计方案（高德 API 专属版）
+1. 模块概述
+医院服务模块是 SLING 项目的重要组成部分，主要负责医院信息管理、血清库存跟踪、用户周边医院查找、蛇毒治疗专项医院筛选等核心功能。该模块与预警服务共享高德地图 API 功能，实现基于地理位置的医院搜索、地址解析、距离计算与专项医疗资源筛选服务，重点强化蛇毒咬伤治疗相关医院的精准检索能力，为紧急医疗场景提供高效支持。
+2. 数据库表结构
+基于数据库中的 hospital_info 表结构，新增蛇毒治疗相关扩展字段：
+sql
+CREATE TABLE `hospital_info` (
+  `hospital_id` bigint NOT NULL AUTO_INCREMENT COMMENT '医院唯一标识，自增长',
+  `hospital_name` varchar(100) NOT NULL COMMENT '医院名称，如"XX市第一人民医院"',
+  `address` varchar(255) NOT NULL COMMENT '医院地址，详细的地理位置信息',
+  `latitude` decimal(10, 6) NULL DEFAULT NULL COMMENT '医院所在纬度，用于地图定位',
+  `longitude` decimal(10, 6) NULL DEFAULT NULL COMMENT '医院所在经度，用于地图定位',
+  `contact_info` text NULL COMMENT '医院联系信息，如电话号码、邮箱等',
+  `hospital_type` varchar(50) NULL DEFAULT NULL COMMENT '医院类型，如"综合医院""专科医院"等',
+  `serum_availability` tinyint(1) DEFAULT 0 COMMENT '血清可用性，0-不可用，1-可用',
+  `emergency_department` tinyint(1) DEFAULT 1 COMMENT '急诊科可用性，0-不可用，1-可用',
+  `snake_venom_treatment` tinyint(1) DEFAULT 0 COMMENT '蛇毒治疗能力标识，0-不支持，1-支持',
+  `snake_venom_keywords` varchar(255) NULL DEFAULT NULL COMMENT '蛇毒治疗相关关键词，如"抗蛇毒血清""蛇咬伤治疗"等，用于快速筛选',
+  `created_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `del_flag` tinyint(1) DEFAULT 0 COMMENT '逻辑删除标志，0-未删除，1-已删除',
+  PRIMARY KEY (`hospital_id`),
+  KEY `idx_location` (`latitude`, `longitude`),
+  KEY `idx_type` (`hospital_type`),
+  KEY `idx_snake_treatment` (`snake_venom_treatment`),
+  KEY `idx_snake_keywords` (`snake_venom_keywords`) COMMENT '蛇毒关键词索引，优化筛选效率'
+) ENGINE = InnoDB COMMENT = '存储医院的基本信息，包括位置、联系方式、类型及蛇毒治疗能力等';
+3. 项目依赖配置
+在 hospital-service 的 pom.xml 中保留原有依赖，仅保留 Excel 导出相关依赖：
+xml
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <!-- 原有配置保持不变 -->
+    <<dependencies>
+        <!-- 原有依赖保持不变 -->
+        <!-- Excel导出依赖（支持结果导出功能） -->
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi</artifactId>
+            <version>4.1.2</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>4.1.2</version>
+        </dependency>
+    </</dependencies>
+    <!-- 原有build配置保持不变 -->
+</project>
+4. 实体类设计
+4.1 HospitalInfo 实体类（新增蛇毒治疗相关字段）
+java
+运行
+package com.sling.hospital.entity;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.Data;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Data
+@TableName("hospital_info")
+public class HospitalInfo {
+    @TableId(type = IdType.AUTO)
+    private Long hospitalId;
+
+    private String hospitalName;
+
+    private String address;
+
+    private BigDecimal latitude;
+
+    private BigDecimal longitude;
+
+    private String contactInfo;
+
+    private String hospitalType;
+
+    private Boolean serumAvailability;
+
+    private Boolean emergencyDepartment;
+
+    // 新增蛇毒治疗相关字段
+    private Boolean snakeVenomTreatment; // 是否支持蛇毒治疗
+    private String snakeVenomKeywords; // 蛇毒治疗相关关键词
+
+    private LocalDateTime createdTime;
+
+    private LocalDateTime updatedTime;
+
+    private Boolean delFlag;
+
+    // 计算距离的辅助字段
+    @TableField(exist = false)
+    private Double distance;
+
+    // 辅助字段：匹配的蛇毒关键词列表（用于返回给前端）
+    @TableField(exist = false)
+    private List<String> matchedSnakeKeywords;
+
+    // 辅助字段：距离描述（如"1.2公里"）
+    @TableField(exist = false)
+    private String distanceDesc;
+}
+4.2 蛇毒治疗医院查询参数实体类
+java
+运行
+package com.sling.hospital.entity.dto;
+import lombok.Data;
+import javax.validation.constraints.NotNull;
+import java.math.BigDecimal;
+
+@Data
+public class SnakeVenomHospitalQueryDTO {
+    /**
+     * 用户输入（支持模糊地址或经纬度字符串，如"广州市天河区"或"113.32,23.13"）
+     */
+    @NotNull(message = "用户位置信息不能为空")
+    private String userInput;
+
+    /**
+     * 搜索半径（单位：米，默认5000米）
+     */
+    private Integer radius = 5000;
+
+    /**
+     * 地图类型（默认高德地图，无需修改）
+     */
+    private String mapType = "AMAP";
+}
+5. 数据访问层设计
+5.1 HospitalInfoMapper 接口（新增蛇毒治疗医院筛选方法）
+java
+运行
+package com.sling.hospital.mapper;
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.sling.hospital.entity.HospitalInfo;
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+import java.math.BigDecimal;
+import java.util.List;
+
+@Mapper
+public interface HospitalInfoMapper extends BaseMapper<HospitalInfo> {
+    /**
+     * 根据经纬度和距离范围查找附近的医院
+     * @param userLat 用户纬度
+     * @param userLng 用户经度
+     * @param distance 距离范围（单位：米）
+     * @return 附近的医院列表
+     */
+    List<HospitalInfo> selectNearbyHospitals(@Param("userLat") BigDecimal userLat,
+                                          @Param("userLng") BigDecimal userLng,
+                                          @Param("distance") Integer distance);
+
+    /**
+     * 根据关键词筛选支持蛇毒治疗的医院
+     * @param keywords 蛇毒治疗相关关键词列表
+     * @return 符合条件的医院列表
+     */
+    List<HospitalInfo> selectSnakeVenomHospitalsByKeywords(@Param("keywords") List<String> keywords);
+
+    /**
+     * 查找附近支持蛇毒治疗的医院（结合距离和关键词筛选）
+     * @param userLat 用户纬度
+     * @param userLng 用户经度
+     * @param distance 距离范围（单位：米）
+     * @param keywords 蛇毒治疗相关关键词列表
+     * @return 附近的蛇毒治疗医院列表
+     */
+    List<HospitalInfo> selectNearbySnakeVenomHospitals(@Param("userLat") BigDecimal userLat,
+                                                     @Param("userLng") BigDecimal userLng,
+                                                     @Param("distance") Integer distance,
+                                                     @Param("keywords") List<String> keywords);
+}
+5.2 HospitalInfoMapper.xml（新增对应 SQL 实现）
+xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.sling.hospital.mapper.HospitalInfoMapper">
+
+    <!-- 原有resultMap扩展新增字段 -->
+    <resultMap id="HospitalInfoMap" type="com.sling.hospital.entity.HospitalInfo">
+        <id column="hospital_id" property="hospitalId"/>
+        <result column="hospital_name" property="hospitalName"/>
+        <result column="address" property="address"/>
+        <result column="latitude" property="latitude"/>
+        <result column="longitude" property="longitude"/>
+        <result column="contact_info" property="contactInfo"/>
+        <result column="hospital_type" property="hospitalType"/>
+        <result column="serum_availability" property="serumAvailability"/>
+        <result column="emergency_department" property="emergencyDepartment"/>
+        <result column="snake_venom_treatment" property="snakeVenomTreatment"/>
+        <result column="snake_venom_keywords" property="snakeVenomKeywords"/>
+        <result column="created_time" property="createdTime"/>
+        <result column="updated_time" property="updatedTime"/>
+        <result column="del_flag" property="delFlag"/>
+        <result column="distance" property="distance"/>
+    </resultMap>
+
+    <!-- 原有selectNearbyHospitals保持不变 -->
+
+    <!-- 新增：根据关键词筛选蛇毒治疗医院 -->
+    <select id="selectSnakeVenomHospitalsByKeywords" resultMap="HospitalInfoMap">
+        SELECT
+            *
+        FROM hospital_info
+        WHERE
+            del_flag = 0
+            AND snake_venom_treatment = 1
+            AND (
+                <foreach collection="keywords" item="keyword" separator="OR">
+                    snake_venom_keywords LIKE CONCAT('%', #{keyword}, '%')
+                    OR hospital_name LIKE CONCAT('%', #{keyword}, '%')
+                    OR hospital_type LIKE CONCAT('%', #{keyword}, '%')
+                </foreach>
+            )
+        ORDER BY
+            hospital_type DESC, hospital_name ASC
+    </select>
+
+    <!-- 新增：查找附近支持蛇毒治疗的医院 -->
+    <select id="selectNearbySnakeVenomHospitals" resultMap="HospitalInfoMap">
+        SELECT
+            hospital_id,
+            hospital_name,
+            address,
+            latitude,
+            longitude,
+            contact_info,
+            hospital_type,
+            serum_availability,
+            emergency_department,
+            snake_venom_treatment,
+            snake_venom_keywords,
+            created_time,
+            updated_time,
+            del_flag,
+            6371000 * ACOS(
+                COS(RADIANS(#{userLat})) * COS(RADIANS(latitude)) *
+                COS(RADIANS(longitude) - RADIANS(#{userLng})) +
+                SIN(RADIANS(#{userLat})) * SIN(RADIANS(latitude))
+            ) AS distance
+        FROM hospital_info
+        WHERE
+            del_flag = 0
+            AND snake_venom_treatment = 1
+            AND (
+                <foreach collection="keywords" item="keyword" separator="OR">
+                    snake_venom_keywords LIKE CONCAT('%', #{keyword}, '%')
+                    OR hospital_name LIKE CONCAT('%', #{keyword}, '%')
+                    OR hospital_type LIKE CONCAT('%', #{keyword}, '%')
+                </foreach>
+            )
+            AND 6371000 * ACOS(
+                COS(RADIANS(#{userLat})) * COS(RADIANS(latitude)) *
+                COS(RADIANS(longitude) - RADIANS(#{userLng})) +
+                SIN(RADIANS(#{userLat})) * SIN(RADIANS(latitude))
+            ) <= #{distance}
+        ORDER BY
+            distance ASC
+        LIMIT 20
+    </select>
+</mapper>
+6. 服务层设计
+6.1 完善 AmapService（核心地图服务）
+java
+运行
+package com.sling.hospital.service;
+import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONObject;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+import jakarta.annotation.PostConstruct;
+import java.util.HashMap;
+import java.util.Map;
+
+@Service
+public class AmapService {
+    @Value("${amap.api-key:}")
+    private String amapApiKey;
+
+    private RestTemplate restTemplate;
+
+    // 高德地图API接口地址
+    private static final String GEOCODE_URL = "https://restapi.amap.com/v3/geocode/geo";
+    private static final String POI_SEARCH_URL = "https://restapi.amap.com/v3/place/around";
+
+    @PostConstruct
+    public void init() {
+        this.restTemplate = new RestTemplate();
+    }
+
+    /**
+     * 解析用户输入（支持地址或经纬度），返回经纬度（高德GCJ02坐标系）
+     * @param userInput 用户输入（如"广州市天河区"或"113.32,23.13"）
+     * @return 经纬度数组[lng, lat]
+     */
+    public Double[] parseUserInput(String userInput) throws Exception {
+        if (userInput.contains(",")) {
+            // 输入为经纬度格式
+            String[] lngLatArr = userInput.split(",");
+            if (lngLatArr.length != 2) {
+                throw new IllegalArgumentException("经纬度格式错误，正确格式为\"经度,纬度\"");
+            }
+            Double lng = Double.parseDouble(lngLatArr[0].trim());
+            Double lat = Double.parseDouble(lngLatArr[1].trim());
+            return new Double[]{lng, lat};
+        } else {
+            // 输入为地址，转换为经纬度（高德GCJ02坐标系）
+            String geoCodeUrl = String.format(
+                "%s?key=%s&address=%s&output=json",
+                GEOCODE_URL, amapApiKey, userInput
+            );
+            String response = restTemplate.getForObject(geoCodeUrl, String.class);
+            JSONObject result = JSON.parseObject(response);
+            if (!"1".equals(result.getString("status")) || result.getJSONArray("geocodes").isEmpty()) {
+                throw new Exception("地址解析失败：" + result.getString("info"));
+            }
+            String lngLat = result.getJSONArray("geocodes").getJSONObject(0).getString("location");
+            String[] lngLatArr = lngLat.split(",");
+            Double lng = Double.parseDouble(lngLatArr[0]);
+            Double lat = Double.parseDouble(lngLatArr[1]);
+            return new Double[]{lng, lat};
+        }
+    }
+
+    /**
+     * 周边POI搜索（查找附近医院）
+     * @param lng 中心点经度
+     * @param lat 中心点纬度
+     * @param radius 搜索半径（米）
+     * @param pageSize 每页结果数
+     * @return 医院原始数据JSON字符串
+     */
+    public String searchNearbyHospitals(Double lng, Double lat, Integer radius, Integer pageSize) throws Exception {
+        Map<String, Object> params = new HashMap<>();
+        params.put("key", amapApiKey);
+        params.put("location", lng + "," + lat); // 高德POI搜索：经度在前，纬度在后
+        params.put("radius", radius);
+        params.put("keywords", "医院");
+        params.put("types", "医疗保健服务;医疗服务;医院");
+        params.put("output", "json");
+        params.put("offset", pageSize);
+        params.put("page", 1);
+        params.put("extensions", "all"); // 返回详细信息
+
+        String response = restTemplate.getForObject(POI_SEARCH_URL, String.class, params);
+        if (response == null) {
+            throw new Exception("高德地图POI搜索失败，无返回结果");
+        }
+
+        JSONObject result = JSON.parseObject(response);
+        if (!"1".equals(result.getString("status"))) {
+            throw new Exception("周边医院检索失败：" + result.getString("info"));
+        }
+
+        return response;
+    }
+
+    /**
+     * 按关键词搜索医院（兜底方案专用）
+     * @param keywords 搜索关键词
+     * @param city 城市（可选）
+     * @return 医院原始数据JSON字符串
+     */
+    public String searchHospitalsByKeyword(String keywords, String city) throws Exception {
+        String searchUrl = String.format(
+            "https://restapi.amap.com/v3/place/text?key=%s&keywords=%s&city=%s&output=json&offset=20&extensions=all",
+            amapApiKey, keywords, city
+        );
+        String response = restTemplate.getForObject(searchUrl, String.class);
+        if (response == null) {
+            throw new Exception("高德地图关键词搜索失败，无返回结果");
+        }
+
+        JSONObject result = JSON.parseObject(response);
+        if (!"1".equals(result.getString("status"))) {
+            throw new Exception("关键词医院检索失败：" + result.getString("info"));
+        }
+
+        return response;
+    }
+}
+6.2 蛇毒治疗医院服务（SnakeVenomHospitalService）
+java
+运行
+package com.sling.hospital.service;
+import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONObject;
+import com.sling.hospital.entity.HospitalInfo;
+import com.sling.hospital.entity.dto.SnakeVenomHospitalQueryDTO;
+import com.sling.hospital.mapper.HospitalInfoMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+@Service
+public class SnakeVenomHospitalService {
+
+    @Autowired
+    private HospitalInfoMapper hospitalInfoMapper;
+
+    @Autowired
+    private AmapService amapService;
+
+    // 蛇毒治疗核心关键词库（多维度覆盖）
+    private static final List<String> SNAKE_VENOM_KEYWORDS = Arrays.asList(
+        "蛇毒", "抗蛇毒血清", "蛇咬伤", "蛇伤治疗", "毒蛇咬伤",
+        "蛇伤专科", "急诊科 蛇伤", "中毒救治 蛇", "蛇毒抗体", "蛇伤急救中心"
+    );
+
+    /**
+     * 检索周边支持蛇毒治疗的医院（核心功能）
+     * @param queryDTO 查询参数（用户输入、搜索半径、地图类型）
+     * @return 筛选后的医院列表（含距离信息、匹配关键词）
+     */
+    public List<HospitalInfo> searchSnakeVenomHospitals(SnakeVenomHospitalQueryDTO queryDTO) throws Exception {
+        // 1. 解析用户输入，获取经纬度（仅使用高德地图）
+        Double[] lngLat = amapService.parseUserInput(queryDTO.getUserInput().trim());
+        Double userLng = lngLat[0];
+        Double userLat = lngLat[1];
+
+        // 2. 查找附近支持蛇毒治疗的医院
+        List<HospitalInfo> nearbyHospitals = hospitalInfoMapper.selectNearbySnakeVenomHospitals(
+            new BigDecimal(userLat),
+            new BigDecimal(userLng),
+            queryDTO.getRadius(),
+            SNAKE_VENOM_KEYWORDS
+        );
+
+        // 3. 补充距离描述和匹配关键词
+        for (HospitalInfo hospital : nearbyHospitals) {
+            // 计算距离描述
+            double distance = hospital.getDistance();
+            if (distance >= 1000) {
+                hospital.setDistanceDesc(String.format("%.1f公里", distance / 1000));
+            } else {
+                hospital.setDistanceDesc(String.format("%.0f米", distance));
+            }
+
+            // 匹配关键词筛选
+            List<String> matchedKeywords = new ArrayList<>();
+            String keywords = hospital.getSnakeVenomKeywords() != null ? hospital.getSnakeVenomKeywords() : "";
+            String name = hospital.getHospitalName() != null ? hospital.getHospitalName() : "";
+            for (String keyword : SNAKE_VENOM_KEYWORDS) {
+                if (keywords.contains(keyword) || name.contains(keyword)) {
+                    matchedKeywords.add(keyword);
+                }
+            }
+            hospital.setMatchedSnakeKeywords(matchedKeywords);
+        }
+
+        // 4. 若数据库中无结果，调用高德地图API补充检索（兜底方案）
+        if (nearbyHospitals.isEmpty()) {
+            nearbyHospitals = supplementHospitalsFromAmapAPI(queryDTO, userLng, userLat);
+        }
+
+        return nearbyHospitals;
+    }
+
+    /**
+     * 从高德地图API补充检索医院（数据库无结果时兜底）
+     */
+    private List<HospitalInfo> supplementHospitalsFromAmapAPI(SnakeVenomHospitalQueryDTO queryDTO, Double userLng, Double userLat) throws Exception {
+        List<HospitalInfo> supplementHospitals = new ArrayList<>();
+        // 调用高德地图周边搜索接口
+        String mapResult = amapService.searchNearbyHospitals(userLng, userLat, queryDTO.getRadius(), 20);
+
+        // 解析高德地图API返回结果，转换为HospitalInfo对象
+        JSONObject resultObj = JSON.parseObject(mapResult);
+        if (resultObj.containsKey("pois") && !resultObj.getJSONArray("pois").isEmpty()) {
+            for (Object obj : resultObj.getJSONArray("pois")) {
+                JSONObject hospitalObj = (JSONObject) obj;
+                HospitalInfo hospital = new HospitalInfo();
+
+                // 填充核心字段
+                hospital.setHospitalName(hospitalObj.getString("name"));
+                hospital.setAddress(hospitalObj.getString("address"));
+                hospital.setContactInfo(hospitalObj.getString("tel", "暂无"));
+                hospital.setHospitalType(hospitalObj.getString("type"));
+
+                // 解析经纬度
+                String location = hospitalObj.getString("location");
+                String[] lngLatArr = location.split(",");
+                hospital.setLongitude(new BigDecimal(lngLatArr[0]));
+                hospital.setLatitude(new BigDecimal(lngLatArr[1]));
+
+                // 计算距离
+                double distance = calculateDistance(
+                    userLng, userLat,
+                    Double.parseDouble(lngLatArr[0]), Double.parseDouble(lngLatArr[1])
+                );
+                hospital.setDistance(distance);
+                hospital.setDistanceDesc(distance >= 1000 ?
+                    String.format("%.1f公里", distance / 1000) :
+                    String.format("%.0f米", distance));
+
+                // 匹配蛇毒关键词
+                List<String> matchedKeywords = new ArrayList<>();
+                String name = hospital.getHospitalName() != null ? hospital.getHospitalName() : "";
+                String snippet = hospitalObj.getString("snippet", "");
+                String type = hospital.getHospitalType() != null ? hospital.getHospitalType() : "";
+                for (String keyword : SNAKE_VENOM_KEYWORDS) {
+                    if (name.contains(keyword) || snippet.contains(keyword) || type.contains(keyword)) {
+                        matchedKeywords.add(keyword);
+                    }
+                }
+                hospital.setMatchedSnakeKeywords(matchedKeywords);
+                hospital.setSnakeVenomTreatment(!matchedKeywords.isEmpty());
+                // 默认为有急诊科和血清（实际需用户自行确认）
+                hospital.setEmergencyDepartment(true);
+                hospital.setSerumAvailability(!matchedKeywords.isEmpty());
+
+                supplementHospitals.add(hospital);
+            }
+
+            // 按距离排序
+            supplementHospitals.sort((h1, h2) -> h1.getDistance().compareTo(h2.getDistance()));
+        }
+
+        return supplementHospitals;
+    }
+
+    /**
+     * Haversine公式计算两点球面距离（单位：米）
+     */
+    private double calculateDistance(double lng1, double lat1, double lng2, double lat2) {
+        final double R = 6371000; // 地球半径（米）
+        double lat1Rad = Math.toRadians(lat1);
+        double lat2Rad = Math.toRadians(lat2);
+        double deltaLat = Math.toRadians(lat2 - lat1);
+        double deltaLng = Math.toRadians(lng2 - lng1);
+
+        double a = Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+                   Math.cos(lat1Rad) * Math.cos(lat2Rad) *
+                   Math.sin(deltaLng / 2) * Math.sin(deltaLng / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+        return R * c;
+    }
+
+    /**
+     * 导出蛇毒治疗医院信息到Excel
+     * @param hospitals 医院列表
+     * @return Excel文件字节数组
+     */
+    public byte[] exportSnakeVenomHospitalsToExcel(List<HospitalInfo> hospitals) throws Exception {
+        // 使用Apache POI实现Excel导出逻辑
+        org.apache.poi.ss.usermodel.Workbook workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook();
+        org.apache.poi.ss.usermodel.Sheet sheet = workbook.createSheet("蛇毒治疗医院列表");
+
+        // 创建表头
+        String[] headers = {"序号", "医院名称", "地址", "联系电话", "距离", "医院类型", "是否有血清", "匹配关键词"};
+        org.apache.poi.ss.usermodel.Row headerRow = sheet.createRow(0);
+        for (int i = 0; i < headers.length; i++) {
+            org.apache.poi.ss.usermodel.Cell cell = headerRow.createCell(i);
+            cell.setCellValue(headers[i]);
+        }
+
+        // 填充数据
+        for (int i = 0; i < hospitals.size(); i++) {
+            HospitalInfo hospital = hospitals.get(i);
+            org.apache.poi.ss.usermodel.Row dataRow = sheet.createRow(i + 1);
+
+            dataRow.createCell(0).setCellValue(i + 1);
+            dataRow.createCell(1).setCellValue(hospital.getHospitalName());
+            dataRow.createCell(2).setCellValue(hospital.getAddress());
+            dataRow.createCell(3).setCellValue(hospital.getContactInfo());
+            dataRow.createCell(4).setCellValue(hospital.getDistanceDesc());
+            dataRow.createCell(5).setCellValue(hospital.getHospitalType());
+            dataRow.createCell(6).setCellValue(hospital.getSerumAvailability() ? "是" : "否");
+            dataRow.createCell(7).setCellValue(String.join(",", hospital.getMatchedSnakeKeywords()));
+        }
+
+        // 自动调整列宽
+        for (int i = 0; i < headers.length; i++) {
+            sheet.autoSizeColumn(i);
+        }
+
+        // 写入字节数组
+        java.io.ByteArrayOutputStream outputStream = new java.io.ByteArrayOutputStream();
+        workbook.write(outputStream);
+        workbook.close();
+
+        return outputStream.toByteArray();
+    }
+}
+6.3 扩展 HospitalInfoService 接口（新增蛇毒治疗相关方法）
+java
+运行
+package com.sling.hospital.service;
+import com.sling.hospital.entity.HospitalInfo;
+import java.math.BigDecimal;
+import java.util.List;
+
+public interface HospitalInfoService {
+    // 原有方法保持不变
+
+    /**
+     * 筛选支持蛇毒治疗的医院（不限制距离）
+     */
+    List<HospitalInfo> getSnakeVenomHospitals();
+
+    /**
+     * 根据关键词筛选蛇毒治疗医院
+     */
+    List<HospitalInfo> getSnakeVenomHospitalsByKeywords(List<String> keywords);
+}
+6.4 扩展 HospitalInfoServiceImpl 实现类
+java
+运行
+package com.sling.hospital.service.impl;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.sling.hospital.entity.HospitalInfo;
+import com.sling.hospital.mapper.HospitalInfoMapper;
+import com.sling.hospital.service.HospitalInfoService;
+import org.springframework.stereotype.Service;
+import java.util.List;
+
+@Service
+public class HospitalInfoServiceImpl extends ServiceImpl<HospitalInfoMapper, HospitalInfo>
+    implements HospitalInfoService {
+
+    // 原有代码保持不变
+
+    @Override
+    public List<HospitalInfo> getSnakeVenomHospitals() {
+        QueryWrapper<HospitalInfo> wrapper = new QueryWrapper<>();
+        wrapper.eq("del_flag", false)
+               .eq("snake_venom_treatment", true);
+        return hospitalInfoMapper.selectList(wrapper);
+    }
+
+    @Override
+    public List<HospitalInfo> getSnakeVenomHospitalsByKeywords(List<String> keywords) {
+        return hospitalInfoMapper.selectSnakeVenomHospitalsByKeywords(keywords);
+    }
+}
+7. 控制层设计（扩展蛇毒治疗医院相关接口）
+java
+运行
+package com.sling.hospital.controller;
+import com.sling.common.utils.Result;
+import com.sling.common.utils.ResultUtils;
+import com.sling.hospital.entity.HospitalInfo;
+import com.sling.hospital.entity.dto.SnakeVenomHospitalQueryDTO;
+import com.sling.hospital.service.HospitalInfoService;
+import com.sling.hospital.service.SnakeVenomHospitalService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import javax.validation.Valid;
+import java.util.List;
+
+@RestController
+@RequestMapping("/hospital")
+@CrossOrigin(origins = "*")
+public class HospitalInfoController {
+
+    // 原有Autowired保持不变
+    @Autowired
+    private SnakeVenomHospitalService snakeVenomHospitalService;
+
+    @Autowired
+    private HospitalInfoService hospitalInfoService;
+
+    // 原有接口保持不变
+
+    /**
+     * 检索周边支持蛇毒治疗的医院（核心扩展接口）
+     * @param queryDTO 查询参数（用户输入、搜索半径、地图类型）
+     * @return 筛选后的医院列表
+     */
+    @PostMapping("/snake-venom/nearby")
+    public Result searchSnakeVenomHospitals(@Valid @RequestBody SnakeVenomHospitalQueryDTO queryDTO) {
+        try {
+            // 强制使用高德地图
+            queryDTO.setMapType("AMAP");
+            List<HospitalInfo> hospitals = snakeVenomHospitalService.searchSnakeVenomHospitals(queryDTO);
+            if (hospitals.isEmpty()) {
+                return ResultUtils.success("未找到支持蛇毒治疗的医院，建议扩大搜索半径", hospitals);
+            }
+            return ResultUtils.success("检索成功", hospitals);
+        } catch (Exception e) {
+            return ResultUtils.error("检索蛇毒治疗医院失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 导出蛇毒治疗医院信息到Excel
+     * @param queryDTO 查询参数
+     * @return Excel文件下载响应
+     */
+    @PostMapping("/snake-venom/export")
+    public ResponseEntity<byte[]> exportSnakeVenomHospitals(@Valid @RequestBody SnakeVenomHospitalQueryDTO queryDTO) {
+        try {
+            // 强制使用高德地图
+            queryDTO.setMapType("AMAP");
+            List<HospitalInfo> hospitals = snakeVenomHospitalService.searchSnakeVenomHospitals(queryDTO);
+            byte[] excelBytes = snakeVenomHospitalService.exportSnakeVenomHospitalsToExcel(hospitals);
+
+            // 设置响应头
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            headers.setContentDispositionFormData("attachment", "蛇毒治疗医院列表.xlsx");
+
+            return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * 生成医院导航链接（仅支持高德地图）
+     * @param hospitalId 医院ID
+     * @param userLng 用户经度
+     * @param userLat 用户纬度
+     * @return 高德地图导航链接
+     */
+    @GetMapping("/navigation")
+    public Result generateNavigationUrl(@RequestParam Long hospitalId,
+                                       @RequestParam Double userLng,
+                                       @RequestParam Double userLat) {
+        try {
+            HospitalInfo hospital = hospitalInfoService.getById(hospitalId);
+            if (hospital == null || hospital.getDelFlag()) {
+                return ResultUtils.error("医院信息不存在");
+            }
+
+            double destLng = hospital.getLongitude().doubleValue();
+            double destLat = hospital.getLatitude().doubleValue();
+
+            // 高德地图导航链接（GCJ02坐标系）
+            String navigationUrl = String.format(
+                "https://uri.amap.com/navigation?from=%s,%s&to=%s,%s&mode=car&src=sling",
+                userLng, userLat, destLng, destLat
+            );
+
+            return ResultUtils.success("导航链接生成成功", navigationUrl);
+        } catch (Exception e) {
+            return ResultUtils.error("生成导航链接失败: " + e.getMessage());
+        }
+    }
+}
+8. 配置文件更新
+yaml
+server:
+  port: 7004
+spring:
+  # 原有配置保持不变
+# 高德地图API配置（唯一地图配置）
+amap:
+  api-key: 6b27e2cf049182541e6f659eacf63d89
+mybatis-plus:
+  # 原有配置保持不变
+# 分页配置
+pagehelper:
+  # 原有配置保持不变
+9. 启动类配置（保持不变）
+java
+运行
+package com.sling.hospital;
+import org.mybatis.spring.annotation.MapperScan;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
+
+@SpringBootApplication
+@EnableDiscoveryClient
+@MapperScan("com.sling.hospital.mapper")
+public class HospitalApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(HospitalApplication.class, args);
+    }
+}
+10. 前端对接 API（新增扩展接口）
+10.1 检索周边蛇毒治疗医院 API
+plaintext
+POST /hospital/snake-venom/nearby
+请求体：
+{
+  "userInput": "广州市天河区"或"113.32,23.13",
+  "radius": 5000,
+  "mapType": "AMAP"（固定值，不可修改）
+}
+响应示例：
+{
+  "code": 200,
+  "message": "检索成功",
+  "data": [
+    {
+      "hospitalId": 2,
+      "hospitalName": "XX市蛇伤急救中心",
+      "address": "广州市天河区XX路XX号",
+      "latitude": "23.130000",
+      "longitude": "113.320000",
+      "contactInfo": "020-87654321",
+      "hospitalType": "专科医院",
+      "serumAvailability": true,
+      "emergencyDepartment": true,
+      "snakeVenomTreatment": true,
+      "distance": 850.2,
+      "distanceDesc": "0.9公里",
+      "matchedSnakeKeywords": ["蛇伤急救中心", "抗蛇毒血清"]
+    }
+  ]
+}
+10.2 导出蛇毒治疗医院 Excel API
+plaintext
+POST /hospital/snake-venom/export
+请求体：同10.1
+响应：Excel文件下载（Content-Type: application/octet-stream）
+10.3 生成医院导航链接 API
+plaintext
+GET /hospital/navigation?hospitalId=2&userLng=113.32&userLat=23.13
+响应示例：
+{
+  "code": 200,
+  "message": "导航链接生成成功",
+  "data": "https://uri.amap.com/navigation?from=113.32,23.13&to=113.320000,23.130000&mode=car&src=sling"
+}
+11. 核心扩展功能实现说明
+11.1 蛇毒治疗医院检索流程
+用户输入处理：支持模糊地址（如 "深圳市南山区"）或经纬度（如 "113.94,22.54"）两种输入方式位置解析：调用高德地图 API 将地址转换为 GCJ02 标准经纬度双重检索：
+优先从本地数据库检索附近支持蛇毒治疗的医院（通过经纬度距离计算 + 关键词筛选）
+若数据库无结果，调用高德地图 API 补充检索周边医院，并二次筛选蛇毒治疗相关资源
+结果优化：
+按距离从近到远排序，优先推荐最近的医疗资源
+补充距离描述（如 "1.2 公里"）和匹配关键词，提升用户体验
+支持 Excel 导出，方便离线使用
+11.2 关键词筛选机制
+采用多维度关键词匹配策略，避免遗漏有效医疗资源：
+核心关键词库：覆盖 "蛇毒"" 抗蛇毒血清 ""蛇咬伤治疗" 等 10 + 核心术语
+匹配维度：医院名称、蛇毒治疗关键词字段、医院类型标签、医院简介
+匹配规则：任意关键词命中即视为支持蛇毒治疗的目标医院
+11.3 坐标系处理
+统一使用高德地图 GCJ02 坐标系（国家测绘局加密坐标系），无需进行坐标系转换，简化开发流程
+12. 性能优化与扩展建议
+12.1 性能优化
+索引优化：对 snake_venom_treatment 和 snake_venom_keywords 字段建立索引，提升筛选效率
+缓存策略：缓存热门区域的蛇毒治疗医院数据（如使用 Redis），减少数据库查询和 API 调用
+分页支持：在检索接口中新增分页参数，避免返回过多结果导致响应缓慢
+异步处理：地图 API 调用和 Excel 导出功能采用异步处理，提升接口响应速度
+12.2 功能扩展
+血清库存关联：与 serum_inventory 表关联，显示各医院蛇毒血清的具体库存数量和有效期
+实时更新：定期同步高德地图 API 的医院数据到本地数据库，确保信息准确性
+多页检索：扩展高德地图 API 分页调用逻辑，获取更多医院结果（默认仅获取第 1 页 20 条）
+用户评价：新增医院治疗效果评价功能，帮助用户选择更优质的医疗资源
+13. 注意事项
+API 密钥管理：高德地图 API 密钥需妥善保管，生产环境中建议通过配置中心管理，避免硬编码
+调用频率限制：免费高德地图 API 存在调用频率限制，商业使用需升级套餐
+数据准确性：地图 API 返回的医院信息可能存在更新不及时的情况，建议用户联系医院确认血清储备和治疗能力
+隐私保护：用户位置信息仅用于实时检索，不存储在服务器，确保隐私安全
+逻辑删除：医院信息采用逻辑删除机制，确保历史数据可追溯，符合医疗数据管理规范
+14. 项目集成说明
+服务注册：已集成 Nacos 服务发现，可被预警服务、用户服务等其他微服务调用
+API 网关：通过 snake-gateway 统一对外暴露接口，支持负载均衡和熔断降级
+数据库：与原有 hospital_info 表兼容，新增字段不影响历史数据
+前端对接：提供清晰的 API 文档和响应示例，支持快速集成到前端页面

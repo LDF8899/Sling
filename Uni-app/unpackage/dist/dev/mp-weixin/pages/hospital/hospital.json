@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "附近医院",
+  "navigationStyle": "custom",
+  "usingComponents": {
+    "glass-navbar": "../../components/GlassNavbar"
+  }
+}

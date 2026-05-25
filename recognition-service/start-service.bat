@@ -1,0 +1,3 @@
+@echo off
+echo Starting Recognition Service...
+mvn spring-boot:run

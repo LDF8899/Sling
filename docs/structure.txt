@@ -1,0 +1,20 @@
+# Sling 项目文档结构
+
+## 项目概览
+- PROJECT_OVERVIEW.md - 项目概况与技术栈
+- 项目立项计划书.md - 项目初始规划
+- 下一步规划书.md - 项目后续规划
+
+## 技术文档
+- 项目综合介绍书.md - 详细技术文档
+- ANIMAL_IDENTIFICATION_SYSTEMS_ANALYSIS.md - 相关开源项目分析
+
+## 开发指南
+- QUICK_START.md - 快速开始
+- DEVELOPMENT_SUMMARY.md - 开发总结
+- CHECKLIST.md - 检查清单
+
+## 配置与部署
+- RUN_ME.md - 运行指南
+
+```

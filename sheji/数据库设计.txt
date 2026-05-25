@@ -1,0 +1,257 @@
+/*
+ Navicat Premium Dump SQL
+
+ Source Server         : boot_movie
+ Source Server Type    : MySQL
+ Source Server Version : 80033 (8.0.33)
+ Source Host           : localhost:3306
+ Source Schema         : sling
+
+ Target Server Type    : MySQL
+ Target Server Version : 80033 (8.0.33)
+ File Encoding         : 65001
+
+ Date: 17/12/2025 11:44:52
+*/
+
+SET NAMES utf8mb4;
+SET FOREIGN_KEY_CHECKS = 0;
+
+-- ----------------------------
+-- Table structure for emergency_qa_cache
+-- ----------------------------
+DROP TABLE IF EXISTS `emergency_qa_cache`;
+CREATE TABLE `emergency_qa_cache`  (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `question` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '用户提问的问题',
+  `answer` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'AI生成的答案',
+  `created_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for hospital_info
+-- ----------------------------
+DROP TABLE IF EXISTS `hospital_info`;
+CREATE TABLE `hospital_info`  (
+  `hospital_id` bigint NOT NULL AUTO_INCREMENT COMMENT '医院唯一标识，自增长',
+  `hospital_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '医院名称，如“XX市第一人民医院”',
+  `address` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '医院地址，详细的地理位置信息',
+  `latitude` decimal(10, 6) NULL DEFAULT NULL COMMENT '医院所在纬度，用于地图定位',
+  `longitude` decimal(10, 6) NULL DEFAULT NULL COMMENT '医院所在经度，用于地图定位',
+  `contact_info` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL COMMENT '医院联系信息，如电话号码、邮箱等',
+  `hospital_type` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '医院类型，如“综合医院”“专科医院”等',
+  PRIMARY KEY (`hospital_id`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '存储医院的基本信息，包括位置、联系方式和类型等' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for recognition_record
+-- ----------------------------
+DROP TABLE IF EXISTS `recognition_record`;
+CREATE TABLE `recognition_record`  (
+  `record_id` bigint NOT NULL AUTO_INCREMENT COMMENT '识别记录唯一标识，自增长',
+  `user_id` bigint NOT NULL COMMENT '关联用户表的user_id，表明发起识别请求的用户',
+  `snake_id` bigint NULL DEFAULT NULL COMMENT '识别出的蛇类ID，关联蛇类信息表的snake_id，识别失败时可为空',
+  `image_path` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '上传用于识别的图像存储路径',
+  `recognition_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '识别操作发生的时间',
+  `recognition_result` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '识别结果描述，如“识别成功”“识别失败：图像模糊”等',
+  `recognition_metadata` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL COMMENT '识别过程中的额外元数据，如使用的识别模型版本、识别置信度等，以JSON格式存储',
+  PRIMARY KEY (`record_id`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '记录用户蛇类识别请求及识别结果相关信息，方便追溯和统计' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for role
+-- ----------------------------
+DROP TABLE IF EXISTS `role`;
+CREATE TABLE `role`  (
+  `role_id` bigint NOT NULL AUTO_INCREMENT COMMENT '角色唯一标识，自增长',
+  `role_name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '角色名称，如\"管理员\"、\"普通用户\"、\"VIP用户\"等',
+  `role_description` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '角色描述，用于详细说明角色的职责和权限范围',
+  `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '角色创建时间',
+  PRIMARY KEY (`role_id`) USING BTREE,
+  UNIQUE INDEX `role_name`(`role_name` ASC) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '存储系统中的角色信息' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for serum_inventory
+-- ----------------------------
+DROP TABLE IF EXISTS `serum_inventory`;
+CREATE TABLE `serum_inventory`  (
+  `inventory_id` bigint NOT NULL AUTO_INCREMENT COMMENT '库存记录唯一标识，自增长',
+  `hospital_id` bigint NOT NULL COMMENT '关联医院表的hospital_id，表明该库存属于哪家医院',
+  `snake_id` bigint NOT NULL COMMENT '关联蛇类信息表的snake_id，表明对应的蛇类血清',
+  `serum_amount` int NOT NULL COMMENT '该蛇类血清的库存数量',
+  `serum_expiry_date` date NULL DEFAULT NULL COMMENT '血清的过期日期，用于管理血清的有效期',
+  `inventory_metadata` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL COMMENT '库存相关的额外元数据，如血清的来源、入库时间等，以JSON格式存储',
+  PRIMARY KEY (`inventory_id`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '记录各个医院针对不同蛇类血清的库存情况，以便及时调配' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for snake_active_area
+-- ----------------------------
+DROP TABLE IF EXISTS `snake_active_area`;
+CREATE TABLE `snake_active_area`  (
+  `area_id` bigint NOT NULL AUTO_INCREMENT COMMENT '区域唯一标识，自增长',
+  `area_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '区域名称，如“XX森林公园”“XX山区”等',
+  `latitude` decimal(10, 6) NULL DEFAULT NULL COMMENT '区域中心纬度，用于地图定位和区域划分',
+  `longitude` decimal(10, 6) NULL DEFAULT NULL COMMENT '区域中心经度，用于地图定位和区域划分',
+  `radius` int NULL DEFAULT NULL COMMENT '以区域中心为圆心的半径，单位为米，用于确定区域范围',
+  `snake_id` bigint NOT NULL COMMENT '关联蛇类信息表的snake_id，表明该区域活跃的蛇类',
+  `active_count` int NULL DEFAULT 0 COMMENT '当前蛇类在该区域的活跃次数，初始值为0',
+  `area_metadata` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL COMMENT '区域相关的额外元数据，如区域的生态环境特点、周边设施等，以JSON格式存储',
+  PRIMARY KEY (`area_id`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '记录蛇类在不同区域的活跃情况，为预警服务提供数据基础' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for snake_emergency_info
+-- ----------------------------
+DROP TABLE IF EXISTS `snake_emergency_info`;
+CREATE TABLE `snake_emergency_info`  (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '应急信息唯一标识',
+  `snake_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '蛇类学名，与snake_info表关联',
+  `snake_alias` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '别名，多个用逗号分隔',
+  `venom_type` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '毒液类型（神经毒素/血液毒素/细胞毒素/混合毒素）',
+  `symptom_description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL COMMENT '典型症状描述',
+  `emergency_treatment` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL COMMENT '紧急处理方法',
+  `medical_attention` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL COMMENT '医疗注意要点',
+  `image_url` varchar(300) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '蛇类图片链接',
+  `created_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `del_flag` tinyint UNSIGNED NULL DEFAULT 0 COMMENT '逻辑删除标识，0-正常，1-删除',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE INDEX `snake_name`(`snake_name` ASC) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 7 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '存储蛇类应急处理信息' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for snake_info
+-- ----------------------------
+DROP TABLE IF EXISTS `snake_info`;
+CREATE TABLE `snake_info`  (
+  `snake_id` bigint NOT NULL AUTO_INCREMENT COMMENT '蛇类唯一标识，自增长',
+  `snake_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '蛇类名称，如“竹叶青”“眼镜王蛇”等',
+  `characteristics` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '蛇类特征描述，包括外观、习性等方面的特征',
+  `toxicity_level` int NOT NULL COMMENT '毒性等级，用于衡量蛇类毒性程度，例如1 - 低毒，2 - 中毒，3 - 剧毒等',
+  `habitat_info` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL COMMENT '蛇类栖息地信息，记录蛇类生存的环境特点和分布区域',
+  `conservation_status` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '保护状态，表明蛇类在自然界中的保护等级，如“无危”“濒危”等',
+  PRIMARY KEY (`snake_id`) USING BTREE,
+  UNIQUE INDEX `idx_snake_name`(`snake_name` ASC) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '存储蛇类的基础信息，为蛇类识别和相关服务提供数据支持' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for snake_serum_match
+-- ----------------------------
+DROP TABLE IF EXISTS `snake_serum_match`;
+CREATE TABLE `snake_serum_match`  (
+  `match_id` bigint NOT NULL AUTO_INCREMENT COMMENT '匹配记录唯一标识，自增长',
+  `snake_id` bigint NOT NULL COMMENT '关联蛇类信息表的snake_id，表明对应的蛇类',
+  `serum_type` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '对应蛇类所需的血清类型',
+  `match_metadata` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL COMMENT '匹配相关的额外元数据，如匹配算法的版本、匹配的准确性等，以JSON格式存储',
+  PRIMARY KEY (`match_id`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '存储蛇类与相应血清类型的匹配关系及相关信息，辅助精准寻医服务' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for user_action_log
+-- ----------------------------
+DROP TABLE IF EXISTS `user_action_log`;
+CREATE TABLE `user_action_log`  (
+  `log_id` bigint NOT NULL AUTO_INCREMENT COMMENT '行为记录唯一标识，自增长',
+  `user_id` bigint NOT NULL COMMENT '关联用户表的user_id，标识行为所属用户',
+  `action_type` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '行为类型，如“登录”、“提交蛇类识别请求”等',
+  `action_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '行为发生的时间',
+  `action_detail` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL COMMENT '行为详细信息，记录行为的具体内容，如识别蛇类时的输入参数等',
+  `action_metadata` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL COMMENT '行为相关的额外元数据，以JSON格式存储，如识别蛇类时的设备信息等',
+  PRIMARY KEY (`log_id`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '用于记录用户在系统中的关键操作行为，便于审计和分析' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for user_info
+-- ----------------------------
+DROP TABLE IF EXISTS `user_info`;
+CREATE TABLE `user_info`  (
+  `user_id` bigint NOT NULL AUTO_INCREMENT COMMENT '用户唯一标识，自增长',
+  `username` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '用户名，具有唯一性，用于用户登录和标识',
+  `password` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '用户密码，经过加密存储',
+  `email` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '用户邮箱，可用于找回密码等功能',
+  `phone` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '用户手机号码，方便联系用户',
+  `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '用户注册时间，记录用户创建账号的时刻',
+  `last_login_time` timestamp NULL DEFAULT NULL COMMENT '用户最后登录时间，记录用户最后一次登录系统的时间',
+  `extra_info` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL COMMENT '预留字段，以JSON格式存储用户可能的额外信息，如个性化设置等',
+  PRIMARY KEY (`user_id`) USING BTREE,
+  UNIQUE INDEX `username`(`username` ASC) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 6 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '存储用户的基本信息和认证相关信息' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for user_permission
+-- ----------------------------
+DROP TABLE IF EXISTS `user_permission`;
+CREATE TABLE `user_permission`  (
+  `permission_id` bigint NOT NULL AUTO_INCREMENT COMMENT '权限唯一标识，自增长',
+  `user_id` bigint NOT NULL COMMENT '关联用户表的user_id，表明该权限所属用户',
+  `permission_name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '权限名称，明确权限对应的操作，如“查看蛇类详细信息”',
+  `permission_description` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '权限描述，用于更详细地说明权限的作用和适用场景',
+  PRIMARY KEY (`permission_id`) USING BTREE,
+  INDEX `user_id`(`user_id` ASC) USING BTREE,
+  CONSTRAINT `user_permission_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `user_info` (`user_id`) ON DELETE RESTRICT ON UPDATE RESTRICT
+) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '记录用户所拥有的各项操作权限' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for user_role
+-- ----------------------------
+DROP TABLE IF EXISTS `user_role`;
+CREATE TABLE `user_role`  (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `user_id` bigint NOT NULL COMMENT '关联用户表的user_id',
+  `role_id` bigint NOT NULL COMMENT '关联角色表的role_id',
+  `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '关联创建时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE INDEX `uk_user_role`(`user_id` ASC, `role_id` ASC) USING BTREE COMMENT '确保用户和角色的关联唯一性',
+  INDEX `role_id`(`role_id` ASC) USING BTREE,
+  CONSTRAINT `user_role_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `user_info` (`user_id`) ON DELETE CASCADE ON UPDATE RESTRICT,
+  CONSTRAINT `user_role_ibfk_2` FOREIGN KEY (`role_id`) REFERENCES `role` (`role_id`) ON DELETE CASCADE ON UPDATE RESTRICT
+) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '存储用户和角色的关联关系' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for warning_area
+-- ----------------------------
+DROP TABLE IF EXISTS `warning_area`;
+CREATE TABLE `warning_area`  (
+  `area_id` bigint NOT NULL AUTO_INCREMENT COMMENT '预警区域唯一标识，自增长',
+  `area_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '区域名称',
+  `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL COMMENT '区域描述',
+  `boundary_coordinates` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '边界坐标点集合，以JSON格式存储多个坐标点',
+  `snake_species` json NULL COMMENT '该区域常见的蛇类种类，以JSON数组格式存储',
+  `warning_level` int NULL DEFAULT 1 COMMENT '预警等级，1-低风险，2-中风险，3-高风险',
+  `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`area_id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '存储需要进行蛇类预警的区域信息' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for warning_record
+-- ----------------------------
+DROP TABLE IF EXISTS `warning_record`;
+CREATE TABLE `warning_record`  (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '预警记录唯一标识，自增长',
+  `area_id` bigint NOT NULL COMMENT '关联预警区域表的area_id',
+  `warning_content` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL COMMENT '预警内容',
+  `warning_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '预警时间',
+  `is_valid` int NULL DEFAULT 1 COMMENT '是否有效，1-有效，0-无效',
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `area_id`(`area_id` ASC) USING BTREE,
+  CONSTRAINT `warning_record_ibfk_1` FOREIGN KEY (`area_id`) REFERENCES `warning_area` (`area_id`) ON DELETE RESTRICT ON UPDATE RESTRICT
+) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '存储预警记录信息' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for warning_rule
+-- ----------------------------
+DROP TABLE IF EXISTS `warning_rule`;
+CREATE TABLE `warning_rule`  (
+  `rule_id` bigint NOT NULL AUTO_INCREMENT COMMENT '预警规则唯一标识，自增长',
+  `snake_id` bigint NOT NULL COMMENT '关联蛇类信息表的snake_id，表明针对哪种蛇类的预警规则',
+  `active_threshold` int NOT NULL COMMENT '蛇类活跃预警阈值，当蛇类在某区域的活跃程度达到该值时触发预警',
+  `warning_message` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '预警消息内容，在触发预警时展示给用户的提示信息',
+  `rule_metadata` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL COMMENT '预警规则的额外元数据，如规则的制定依据、适用范围等，以JSON格式存储',
+  PRIMARY KEY (`rule_id`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '定义蛇类活跃区域的预警触发条件和相关信息' ROW_FORMAT = Dynamic;
+
+SET FOREIGN_KEY_CHECKS = 1;

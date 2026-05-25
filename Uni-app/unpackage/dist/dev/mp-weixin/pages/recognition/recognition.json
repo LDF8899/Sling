@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "蛇类识别",
+  "navigationStyle": "custom",
+  "usingComponents": {
+    "glass-navbar": "../../components/GlassNavbar",
+    "loading-spinner": "../../components/LoadingSpinner"
+  }
+}

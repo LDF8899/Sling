@@ -1,0 +1,437 @@
+遇到的「路径变成直线」问题核心原因是：原有代码只返回了路线的文字步骤，未解析高德 API 返回的 polyline 加密坐标（这是路线的真实轨迹点），直接用起点和终点连线就会变成直线。
+下面我会基于你的原有代码完整改造，重点补全 polyline 解码逻辑，让前端能拿到完整的路线轨迹坐标，从而绘制出真实的规划路线。
+第一步：安装依赖（解码 polyline 需要）
+bash
+运行
+pip install polyline  # 用于解码高德的加密坐标串
+第二步：完整改造后的 Python 代码（保留原有逻辑 + 新增轨迹解码）
+python
+运行
+import requests
+import re
+import polyline  # 新增：导入polyline解码库
+
+# 高德地图API配置（Web服务Key，仅用于后端）
+AMAP_API_KEY = "6b27e2cf049182541e6f659eacf63d89"
+# 地理编码/逆地理编码API
+GEOCODE_URL = "https://restapi.amap.com/v3/geocode/geo"
+REGEOCODE_URL = "https://restapi.amap.com/v3/geocode/regeo"
+# 路径规划API
+DRIVING_URL = "https://restapi.amap.com/v3/direction/driving"
+WALKING_URL = "https://restapi.amap.com/v3/direction/walking"
+
+
+def is_coordinate(input_str):
+    """判断输入是否为经纬度坐标（支持 116.481,39.921 或 116.481 39.921 格式）"""
+    pattern = r'^(\d{1,3}\.\d+)\s*[,，\s]\s*(\d{1,3}\.\d+)$'
+    match = re.match(pattern, input_str.strip())
+    if match:
+        try:
+            lon = float(match.group(1))
+            lat = float(match.group(2))
+            if -180 <= lon <= 180 and -90 <= lat <= 90:
+                return True, lon, lat
+        except ValueError:
+            pass
+    return False, None, None
+
+
+def address_to_coordinate(address):
+    """地址转经纬度（增强异常处理和校验）"""
+    params = {
+        "key": AMAP_API_KEY,
+        "address": address,
+        "output": "json",
+        "city": "遵义"  # 指定城市，提升解析精度（可根据输入自动适配）
+    }
+    try:
+        response = requests.get(GEOCODE_URL, params=params, timeout=10)
+        response.raise_for_status()
+        result = response.json()
+
+        # 校验API返回状态
+        if result.get("status") != "1":
+            return False, None, None, f"API返回错误：{result.get('info', '未知错误')}"
+
+        geocodes = result.get("geocodes", [])
+        if not geocodes:
+            return False, None, None, "未查询到该地址的坐标信息"
+
+        # 提取并校验经纬度
+        loc = geocodes[0].get("location", "")
+        if not loc or "," not in loc:
+            return False, None, None, "地址解析返回无效坐标格式"
+
+        lon_str, lat_str = loc.split(",", 1)
+        try:
+            lon = float(lon_str.strip())
+            lat = float(lat_str.strip())
+        except ValueError:
+            return False, None, None, "坐标转换为数字失败"
+
+        # 最终校验经纬度范围
+        if not (-180 <= lon <= 180 and -90 <= lat <= 90):
+            return False, None, None, "经纬度超出合法范围"
+
+        return True, lon, lat, "解析成功"
+    except requests.exceptions.RequestException as e:
+        return False, None, None, f"网络请求错误：{str(e)}"
+    except Exception as e:
+        return False, None, None, f"解析异常：{str(e)}"
+
+
+def coordinate_to_address(lon, lat):
+    """经纬度转地址（仅用于展示）"""
+    if lon is None or lat is None:
+        return "无效坐标"
+    params = {
+        "key": AMAP_API_KEY,
+        "location": f"{lon},{lat}",
+        "output": "json",
+        "radius": 1000,
+        "extensions": "base"
+    }
+    try:
+        response = requests.get(REGEOCODE_URL, params=params, timeout=10)
+        response.raise_for_status()
+        result = response.json()
+        if result.get("status") == "1":
+            return result["regeocode"].get("formatted_address", "未知地址")
+        return "地址解析失败"
+    except Exception:
+        return "未知地址"
+
+
+def decode_polyline(polyline_str):
+    """解码高德API返回的polyline加密坐标串"""
+    try:
+        # 高德的polyline是lat在前、lon在后，解码后转换为[lon, lat]格式（适配高德前端）
+        coords = polyline.decode(polyline_str)
+        return [[lon, lat] for lat, lon in coords]
+    except Exception as e:
+        print(f"Polyline解码失败：{e}")
+        return []
+
+
+def get_driving_route(start_lon, start_lat, end_lon, end_lat, strategy=0):
+    """获取驾车路线规划（新增：解析polyline轨迹坐标）"""
+    # 先校验坐标有效性
+    if None in [start_lon, start_lat, end_lon, end_lat]:
+        return {"success": False, "error": "起点/终点坐标无效"}
+
+    strategy_map = {
+        0: "默认路线",
+        1: "高速优先",
+        2: "国道优先",
+        3: "不走高速",
+        4: "避免收费",
+        5: "不走高速+避免收费"
+    }
+    params = {
+        "key": AMAP_API_KEY,
+        "origin": f"{start_lon:.6f},{start_lat:.6f}",  # 保留6位小数，避免精度问题
+        "destination": f"{end_lon:.6f},{end_lat:.6f}",
+        "output": "json",
+        "strategy": strategy,
+        "extensions": "all",  # 必须为all，才能返回polyline字段
+        "city": "遵义"  # 指定城市，提升路线精度
+    }
+    try:
+        response = requests.get(DRIVING_URL, params=params, timeout=15)
+        response.raise_for_status()
+        result = response.json()
+
+        if result.get("status") == "1" and "route" in result and result["route"].get("paths"):
+            route = result["route"]["paths"][0]
+            steps = []
+            total_path = []  # 存储完整的路线轨迹坐标（所有步骤的坐标拼接）
+
+            for step in route["steps"]:
+                # 解码当前步骤的polyline坐标
+                step_polyline = step.get("polyline", "")
+                step_coords = decode_polyline(step_polyline) if step_polyline else []
+                # 拼接总轨迹
+                total_path.extend(step_coords)
+
+                steps.append({
+                    "instruction": step["instruction"],
+                    "road": step.get("road", ""),
+                    "distance": step["distance"],
+                    "duration": step["duration"],
+                    "polyline": step_coords  # 可选：返回单步轨迹
+                })
+
+            return {
+                "success": True,
+                "strategy": strategy_map[strategy],
+                "total_distance": f"{round(float(route['distance']) / 1000, 2)}公里",
+                "total_duration": f"{round(float(route['duration']) / 60, 1)}分钟",
+                "total_toll": f"{route.get('toll', 0)}元",
+                "steps": steps,
+                "start": [start_lon, start_lat],  # 起点坐标
+                "end": [end_lon, end_lat],        # 终点坐标
+                "path_coords": total_path         # 核心：完整路线轨迹坐标（非直线）
+            }
+        return {"success": False, "error": f"驾车路线规划失败：{result.get('info', '未知错误')}"}
+    except Exception as e:
+        return {"success": False, "error": f"驾车路线请求错误：{str(e)}"}
+
+
+def get_walking_route(start_lon, start_lat, end_lon, end_lat):
+    """获取步行路线规划（新增：解析polyline轨迹坐标）"""
+    # 先校验坐标有效性
+    if None in [start_lon, start_lat, end_lon, end_lat]:
+        return {"success": False, "error": "起点/终点坐标无效"}
+
+    params = {
+        "key": AMAP_API_KEY,
+        "origin": f"{start_lon:.6f},{start_lat:.6f}",
+        "destination": f"{end_lon:.6f},{end_lat:.6f}",
+        "output": "json",
+        "extensions": "all",  # 必须为all，才能返回polyline字段
+        "city": "遵义"
+    }
+    try:
+        response = requests.get(WALKING_URL, params=params, timeout=15)
+        response.raise_for_status()
+        result = response.json()
+
+        if result.get("status") == "1" and "route" in result and result["route"].get("paths"):
+            route = result["route"]["paths"][0]
+            steps = []
+            total_path = []  # 存储完整的路线轨迹坐标
+
+            for step in route["steps"]:
+                # 解码当前步骤的polyline坐标
+                step_polyline = step.get("polyline", "")
+                step_coords = decode_polyline(step_polyline) if step_polyline else []
+                total_path.extend(step_coords)
+
+                steps.append({
+                    "instruction": step["instruction"],
+                    "road": step.get("road", ""),
+                    "distance": step["distance"],
+                    "duration": step["duration"],
+                    "polyline": step_coords  # 可选：返回单步轨迹
+                })
+
+            return {
+                "success": True,
+                "total_distance": f"{round(float(route['distance']) / 1000, 2)}公里",
+                "total_duration": f"{round(float(route['duration']) / 60, 1)}分钟",
+                "steps": steps,
+                "start": [start_lon, start_lat],  # 起点坐标
+                "end": [end_lon, end_lat],        # 终点坐标
+                "path_coords": total_path         # 核心：完整路线轨迹坐标
+            }
+        return {"success": False, "error": f"步行路线规划失败：{result.get('info', '未知错误')}"}
+    except Exception as e:
+        return {"success": False, "error": f"步行路线请求错误：{str(e)}"}
+
+
+def parse_input_location(input_str, prompt, default_city="遵义"):
+    """解析用户输入的起点/终点（增强容错）"""
+    while True:
+        user_input = input(prompt).strip()
+        if not user_input:
+            print("输入不能为空，请重新输入！")
+            continue
+
+        # 第一步：判断是否为坐标
+        is_coord, lon, lat = is_coordinate(user_input)
+        if is_coord:
+            addr = coordinate_to_address(lon, lat)
+            print(f"✅ 解析到坐标：{lon:.6f},{lat:.6f} → 对应地址：{addr}")
+            return lon, lat
+
+        # 第二步：按地址解析（指定城市提升精度）
+        success, lon, lat, msg = address_to_coordinate(user_input)
+        if success:
+            print(f"✅ 解析到地址：{user_input} → 对应坐标：{lon:.6f},{lat:.6f}")
+            return lon, lat
+        else:
+            print(f"❌ 地址解析失败：{msg}，请重新输入！")
+
+
+import sys
+import json
+from argparse import ArgumentParser
+
+def main():
+    """主交互逻辑"""
+    parser = ArgumentParser(description="路线规划服务命令行工具")
+    parser.add_argument('--mode', required=True, help='操作模式: driving_route, walking_route')
+    parser.add_argument('--start_lon', type=float, help='起点经度')
+    parser.add_argument('--start_lat', type=float, help='起点纬度')
+    parser.add_argument('--end_lon', type=float, help='终点经度')
+    parser.add_argument('--end_lat', type=float, help='终点纬度')
+    parser.add_argument('--strategy', type=int, default=0, help='路线策略（驾车）')
+
+    args = parser.parse_args()
+
+    if args.mode == "driving_route":
+        if args.start_lon is None or args.start_lat is None or args.end_lon is None or args.end_lat is None:
+            print(json.dumps({"error": "缺少驾车路线参数"}))
+            return
+        try:
+            route_result = get_driving_route(args.start_lon, args.start_lat, args.end_lon, args.end_lat, args.strategy)
+            print(json.dumps(route_result, ensure_ascii=False))
+        except ValueError:
+            result = {"success": False, "error": "参数格式错误"}
+            print(json.dumps(result, ensure_ascii=False))
+
+    elif args.mode == "walking_route":
+        if args.start_lon is None or args.start_lat is None or args.end_lon is None or args.end_lat is None:
+            print(json.dumps({"error": "缺少步行路线参数"}))
+            return
+        try:
+            route_result = get_walking_route(args.start_lon, args.start_lat, args.end_lon, args.end_lat)
+            print(json.dumps(route_result, ensure_ascii=False))
+        except ValueError:
+            result = {"success": False, "error": "参数格式错误"}
+            print(json.dumps(result, ensure_ascii=False))
+
+    else:
+        result = {"success": False, "error": f"不支持的模式: {args.mode}"}
+        print(json.dumps(result, ensure_ascii=False))
+
+
+if __name__ == "__main__":
+    main()
+第三步：前端适配代码（用你的 Web 端 Key 绘制真实路线）
+html
+预览
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>蛇类区域预警 - 路线规划</title>
+    <style>
+        #mapContainer {
+            width: 100%;
+            height: 600px;
+            margin: 20px 0;
+        }
+        .route-info {
+            padding: 10px;
+            border: 1px solid #eee;
+            margin-bottom: 10px;
+        }
+    </style>
+    <!-- 引入高德Web端API（用你的蛇类区域预警2的Key） -->
+    <script type="text/javascript" src="https://webapi.amap.com/maps?v=2.0&key=5b3ed07d3b4e322b48d421a9e84ebd9a&plugin=AMap.Geolocation,AMap.Marker,AMap.Polyline"></script>
+</head>
+<body>
+    <div class="route-info">
+        起点：<input type="text" id="startInput" placeholder="输入地址或坐标（如：遵义市红花岗区）">
+        终点：<input type="text" id="endInput" placeholder="输入地址或坐标">
+        <button onclick="getRoute()">查询驾车路线</button>
+        <div id="routeDesc"></div>
+    </div>
+    <div id="mapContainer"></div>
+
+    <script>
+        // 初始化地图
+        var map = new AMap.Map('mapContainer', {
+            zoom: 14,
+            center: [106.92, 27.72] // 遵义市默认中心点
+        });
+
+        // 模拟调用Python接口（实际可通过Ajax请求你的Python服务）
+        function getRoute() {
+            var start = document.getElementById('startInput').value;
+            var end = document.getElementById('endInput').value;
+            if (!start || !end) {
+                alert("请输入起点和终点！");
+                return;
+            }
+
+            // 这里替换为你的Python服务地址（比如用Flask搭建的接口）
+            // 示例：假设已通过地址解析拿到经纬度，直接传参调用Python脚本
+            var startLon = 106.918; // 示例：遵义红花岗区经度
+            var startLat = 27.715;  // 示例：遵义红花岗区纬度
+            var endLon = 106.958;   // 示例：遵义汇川区经度
+            var endLat = 27.735;    // 示例：遵义汇川区纬度
+
+            // 调用Python脚本（实际项目中用Ajax/post请求）
+            // 这里直接模拟返回的路线数据（你可替换为真实接口请求）
+            fetch(`http://localhost:5000/route?mode=driving_route&start_lon=${startLon}&start_lat=${startLat}&end_lon=${endLon}&end_lat=${endLat}`)
+                .then(res => res.json())
+                .then(routeData => {
+                    if (!routeData.success) {
+                        document.getElementById('routeDesc').innerText = "路线查询失败：" + routeData.error;
+                        return;
+                    }
+
+                    // 显示路线信息
+                    document.getElementById('routeDesc').innerText =
+                        `路线策略：${routeData.strategy} | 总距离：${routeData.total_distance} | 总耗时：${routeData.total_duration} | 过路费：${routeData.total_toll}`;
+
+                    // 清空地图原有覆盖物
+                    map.clearMap();
+
+                    // 1. 添加起点标记（绿色）
+                    var startMarker = new AMap.Marker({
+                        position: routeData.start,
+                        map: map,
+                        title: "起点",
+                        icon: new AMap.Icon({
+                            size: new AMap.Size(30, 30),
+                            image: "https://a.amap.com/jsapi_demos/static/demo-center/icons/poi-marker-default.png",
+                            imageSize: new AMap.Size(30, 30)
+                        })
+                    });
+
+                    // 2. 添加终点标记（红色）
+                    var endMarker = new AMap.Marker({
+                        position: routeData.end,
+                        map: map,
+                        title: "终点",
+                        icon: new AMap.Icon({
+                            size: new AMap.Size(30, 30),
+                            image: "https://a.amap.com/jsapi_demos/static/demo-center/icons/poi-marker-red.png",
+                            imageSize: new AMap.Size(30, 30)
+                        })
+                    });
+
+                    // 3. 绘制真实路线（核心：用path_coords而非起点终点连线）
+                    if (routeData.path_coords && routeData.path_coords.length > 0) {
+                        var polyline = new AMap.Polyline({
+                            path: routeData.path_coords, // 解码后的完整轨迹坐标
+                            strokeColor: "#0066FF",     // 路线颜色（蓝色）
+                            strokeWeight: 6,            // 路线宽度
+                            strokeOpacity: 0.8,         // 透明度
+                            map: map
+                        });
+
+                        // 自动适配地图视野，显示完整路线
+                        map.setFitView([startMarker, endMarker, polyline]);
+                    } else {
+                        alert("未获取到路线轨迹，请检查坐标！");
+                    }
+                })
+                .catch(err => {
+                    console.error("请求失败：", err);
+                    document.getElementById('routeDesc').innerText = "请求路线失败：" + err.message;
+                });
+        }
+    </script>
+</body>
+</html>
+关键修复点说明
+新增 decode_polyline 函数：高德 API 返回的 polyline 是加密的坐标串（节省传输量），必须用 polyline 库解码，且要把高德的「lat 在前、lon 在后」转换为前端需要的「lon 在前、lat 在后」。
+extensions: "all" 必须配置：路径规划 API 的 extensions 参数设为 all 才会返回 polyline 字段，否则只返回文字步骤，这是之前没有真实轨迹的核心原因。
+返回 path_coords 字段：把所有步骤的 polyline 解码后拼接成完整轨迹，返回给前端，前端用这个数组绘制路线，而非仅用起点终点连线。
+测试方法
+运行改造后的 Python 脚本，用命令行测试是否返回 path_coords：
+bash
+运行
+python 你的脚本名.py --mode driving_route --start_lon 106.918 --start_lat 27.715 --end_lon 106.958 --end_lat 27.735
+输出结果中会包含 path_coords 数组（大量坐标点，而非空数组）。
+前端搭建简单的服务（如 Flask），让前端能请求 Python 接口，即可看到真实的路线轨迹（不再是直线）。
+常见问题排查
+如果 path_coords 为空：检查 extensions: "all" 是否配置，或高德 API 返回的 steps 中是否有 polyline 字段。
+如果解码报错：确保安装了 polyline 库，且 Python 版本≥3.6。
+如果前端绘制无效果：检查坐标格式是否为 [lon, lat]（高德前端要求），而非 [lat, lon]。
+这样改造后，路线就会按照高德规划的真实道路轨迹显示，而非直线了。

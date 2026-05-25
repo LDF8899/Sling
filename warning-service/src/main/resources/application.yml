@@ -1,0 +1,56 @@
+server:
+  port: 7005
+
+spring:
+  application:
+    name: warning-service
+
+  cloud:
+    nacos:
+      server-addr: localhost:8848
+      discovery:
+        group: SLING_GROUP
+        # 添加注册等待时间，避免启动时Nacos未完全启动导致的连接问题
+        register-timeout: 30000
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/sl?useSSL=false&useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&allowMultiQueries=true
+    username: root
+    password: root123
+    type: com.alibaba.druid.pool.DruidDataSource
+    initial-size: 5
+    min-idle: 5
+    max-active: 20
+    max-wait: 60000
+    time-between-eviction-runs-millis: 60000
+    min-evictable-idle-time-millis: 300000
+    validation-query: SELECT 1
+    test-while-idle: true
+    test-on-borrow: false
+    test-on-return: false
+
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      logic-delete-field: delFlag
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+      
+# 火山引擎 / 高德 API 配置（通过环境变量覆盖）
+api:
+  volcano:
+    key: ${VOLCANO_API_KEY:your-api-key-here}
+    model-id: doubao-seed-1-6-vision-250815
+    base-url: https://ark.cn-beijing.volces.com/api/v3/chat/completions
+  gaode:
+    key: ${GAODE_API_KEY:your-gaode-key-here}
+
+# 增加重试机制，以便在网络不稳定时能够重新连接
+nacos:
+  config:
+    retry:
+      max-retry: 10
+      retry-delay-ms: 1000

@@ -1,0 +1,3 @@
+@echo off
+echo Starting Frontend Vue Application...
+npm run dev

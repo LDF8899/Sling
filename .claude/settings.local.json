@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mysql -u root -proot123 sl)",
+      "Bash(mysql -uroot -proot123 sl -e \"DESC admin_roles; SELECT * FROM admin_roles;\")"
+    ]
+  }
+}

@@ -1,0 +1,3 @@
+@echo off
+echo Starting Warning Service...
+mvn spring-boot:run

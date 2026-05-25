@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "预警信息",
+  "navigationStyle": "custom",
+  "usingComponents": {
+    "glass-navbar": "../../components/GlassNavbar"
+  }
+}

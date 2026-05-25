@@ -1,0 +1,706 @@
+# 蛇灵(SLING)系统详细模块说明
+
+## 项目概述
+
+"蛇灵"(SLING)是一个专门为户外工作人员和户外运动爱好者设计的蛇类识别与应急处理系统。该系统通过现代化的微服务架构，构建一个高可用性、可扩展性强的户外应急服务系统，帮助用户在遇到蛇类时能够快速识别、获取预警信息，并得到正确的应急指导和医疗救助。
+
+## 整体架构
+
+系统采用Spring Cloud Alibaba微服务架构，主要包含以下组件：
+- 前端：Vue 3 + Vite
+- 后端：Spring Boot + Spring Cloud Gateway + Nacos
+- 数据库：MySQL
+- AI服务：火山引擎豆包模型（文本和视觉识别）
+
+## 整体功能框架
+
+### 系统功能概览
+
+蛇灵(SLING)系统是一个综合性的蛇类识别与应急处理平台，主要包含以下核心功能模块：
+
+1. **用户管理模块**
+   - 用户注册与登录
+   - 权限管理与角色分配
+   - 个人信息维护
+   - 管理员后台管理
+
+2. **蛇类识别模块**
+   - AI驱动的图像识别
+   - 蛇类品种智能判断
+   - 识别记录保存
+   - 特征分析
+
+3. **应急处理模块**
+   - 应急指南查询
+   - AI辅助问答
+   - 伤口图片分析
+   - 紧急求助功能
+
+4. **预警监测模块**
+   - 蛇类活跃区域监控
+   - 风险区域预警
+   - 实时预警发布
+   - 地理位置标记
+
+5. **医疗服务模块**
+   - 医院信息管理
+   - 血清库存跟踪
+   - 医院搜索与导航
+   - 路径规划服务
+
+6. **内容管理模块**
+   - 蛇类信息库维护
+   - 应急知识库管理
+   - 系统配置管理
+
+### 模块间交互关系
+
+```
+mermaid
+graph TB
+    A[前端Vue应用] --> B[网关服务]
+    B --> C[用户服务]
+    B --> D[识别服务]
+    B --> E[应急服务]
+    B --> F[预警服务]
+    B --> G[医院服务]
+    B --> H[管理服务]
+    
+    C <--> I[(MySQL数据库)]
+    D <--> I
+    E <--> I
+    F <--> I
+    G <--> I
+    H <--> I
+    
+    D --> J[AI视觉模型]
+    E --> K[AI文本模型]
+    G --> L[Python脚本]
+    
+    F --> M[预警数据更新]
+    G --> N[地理编码服务]
+```
+
+### 系统业务流程图
+
+```
+mermaid
+flowchart TD
+    Start([用户启动系统]) --> Login[用户登录/注册]
+    
+    Login --> Dashboard[进入主仪表板]
+    
+    Dashboard --> Choice{选择功能}
+    
+    Choice -->|拍照识别| Recognition[蛇类识别]
+    Choice -->|查看预警| Warning[预警信息]
+    Choice -->|应急处理| Emergency[应急指南]
+    Choice -->|寻找医院| Hospital[医院导航]
+    Choice -->|管理员功能| Admin[管理面板]
+    
+    Recognition --> Identify[AI识别蛇类]
+    Identify --> Result[显示识别结果]
+    Result --> Guide{是否需要应急指南}
+    
+    Warning --> Alert[显示预警区域]
+    Alert --> Map[地图可视化]
+    
+    Emergency --> Check[症状自查]
+    Check -->|严重症状| Help[紧急求助]
+    Check -->|一般咨询| QandA[AI问答]
+    
+    Hospital --> Search[搜索医院]
+    Search --> Route[路径规划]
+    Route --> Navigate[导航至医院]
+    
+    Guide -->|是| Emergency
+    Guide -->|否| Dashboard
+    
+    Help --> Contact[联系急救]
+    Contact --> Location[发送位置信息]
+    
+    Admin --> Manage[管理功能]
+    Manage -->|用户管理| UserManager[用户信息维护]
+    Manage -->|内容管理| ContentManage[内容审核更新]
+    Manage -->|数据统计| Statistics[数据分析报表]
+    
+    subgraph "后端服务群"
+        S1[用户服务]
+        S2[识别服务]
+        S3[应急服务]
+        S4[预警服务]
+        S5[医院服务]
+        S6[管理服务]
+    end
+    
+    Result -.-> S2
+    Alert -.-> S4
+    Emergency -.-> S3
+    Hospital -.-> S5
+    Admin -.-> S6
+    Login -.-> S1
+```
+
+### 系统核心特性
+
+1. **AI智能识别**：利用先进的AI视觉模型对蛇类进行准确识别
+2. **实时预警系统**：提供蛇类活跃区域的实时预警信息
+3. **应急响应机制**：集成应急处理指南和紧急求助功能
+4. **医疗资源导航**：快速定位蛇伤治疗医院并提供导航服务
+5. **多角色权限管理**：支持普通用户和管理员的不同权限级别
+6. **跨平台兼容性**：前端采用Vue3技术，支持多种设备访问
+7. **微服务架构**：高可用、易扩展的微服务架构设计
+
+### 数据流转过程
+
+1. **用户数据流**：用户注册/登录 → 认证授权 → 个性化服务
+2. **识别数据流**：图片上传 → AI识别 → 结果返回 → 记录存储
+3. **预警数据流**：位置信息 → 风险评估 → 预警生成 → 推送通知
+4. **应急数据流**：症状描述 → AI分析 → 应急指南 → 医院推荐
+5. **医院数据流**：位置查询 → 医院匹配 → 路径规划 → 导航服务
+
+## 模块详细说明
+
+### 1. 网关服务 (snake-gateway)
+
+**文件路径**：`C:\Users\Asuka\Desktop\1\Sling\snake-gateway\`
+
+**功能**：
+- 统一的API入口，负责路由转发和负载均衡
+- 跨域处理
+- 文件上传大小限制
+- 服务发现与路由配置
+
+**路由配置**：
+- `/user/**` → user-service
+- `/recognition/**` → recognition-service  
+- `/emergency/**` → emergency-service
+- `/warning/**` → warning-service
+- `/hospital/**` → hospital-service
+- `/admin/**` → admin-service
+
+**关键技术**：Spring Cloud Gateway、Nacos服务发现
+
+### 2. 用户服务 (user-service)
+
+**文件路径**：`C:\Users\Asuka\Desktop\1\Sling\user-service\`
+
+**功能**：
+- 用户注册/登录
+- 权限管理（用户角色、权限分配）
+- 用户信息管理（头像上传、个人信息更新）
+- 管理员登录功能
+
+**核心控制器**：[UserController.java](file:///C:/Users/Asuka/Desktop/1/Sling/user-service/src/main/java/com/sling/user/controller/UserController.java)
+
+#### 详细API参数说明：
+
+**用户注册**：
+- **路径**：`POST /user/register`
+- **参数**：JSON格式
+  ```json
+  {
+    "username": "用户名",
+    "password": "密码",
+    "email": "邮箱（可选）",
+    "phone": "手机号（可选）"
+  }
+  ```
+- **示例**：
+  ```json
+  {
+    "username": "testuser",
+    "password": "123456",
+    "email": "test@example.com"
+  }
+  ```
+
+**用户登录**：
+- **路径**：`POST /user/login`
+- **参数**：JSON格式
+  ```json
+  {
+    "username": "用户名",
+    "password": "密码"
+  }
+  ```
+
+**管理员登录**：
+- **路径**：`POST /user/admin/login`
+- **参数**：JSON格式
+  ```json
+  {
+    "username": "用户名",
+    "password": "密码"
+  }
+  ```
+
+**获取用户信息**：
+- **路径**：`GET /user/info/{id}`
+- **参数**：路径参数
+  - `{id}`: 用户ID（数字）
+
+**更新用户信息**：
+- **路径**：`PUT /user/update`
+- **参数**：JSON格式
+  ```json
+  {
+    "id": "用户ID",
+    "username": "用户名",
+    "email": "邮箱",
+    "phone": "手机号",
+    "avatarUrl": "头像URL（可选）"
+  }
+  ```
+
+**修改密码**：
+- **路径**：`PUT /user/change-password`
+- **参数**：JSON格式
+  ```json
+  {
+    "userId": "用户ID",
+    "oldPassword": "原密码",
+    "newPassword": "新密码"
+  }
+  ```
+
+**上传头像**：
+- **路径**：`POST /user/upload-avatar`
+- **参数**：
+  - 表单数据：
+    - `avatar` (文件类型)：头像文件
+    - `userId` (文本类型)：用户ID
+- **请求头**：`Content-Type: multipart/form-data`
+
+**获取用户列表**：
+- **路径**：`GET /user/list`
+- **参数**（查询参数）：
+  - `page` (可选，默认0)：页码
+  - `size` (可选，默认10)：每页大小
+  - `username` (可选)：用户名筛选
+  - `email` (可选)：邮箱筛选
+  - `phone` (可选)：手机号筛选
+  - `role` (可选)：角色筛选
+
+**分配用户角色**：
+- **路径**：`POST /user/assign-roles`
+- **参数**：JSON格式
+  ```json
+  {
+    "userId": "用户ID",
+    "roles": ["角色1", "角色2"]
+  }
+  ```
+
+**数据库表**：
+- `user_info` - 用户基本信息
+- `role` - 角色信息
+- `user_role` - 用户角色关联
+- `user_permission` - 用户权限信息
+
+### 3. 蛇类识别服务 (recognition-service)
+
+**文件路径**：`C:\Users\Asuka\Desktop\1\Sling\recognition-service\`
+
+**功能**：
+- 图像上传与蛇类识别
+- 调用AI视觉模型进行蛇类识别
+- 识别记录管理
+
+**核心控制器**：[RecognitionController.java](file:///C:/Users/Asuka/Desktop/1/Sling/recognition-service/src/main/java/com/sling/recognition/controller/RecognitionController.java)
+
+#### 详细API参数说明：
+
+**上传图片进行蛇类识别**：
+- **路径**：`POST /recognition/api/recognition/identify`
+- **参数**：
+  - 表单数据：
+    - `image` (文件类型)：蛇类图片文件
+- **请求头**：`Content-Type: multipart/form-data`
+- **超时时间**：60秒
+
+### 4. 应急服务 (emergency-service)
+
+**文件路径**：`C:\Users\Asuka\Desktop\1\Sling\emergency-service\`
+
+**功能**：
+- 应急指南查询
+- AI问答系统
+- 伤口图片分析
+- 紧急求助功能
+
+**核心控制器**：
+1. [EmergencyGuideController.java](file:///C:/Users/Asuka/Desktop/1/Sling/emergency-service/src/main/java/com/sling/emergency/controller/EmergencyGuideController.java)
+
+#### 详细API参数说明：
+
+**根据蛇类名称获取应急指南**：
+- **路径**：`GET /emergency/guide/{snakeName}`
+- **参数**：路径参数
+  - `{snakeName}`: 蛇类学名（URL编码）
+
+**获取蛇类详细信息**：
+- **路径**：`GET /emergency/guide/details/{snakeName}`
+- **参数**：路径参数
+  - `{snakeName}`: 蛇类学名（URL编码）
+
+**根据症状获取应急指南**：
+- **路径**：`POST /emergency/guide/by-symptoms`
+- **参数**：JSON格式
+  ```json
+  {
+    "symptoms": "症状描述"
+  }
+  ```
+
+**基于问题的应急咨询**：
+- **路径**：`POST /emergency/guide/ask`
+- **参数**：JSON格式
+  ```json
+  {
+    "question": "用户问题"
+  }
+  ```
+
+2. [EmergencyImageAnalysisController.java](file:///C:/Users/Asuka/Desktop/1/Sling/emergency-service/src/main/java/com/sling/emergency/controller/EmergencyImageAnalysisController.java)
+
+**上传伤口图片进行症状分析**：
+- **路径**：`POST /emergency/image/analyze`
+- **参数**：
+  - 表单数据：
+    - `image` (文件类型)：伤口图片文件
+- **请求头**：`Content-Type: multipart/form-data`
+- **超时时间**：60秒
+
+3. [EmergencyHelpController.java](file:///C:/Users\Asuka\Desktop\1\Sling\emergency-service\src\main\java\com\sling\emergency\controller\EmergencyHelpController.java)
+
+**提交紧急求助**：
+- **路径**：`POST /emergency/help/submit`
+- **参数**：JSON格式
+  ```json
+  {
+    "location": "位置信息",
+    "description": "求助描述",
+    "contact": "联系方式"
+  }
+  ```
+
+**获取紧急求助历史**：
+- **路径**：`GET /emergency/help/history`
+- **参数**：无
+
+### 5. 预警服务 (warning-service)
+
+**文件路径**：`C:\Users\Asuka\Desktop\1\Sling\warning-service\`
+
+**功能**：
+- 蛇类活跃区域预警
+- 风险区域管理
+- 实时预警功能
+
+**核心功能**：
+- **获取风险区域地图数据**：`GET /warning/active-area/map`
+  - 参数（查询参数）：
+    - `lat` (可选)：纬度
+    - `lng` (可选)：经度
+    - `radius` (可选)：半径范围
+
+- **获取最近预警列表**：`GET /warning/recent`
+  - 参数（查询参数）：
+    - `page` (可选)：页码
+    - `size` (可选)：每页大小
+    - `areaId` (可选)：区域ID筛选
+
+- **获取区域详情**：`GET /warning/active-area/detail/{areaId}`
+  - 参数：路径参数
+    - `{areaId}`: 区域ID
+
+- **实时蛇类预警**：`POST /warning/real-time`
+  - 参数：JSON格式
+    ```json
+    {
+      "location": {
+        "latitude": "纬度",
+        "longitude": "经度"
+      },
+      "timestamp": "时间戳",
+      "species": "蛇类物种"
+    }
+    ```
+
+- **经纬度转地址**：`GET /warning/convert-location`
+  - 参数（查询参数）：
+    - `lat` (必需)：纬度
+    - `lng` (必需)：经度
+
+**数据库表**：
+- `warning_area` - 预警区域
+- `warning_record` - 预警记录
+- `warning_rule` - 预警规则
+- `snake_active_area` - 蛇类活跃区域
+
+### 6. 医院服务 (hospital-service)
+
+**文件路径**：`C:\Users\Asuka\Desktop\1\Sling\hospital-service\`
+
+**功能**：
+- 医院信息管理
+- 血清库存管理
+- 医院搜索与导航
+- 路径规划
+
+**核心功能**：
+
+**检索周边支持蛇毒治疗的医院**：
+- **路径**：`POST /hospital/snake-venom/nearby`
+- **参数**：JSON格式
+  ```json
+  {
+    "latitude": "纬度",
+    "longitude": "经度",
+    "radius": "搜索半径（米）",
+    "specialty": "专科类型（可选）"
+  }
+  ```
+
+**搜索医院**：
+- **路径**：`POST /hospital/search`
+- **参数**：JSON格式
+  ```json
+  {
+    "query": "搜索关键词",
+    "latitude": "当前纬度（可选）",
+    "longitude": "当前经度（可选）"
+  }
+  ```
+
+**获取路线**：
+- **路径**：`POST /hospital/route/driving` 或 `POST /hospital/route/walking`
+- **参数**：JSON格式
+  ```json
+  {
+    "origin": {
+      "latitude": "起点纬度",
+      "longitude": "起点经度"
+    },
+    "destination": {
+      "latitude": "终点纬度",
+      "longitude": "终点经度"
+    }
+  }
+  ```
+
+**地址转坐标**：
+- **路径**：`GET /hospital/geocode`
+- **参数**（查询参数）：
+  - `address` (必需)：地址字符串
+
+**坐标转地址**：
+- **路径**：`GET /hospital/reverse-geocode`
+- **参数**（查询参数）：
+  - `lat` (必需)：纬度
+  - `lng` (必需)：经度
+
+**数据库表**：
+- `hospital_info` - 医院信息
+- `serum_inventory` - 血清库存
+- `snake_serum_match` - 蛇类血清匹配
+
+### 7. 蛇类信息服务 (snake-info-service)
+
+**文件路径**：`C:\Users\Asuka\Desktop\1\Sling\snake-info-service\`
+
+**功能**：
+- 蛇类基础信息管理
+- 蛇类特征库维护
+
+**数据库表**：
+- `snake_info` - 蛇类信息
+
+### 8. 管理服务 (admin-service)
+
+**文件路径**：`C:\Users\Asuka\Desktop\1\Sling\admin-service\`
+
+**功能**：
+- 管理员功能
+- 内容管理
+- 系统配置
+- 操作日志
+
+### 9. 前端应用 (vue3)
+
+**文件路径**：`C:\Users\Asuka\Desktop\1\Sling\vue3\`
+
+**功能**：
+- 用户界面展示
+- 页面路由管理
+- API调用封装
+- 用户交互处理
+
+**主要页面**：
+- 登录/注册页面
+- 仪表盘
+- 蛇类识别页面
+- 预警页面
+- 应急处理页面
+- 医院地图页面
+- 个人资料页面
+- 管理员面板
+
+**API封装**：[api.js](file:///C:/Users/Asuka/Desktop/1/Sling/vue3/src/services/api.js)
+
+#### 前端API调用示例：
+
+**用户登录**：
+```javascript
+import { user } from '@/services/api'
+
+// 调用登录接口
+const response = await user.login({
+  username: 'testuser',
+  password: '123456'
+})
+```
+
+**上传头像**：
+```javascript
+import { user } from '@/services/api'
+
+// 创建FormData对象
+const formData = new FormData()
+formData.append('avatar', fileObject)  // 文件对象
+formData.append('userId', userId)      // 用户ID
+
+// 调用上传接口
+const response = await user.uploadAvatar({ file: fileObject, userId })
+```
+
+**识别蛇类**：
+```javascript
+import { recognition } from '@/services/api'
+
+// 创建FormData对象
+const formData = new FormData()
+formData.append('image', imageFile)
+
+// 调用识别接口
+const response = await recognition.identifySnake(formData)
+```
+
+## 数据库设计
+
+数据库名称：sling
+
+主要数据表：
+1. `user_info` - 用户基本信息
+2. `role` - 角色信息
+3. `user_role` - 用户角色关联
+4. `user_permission` - 用户权限
+5. `snake_info` - 蛇类信息
+6. `snake_emergency_info` - 蛇类应急信息
+7. `recognition_record` - 识别记录
+8. `hospital_info` - 医院信息
+9. `serum_inventory` - 血清库存
+10. `warning_area` - 预警区域
+11. `warning_record` - 预警记录
+12. `emergency_qa_cache` - 应急问答缓存
+
+## AI服务集成
+
+系统集成了火山引擎豆包AI模型：
+- **文本模型**：doubao-seed-1-6-251015
+- **视觉模型**：doubao-seed-1-6-vision-250815
+- **API密钥**：8370e071-1279-4636-9ab6-da098db74f0d
+
+## 业务流程
+
+### 1. 蛇类识别流程
+1. 用户上传蛇类图片
+2. 前端调用识别服务API
+3. 识别服务调用AI视觉模型
+4. AI返回识别结果
+5. 识别结果存储到数据库
+6. 返回识别结果给前端
+
+### 2. 应急处理流程
+1. 用户提交蛇类名称或症状
+2. 系统查询数据库获取应急信息
+3. 如无信息则调用AI生成
+4. 返回应急处理指南
+5. 提供附近医院信息
+
+### 3. 用户认证流程
+1. 用户输入用户名密码
+2. 后端验证用户信息
+3. 返回用户角色和权限
+4. 前端存储token
+5. 后续请求携带token
+
+## 技术栈
+
+### 后端技术栈
+- Spring Boot 2.7.0
+- Spring Cloud 2021.0.3
+- Spring Cloud Alibaba 2021.0.1.0
+- MyBatis-Plus 3.5.3.1
+- MySQL 8.0+
+- Nacos 2.4+
+- Maven 3.6+
+
+### 前端技术栈
+- Vue 3
+- Vite
+- Axios
+- Element Plus (计划中)
+
+### AI服务
+- 火山引擎豆包模型
+- 文本模型：doubao-seed-1-6
+- 视觉模型：doubao-seed-1-6-vision
+
+## 项目启动流程
+
+1. 启动Nacos服务（端口8848）
+2. 启动MySQL数据库
+3. 启动各微服务（用户服务、识别服务、应急服务等）
+4. 启动前端应用（端口5173）
+
+## API调用方式
+
+系统通过网关统一对外提供服务，所有请求通过端口8888访问：
+- 用户服务：`http://localhost:8888/user/**`
+- 识别服务：`http://localhost:8888/recognition/**`
+- 应急服务：`http://localhost:8888/emergency/**`
+- 预警服务：`http://localhost:8888/warning/**`
+- 医院服务：`http://localhost:8888/hospital/**`
+- 管理服务：`http://localhost:8888/admin/**`
+
+## 参数传递总结
+
+### GET请求参数传递
+- 路径参数：`/api/resource/{id}`
+- 查询参数：`/api/resource?page=1&size=10&filter=value`
+
+### POST/PUT请求参数传递
+- JSON格式：`Content-Type: application/json`
+  ```json
+  {
+    "field1": "value1",
+    "field2": "value2"
+  }
+  ```
+- 表单数据：`Content-Type: multipart/form-data`（文件上传）
+  - `file` (文件类型)：文件字段
+  - `otherField` (文本类型)：其他字段
+
+### 认证
+- 所有需要认证的接口都需要在请求头中添加：
+  ```
+  Authorization: Bearer {token}
+  ```
+
+### 错误处理
+- 成功响应：`200 OK`
+- 认证失败：`401 Unauthorized`
+- 参数错误：`400 Bad Request`
+- 服务器错误：`500 Internal Server Error`

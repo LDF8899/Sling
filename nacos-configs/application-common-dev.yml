@@ -1,0 +1,32 @@
+spring:
+  cloud:
+    nacos:
+      server-addr: 192.168.1.100:8848
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    type: com.alibaba.druid.pool.DruidDataSource
+    url: jdbc:mysql://127.0.0.1:3306/sl?useSSL=false&useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&allowMultiQueries=true
+    username: root
+    password: root123
+  redis:
+    host: localhost
+    port: 6379
+    database: 0
+    timeout: 3000ms
+    lettuce:
+      pool:
+        max-active: 20
+        max-idle: 10
+        min-idle: 5
+        max-wait: 3000ms
+
+# ========== 外部 API 配置 ==========
+api:
+  # 火山引擎 AI（豆包模型）
+  volcano:
+    key: ${VOLCANO_API_KEY:your-api-key-here}
+    model-id: doubao-seed-1-6-vision-250815
+    base-url: https://ark.cn-beijing.volces.com/api/v3/chat/completions
+  # 高德地图
+  gaode:
+    key: ${GAODE_API_KEY:your-gaode-key-here}

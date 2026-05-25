@@ -1,0 +1,229 @@
+以下是 Doubao-Seed-1.6-vision（火山引擎版） 的核心使用文档，包含模型能力、调用方式、参数说明和示例代码：
+api-key-20251209111530
+8370e071-1279-4636-9ab6-da098db74f0d
+
+一、模型基础信息
+项	说明
+模型 ID	doubao-seed-1-6-vision-250815（火山引擎平台标识）
+核心能力	多模态视觉理解（图像 / 视频分析）、工具调用（旋转 / 放大 / 标记）、256k 上下文窗口
+支持输入	文本 + 单图 / 多图 / 视频 URL
+输出限制	最大 64k tokens
+适用场景	图像内容分析、视觉推理、GUI 界面识别、安全隐患检测、医疗影像辅助分析等
+调用方式	火山引擎 Ark 平台 chat/completions API
+二、前置准备
+获取 API Key：在火山引擎控制台开通模型后，生成 API Key（即你截图中的8370e071-1279-4636-9ab6-da098db74f0d）；
+依赖工具：需具备 HTTP 请求能力（如curl、Postman，或代码中的RestTemplate/OkHttp）。
+三、API 调用规范
+1. 请求地址
+plaintext
+https://ark.cn-beijing.volces.com/api/v3/chat/completions
+2. 请求头
+头字段	取值
+Content-Type	application/json
+Authorization	Bearer 你的API Key（替换为实际 Key）
+3. 请求参数（JSON 格式）
+参数名	类型	是否必填	说明
+model	string	是	固定为doubao-seed-1-6-vision-250815
+messages	array	是	对话消息列表，其中可包含图像 URL（通过content中的image_url字段）
+max_completion_tokens	int	否	输出最大 tokens 数，默认 4k，最大 64k
+thinking	boolean	否	是否开启深度思考（默认true，开启后会返回推理过程）
+四、调用示例
+示例 1：分析单张图片内容（curl 版）
+bash
+运行
+curl https://ark.cn-beijing.volces.com/api/v3/chat/completions \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer 8370e071-1279-4636-9ab6-da098db74f0d" \
+-d '{
+  "model": "doubao-seed-1-6-vision-250815",
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "text",
+          "text": "这张图里有什么？"
+        },
+        {
+          "type": "image_url",
+          "image_url": {
+            "url": "https://示例图片URL.jpg"
+          }
+        }
+      ]
+    }
+  ],
+  "max_completion_tokens": 2000
+}'
+示例 2：Spring Boot 代码调用（Java 版）
+java
+运行
+import org.springframework.http.*;
+import org.springframework.web.client.RestTemplate;
+import java.util.*;
+
+public class DoubaoVisionClient {
+    public static void main(String[] args) {
+        // 1. 配置请求头
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("Authorization", "Bearer 8370e071-1279-4636-9ab6-da098db74f0d");
+
+        // 2. 构造请求体
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("model", "doubao-seed-1-6-vision-250815");
+        
+        List<Map<String, Object>> messages = new ArrayList<>();
+        Map<String, Object> userMessage = new HashMap<>();
+        userMessage.put("role", "user");
+        
+        List<Map<String, Object>> content = new ArrayList<>();
+        // 文本部分
+        Map<String, Object> textPart = new HashMap<>();
+        textPart.put("type", "text");
+        textPart.put("text", "分析这张图的安全隐患");
+        // 图片部分
+        Map<String, Object> imagePart = new HashMap<>();
+        imagePart.put("type", "image_url");
+        Map<String, String> imageUrl = new HashMap<>();
+        imageUrl.put("url", "https://示例图片URL.jpg");
+        imagePart.put("image_url", imageUrl);
+        
+        content.add(textPart);
+        content.add(imagePart);
+        userMessage.put("content", content);
+        messages.add(userMessage);
+        requestBody.put("messages", messages);
+
+        // 3. 发送请求
+        HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
+        RestTemplate restTemplate = new RestTemplate();
+        ResponseEntity<String> response = restTemplate.exchange(
+            "https://ark.cn-beijing.volces.com/api/v3/chat/completions",
+            HttpMethod.POST,
+            requestEntity,
+            String.class
+        );
+        // 4. 输出结果
+        System.out.println("模型响应：" + response.getBody());
+    }
+}
+五、响应示例
+json
+{
+  "id": "chatcmpl-xxx",
+  "object": "chat.completion",
+  "created": 1733760000,
+  "model": "doubao-seed-1-6-vision-250815",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "这张图存在以下安全隐患：\n1. 插座过载（同时插了3个大功率设备），可能引发短路；\n2. 电线裸露在外，易被绊倒或触电。"
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 1200,
+    "completion_tokens": 80,
+    "total_tokens": 1280
+  }
+}
+六、注意事项
+图片 URL 要求：需是公网可访问的 HTTP/HTTPS 链接（不支持本地文件）；
+限流说明：火山引擎默认限制RPM=30000（每分钟请求数）、TPM=500万（每分钟 tokens 数）；
+工具调用：模型会自动调用旋转 / 放大等工具（无需额外参数），开启thinking=true可查看工具调用过程；
+费用：按输入 / 输出 tokens 计费（火山引擎当前价：输入 0.8 元 / 百万 tokens，输出 2 元 / 百万 tokens）。
+要不要我帮你整理一份参数速查表，方便你调用时快速参考？
+
+7 篇资料
+那我是想上传本地图片识别
+如果需要上传本地图片让模型识别，不能直接传本地文件路径（模型接口不支持读取你的本地文件），得先把本地图片转为 Base64 编码，再通过请求体传给模型。
+核心步骤：本地图片转 Base64 + 接口调用
+1. 本地图片转 Base64（通用方法）
+无论用什么语言，都可以通过 “读取文件字节流 → 编码为 Base64 字符串” 实现：
+Python 示例：
+python
+运行
+import base64
+
+def image_to_base64(image_path):
+    with open(image_path, "rb") as f:
+        return base64.b64encode(f.read()).decode("utf-8")
+
+# 调用：传入本地图片路径
+img_base64 = image_to_base64("本地图片路径.jpg")
+Java 示例：
+java
+运行
+import java.io.File;
+import java.io.FileInputStream;
+import java.util.Base64;
+
+public String imageToBase64(String imagePath) {
+    File file = new File(imagePath);
+    try (FileInputStream fis = new FileInputStream(file)) {
+        byte[] bytes = new byte[(int) file.length()];
+        fis.read(bytes);
+        return Base64.getEncoder().encodeToString(bytes);
+    } catch (Exception e) {
+        throw new RuntimeException("图片转Base64失败", e);
+    }
+}
+2. 接口调用（携带 Base64 图片）
+把 Base64 字符串放到请求体的image_url.url中（格式为data:image/图片格式;base64,Base64字符串）：
+完整 Python 调用示例（上传本地图片）
+python
+运行
+import requests
+import base64
+
+# 1. 本地图片转Base64
+def image_to_base64(image_path):
+    with open(image_path, "rb") as f:
+        return base64.b64encode(f.read()).decode("utf-8")
+
+# 2. 构造请求
+api_key = "8370e071-1279-4636-9ab6-da098db74f0d"
+url = "https://ark.cn-beijing.volces.com/api/v3/chat/completions"
+headers = {
+    "Content-Type": "application/json",
+    "Authorization": f"Bearer {api_key}"
+}
+
+# 本地图片路径
+local_img_path = "你的本地图片.jpg"
+img_base64 = image_to_base64(local_img_path)
+# 拼接为Base64格式的URL
+img_data_url = f"data:image/jpeg;base64,{img_base64}"  # 注意：图片格式要和实际一致（如png则改为image/png）
+
+request_body = {
+    "model": "doubao-seed-1-6-vision-250815",
+    "messages": [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "识别这张图片的内容"
+                },
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": img_data_url  # 这里传Base64格式的图片
+                    }
+                }
+            ]
+        }
+    ]
+}
+
+# 3. 发送请求
+response = requests.post(url, headers=headers, json=request_body)
+print("识别结果：", response.json()["choices"][0]["message"]["content"])
+3. 注意事项
+图片格式匹配：data:image/xxx中的xxx要和实际图片格式一致（如 JPG 写jpeg，PNG 写png）；
+图片大小限制：单张图片 Base64 编码后不超过10MB（否则接口会返回 413 错误）；
+多图支持：一个请求中可以传多个image_url对象（最多支持 10 张图）。

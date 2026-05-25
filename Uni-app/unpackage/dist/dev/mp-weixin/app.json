@@ -1,0 +1,68 @@
+{
+  "pages": [
+    "pages/login/login",
+    "pages/index/index",
+    "pages/recognition/recognition",
+    "pages/emergency/emergency",
+    "pages/hospital/hospital",
+    "pages/warning/warning",
+    "pages/profile/profile",
+    "pages/exhibition/exhibition",
+    "pages/favorites/favorites",
+    "pages/snake-detail/snake-detail"
+  ],
+  "window": {
+    "navigationBarTextStyle": "white",
+    "navigationBarTitleText": "蛇灵 SLING",
+    "navigationBarBackgroundColor": "#667eea",
+    "backgroundColor": "#f5f5f5"
+  },
+  "tabBar": {
+    "color": "#999999",
+    "selectedColor": "#10b981",
+    "borderStyle": "black",
+    "backgroundColor": "#ffffff",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "iconPath": "static/tabbar/home.png",
+        "selectedIconPath": "static/tabbar/home-active.png",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/recognition/recognition",
+        "iconPath": "static/tabbar/scan.png",
+        "selectedIconPath": "static/tabbar/scan-active.png",
+        "text": "识别"
+      },
+      {
+        "pagePath": "pages/emergency/emergency",
+        "iconPath": "static/tabbar/first-aid.png",
+        "selectedIconPath": "static/tabbar/first-aid-active.png",
+        "text": "应急"
+      },
+      {
+        "pagePath": "pages/hospital/hospital",
+        "iconPath": "static/tabbar/hospital.png",
+        "selectedIconPath": "static/tabbar/hospital-active.png",
+        "text": "医院"
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "iconPath": "static/tabbar/user.png",
+        "selectedIconPath": "static/tabbar/user-active.png",
+        "text": "我的"
+      }
+    ]
+  },
+  "permission": {
+    "scope.userLocation": {
+      "desc": "用于获取您的位置信息，以便提供附近的医院和预警信息"
+    }
+  },
+  "requiredPrivateInfos": [
+    "getLocation",
+    "chooseLocation"
+  ],
+  "usingComponents": {}
+}

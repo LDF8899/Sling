@@ -1,0 +1,530 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="03e5e847-fc98-40a9-aea7-32ab39ad7098" name="Changes" comment="" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Interface" />
+        <option value="Class" />
+      </list>
+    </option>
+  </component>
+  <component name="MavenImportPreferences">
+    <option name="generalSettings">
+      <MavenGeneralSettings>
+        <option name="customMavenHome" value="D:\use\apache-maven-3.9.10-bin\apache-maven-3.9.10" />
+        <option name="localRepository" value="D:\repo" />
+        <option name="mavenHomeTypeForPersistence" value="CUSTOM" />
+        <option name="userSettingsFile" value="D:\use\apache-maven-3.9.10-bin\apache-maven-3.9.10\conf\settings.xml" />
+      </MavenGeneralSettings>
+    </option>
+  </component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="CurrentFile" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 3
+}</component>
+  <component name="ProjectId" id="34JqqyuX7W3iuXEJEoaW0irF4Iv" />
+  <component name="ProjectViewState">
+    <option name="autoscrollToSource" value="true" />
+    <option name="compactDirectories" value="true" />
+    <option name="foldersAlwaysOnTop" value="false" />
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+    <option name="showMembers" value="true" />
+    <option name="showVisibilityIcons" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Batch.check-services.executor&quot;: &quot;Run&quot;,
+    &quot;Batch.clean-ports.executor&quot;: &quot;Run&quot;,
+    &quot;Batch.fix_mysql_auto_start.executor&quot;: &quot;Run&quot;,
+    &quot;Batch.install_python_deps.executor&quot;: &quot;Run&quot;,
+    &quot;Batch.interactive-launch.executor&quot;: &quot;Run&quot;,
+    &quot;Batch.launch.executor&quot;: &quot;Run&quot;,
+    &quot;Batch.restart_mysql_service.executor&quot;: &quot;Run&quot;,
+    &quot;Batch.start-all.executor&quot;: &quot;Run&quot;,
+    &quot;Batch.start-miniprogram.executor&quot;: &quot;Run&quot;,
+    &quot;Batch.stop-all.executor&quot;: &quot;Run&quot;,
+    &quot;Batch.停止脚本.executor&quot;: &quot;Run&quot;,
+    &quot;Batch.启动脚本.executor&quot;: &quot;Run&quot;,
+    &quot;Maven. [org.apache.maven.plugins:maven-archetype-plugin:RELEASE:generate].executor&quot;: &quot;Run&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;Notification.DisplayName-DoNotAsk-Database detector&quot;: &quot;Database detector&quot;,
+    &quot;Notification.DisplayName-DoNotAsk-DatabaseConfigFileWatcher.found&quot;: &quot;找到数据库连接形参&quot;,
+    &quot;Notification.DoNotAsk-Database detector&quot;: &quot;true&quot;,
+    &quot;Notification.DoNotAsk-DatabaseConfigFileWatcher.found&quot;: &quot;true&quot;,
+    &quot;Python.ai_enhanced_snake_hospital_finder.executor&quot;: &quot;Run&quot;,
+    &quot;Python.baidu_image_scraper.executor&quot;: &quot;Run&quot;,
+    &quot;Python.generate_icons.executor&quot;: &quot;Run&quot;,
+    &quot;Python.hospital.executor&quot;: &quot;Run&quot;,
+    &quot;Python.map.executor&quot;: &quot;Run&quot;,
+    &quot;Python.rode.executor&quot;: &quot;Run&quot;,
+    &quot;RequestMappingsPanelOrder0&quot;: &quot;0&quot;,
+    &quot;RequestMappingsPanelOrder1&quot;: &quot;1&quot;,
+    &quot;RequestMappingsPanelWidth0&quot;: &quot;75&quot;,
+    &quot;RequestMappingsPanelWidth1&quot;: &quot;75&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager&quot;: &quot;true&quot;,
+    &quot;Spring Boot.AdminApplication.executor&quot;: &quot;Run&quot;,
+    &quot;Spring Boot.CollectApplication (1).executor&quot;: &quot;Run&quot;,
+    &quot;Spring Boot.CollectApplication -3.executor&quot;: &quot;Run&quot;,
+    &quot;Spring Boot.CollectApplication-2.executor&quot;: &quot;Run&quot;,
+    &quot;Spring Boot.CollectApplication.executor&quot;: &quot;Run&quot;,
+    &quot;Spring Boot.EmergencyApplication.executor&quot;: &quot;Run&quot;,
+    &quot;Spring Boot.GatewayApplication (1).executor&quot;: &quot;Run&quot;,
+    &quot;Spring Boot.GatewayApplication.executor&quot;: &quot;Debug&quot;,
+    &quot;Spring Boot.HospitalApplication.executor&quot;: &quot;Run&quot;,
+    &quot;Spring Boot.MovieApplication-2.executor&quot;: &quot;Debug&quot;,
+    &quot;Spring Boot.MovieApplication-3.executor&quot;: &quot;Debug&quot;,
+    &quot;Spring Boot.MovieApplication.executor&quot;: &quot;Run&quot;,
+    &quot;Spring Boot.OrderApplication.executor&quot;: &quot;Debug&quot;,
+    &quot;Spring Boot.RecognitionApplication.executor&quot;: &quot;Run&quot;,
+    &quot;Spring Boot.SnakeInfoApplication.executor&quot;: &quot;Run&quot;,
+    &quot;Spring Boot.UserApplication (1).executor&quot;: &quot;Run&quot;,
+    &quot;Spring Boot.UserApplication.executor&quot;: &quot;Run&quot;,
+    &quot;Spring Boot.WarningApplication.executor&quot;: &quot;Run&quot;,
+    &quot;javascript.nodejs.core.library.configured.version&quot;: &quot;25.8.1&quot;,
+    &quot;javascript.nodejs.core.library.typings.version&quot;: &quot;25.5.2&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/Asuka/Desktop/1/Sling&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;模块&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
+    &quot;run.configurations.included.in.services&quot;: &quot;true&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+    &quot;ts.external.directory.path&quot;: &quot;D:\\use\\IntelliJ IDEA 2025.1.2\\plugins\\javascript-plugin\\jsLanguageServicesImpl\\external&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  },
+  &quot;keyToStringList&quot;: {
+    &quot;DatabaseDriversLRU&quot;: [
+      &quot;mysql&quot;
+    ]
+  }
+}</component>
+  <component name="ReactorSettings">
+    <option name="notificationShown" value="true" />
+  </component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\Asuka\Desktop\1\Sling\sheji" />
+      <recent name="C:\Users\Asuka\Desktop\1\Sling" />
+      <recent name="C:\Users\Asuka\Desktop\1\Sling\vue3\public\images\banner" />
+      <recent name="C:\Users\Asuka\Desktop\1\Sling\tu" />
+      <recent name="C:\Users\Asuka\Desktop\1\Sling\3\个人中心" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\Asuka\Desktop\1\Sling" />
+      <recent name="C:\Users\Asuka\Desktop\1\Sling\py\hospital-service-py" />
+    </key>
+    <key name="CopyClassDialog.RECENTS_KEY">
+      <recent name="com.iflytek.entity" />
+      <recent name="com.iflytek.utils" />
+      <recent name="com.iflytek.dto" />
+      <recent name="com.iflytek.service.impl" />
+      <recent name="com.iflytek.service" />
+    </key>
+  </component>
+  <component name="RunDashboard">
+    <option name="configurationTypes">
+      <set>
+        <option value="KtorApplicationConfigurationType" />
+        <option value="MicronautRunConfigurationType" />
+        <option value="QuarkusRunConfigurationType" />
+        <option value="SpringBootApplicationConfigurationType" />
+      </set>
+    </option>
+  </component>
+  <component name="RunManager" selected="Batch.启动脚本">
+    <configuration name="启动脚本" type="BatchConfigurationType" factoryName="Batch" temporary="true">
+      <module name="snake-sling-parent" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SCRIPT_NAME" value="启动脚本.bat" />
+      <option name="PARAMETERS" value="" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="停止脚本" type="BatchConfigurationType" factoryName="Batch" temporary="true">
+      <module name="snake-sling-parent" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="WORKING_DIRECTORY" value="C:\Users\Asuka\Desktop\1\Sling" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SCRIPT_NAME" value="停止脚本.bat" />
+      <option name="PARAMETERS" value="" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="停止脚本" type="BatchConfigurationType" factoryName="Batch" temporary="true">
+      <module name="snake-sling-parent" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="WORKING_DIRECTORY" value="C:\Users\Asuka\Desktop\1\Sling" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SCRIPT_NAME" value="停止脚本.bat" />
+      <option name="PARAMETERS" value="" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="停止脚本" type="BatchConfigurationType" factoryName="Batch" temporary="true">
+      <module name="snake-sling-parent" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="WORKING_DIRECTORY" value="C:\Users\Asuka\Desktop\1\Sling" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SCRIPT_NAME" value="停止脚本.bat" />
+      <option name="PARAMETERS" value="" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="fix_mysql_auto_start" type="BatchConfigurationType" factoryName="Batch" temporary="true">
+      <module name="snake-sling-parent" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SCRIPT_NAME" value="fix_mysql_auto_start.bat" />
+      <option name="PARAMETERS" value="" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="start-miniprogram" type="BatchConfigurationType" factoryName="Batch" temporary="true">
+      <module name="snake-sling-parent" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="WORKING_DIRECTORY" value="./test" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SCRIPT_NAME" value="start-miniprogram.bat" />
+      <option name="PARAMETERS" value="" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="create_test_users.sql" type="DatabaseScript" editBeforeRun="true" temporary="true" nameIsGenerated="true">
+      <script-file value="$PROJECT_DIR$/test/create_test_users.sql" />
+      <script-mode>FILE</script-mode>
+      <method v="2" />
+    </configuration>
+    <configuration name="generate_icons" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="snake-sling-parent" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/Uni-app" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Uni-app/generate_icons.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="AdminApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <module name="admin-service" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.sling.admin.AdminApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="GatewayApplication (1)" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <module name="snake-gateway" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.sling.gateway.GatewayApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="HospitalApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <module name="hospital-service" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.sling.hospital.HospitalApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="RecognitionApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <module name="recognition-service" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.sling.recognition.RecognitionApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="SnakeInfoApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <module name="snake-info-service" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.sling.snakeinfo.SnakeInfoApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="UserApplication (1)" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <module name="user-service" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.sling.user.UserApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="WarningApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <module name="warning-service" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.sling.warning.WarningApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <list>
+      <item itemvalue="Batch.启动脚本" />
+      <item itemvalue="Batch.fix_mysql_auto_start" />
+      <item itemvalue="Batch.start-miniprogram" />
+      <item itemvalue="Python.generate_icons" />
+      <item itemvalue="Spring Boot.AdminApplication" />
+      <item itemvalue="Spring Boot.GatewayApplication (1)" />
+      <item itemvalue="Spring Boot.HospitalApplication" />
+      <item itemvalue="Spring Boot.RecognitionApplication" />
+      <item itemvalue="Spring Boot.SnakeInfoApplication" />
+      <item itemvalue="Spring Boot.UserApplication (1)" />
+      <item itemvalue="Spring Boot.WarningApplication" />
+      <item itemvalue="数据库脚本.create_test_users.sql" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Batch.启动脚本" />
+        <item itemvalue="数据库脚本.create_test_users.sql" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-9823dce3aa75-fbdcb00ec9e3-intellij.indexing.shared.core-IU-251.26927.53" />
+        <option value="bundled-js-predefined-d6986cc7102b-09060db00ec0-JavaScript-IU-251.26927.53" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="StructureViewState">
+    <option name="selectedTab" value="逻辑" />
+  </component>
+  <component name="SvnConfiguration">
+    <configuration>C:\Users\Administrator\AppData\Roaming\Subversion</configuration>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="03e5e847-fc98-40a9-aea7-32ab39ad7098" name="Changes" comment="" />
+      <created>1760942229898</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1760942229898</updated>
+      <workItem from="1760942231541" duration="4353000" />
+      <workItem from="1760966470529" duration="675000" />
+      <workItem from="1761006825898" duration="44000" />
+      <workItem from="1761006880037" duration="8924000" />
+      <workItem from="1761100341093" duration="8391000" />
+      <workItem from="1761116120290" duration="2892000" />
+      <workItem from="1761179641154" duration="17705000" />
+      <workItem from="1761217472698" duration="606000" />
+      <workItem from="1761545253848" duration="5182000" />
+      <workItem from="1761563957231" duration="1258000" />
+      <workItem from="1761612073501" duration="10074000" />
+      <workItem from="1761661939294" duration="39000" />
+      <workItem from="1761698921914" duration="16488000" />
+      <workItem from="1761745538199" duration="2311000" />
+      <workItem from="1761784334768" duration="3836000" />
+      <workItem from="1761804364164" duration="6485000" />
+      <workItem from="1761821821182" duration="3103000" />
+      <workItem from="1761870674390" duration="1009000" />
+      <workItem from="1762135277757" duration="12444000" />
+      <workItem from="1762164268868" duration="6700000" />
+      <workItem from="1762216631188" duration="10772000" />
+      <workItem from="1762309070588" duration="9655000" />
+      <workItem from="1762340573549" duration="7489000" />
+      <workItem from="1762389068384" duration="11861000" />
+      <workItem from="1762426403816" duration="1415000" />
+      <workItem from="1762740222428" duration="13514000" />
+      <workItem from="1762780943390" duration="25000" />
+      <workItem from="1762828143938" duration="4382000" />
+      <workItem from="1762833270925" duration="599000" />
+      <workItem from="1763436142260" duration="967000" />
+      <workItem from="1763437236099" duration="27000" />
+      <workItem from="1763522663237" duration="2162000" />
+      <workItem from="1763524894306" duration="6005000" />
+      <workItem from="1763606514635" duration="37000" />
+      <workItem from="1763618450404" duration="3363000" />
+      <workItem from="1763966569656" duration="1759000" />
+      <workItem from="1764046852735" duration="4000" />
+      <workItem from="1764048910165" duration="2000" />
+      <workItem from="1764569265156" duration="2712000" />
+      <workItem from="1764572029977" duration="3632000" />
+      <workItem from="1764642823223" duration="3175000" />
+      <workItem from="1764646029257" duration="2119000" />
+      <workItem from="1764729125987" duration="1196000" />
+      <workItem from="1764730424217" duration="3642000" />
+      <workItem from="1764811455326" duration="882000" />
+      <workItem from="1764814621441" duration="755000" />
+      <workItem from="1764830176683" duration="249000" />
+      <workItem from="1764830444609" duration="481000" />
+      <workItem from="1765173925782" duration="230000" />
+      <workItem from="1765174178673" duration="2373000" />
+      <workItem from="1765247665319" duration="3964000" />
+      <workItem from="1765334504208" duration="13004000" />
+      <workItem from="1765415431904" duration="6466000" />
+      <workItem from="1765432935725" duration="7753000" />
+      <workItem from="1765465877601" duration="5623000" />
+      <workItem from="1765479525085" duration="180000" />
+      <workItem from="1765778689123" duration="7305000" />
+      <workItem from="1765852743013" duration="1223000" />
+      <workItem from="1765854037867" duration="4784000" />
+      <workItem from="1765938995813" duration="50000" />
+      <workItem from="1765939067420" duration="455000" />
+      <workItem from="1765941639826" duration="11800000" />
+      <workItem from="1766018302301" duration="10163000" />
+      <workItem from="1766039423738" duration="11000" />
+      <workItem from="1766039554133" duration="4506000" />
+      <workItem from="1766363960464" duration="8796000" />
+      <workItem from="1766469815842" duration="7870000" />
+      <workItem from="1766479110588" duration="12000" />
+      <workItem from="1766479138475" duration="210000" />
+      <workItem from="1766479359501" duration="26000" />
+      <workItem from="1766479403528" duration="468000" />
+      <workItem from="1766479909642" duration="152000" />
+      <workItem from="1766480266808" duration="193000" />
+      <workItem from="1766480489183" duration="1293000" />
+      <workItem from="1766499840145" duration="1812000" />
+      <workItem from="1766502845471" duration="1466000" />
+      <workItem from="1766507257722" duration="1591000" />
+      <workItem from="1766536839462" duration="12420000" />
+      <workItem from="1766594686173" duration="484000" />
+      <workItem from="1766642324806" duration="2135000" />
+      <workItem from="1766644796852" duration="2853000" />
+      <workItem from="1766647930457" duration="220000" />
+      <workItem from="1766648168736" duration="6108000" />
+      <workItem from="1766729271098" duration="9417000" />
+      <workItem from="1766968763199" duration="9842000" />
+      <workItem from="1767074560546" duration="11301000" />
+      <workItem from="1767141750890" duration="10404000" />
+      <workItem from="1767592499182" duration="1388000" />
+      <workItem from="1767679183306" duration="9811000" />
+      <workItem from="1767746106624" duration="6341000" />
+      <workItem from="1767852210474" duration="11150000" />
+      <workItem from="1768197921741" duration="2142000" />
+      <workItem from="1768284600468" duration="696000" />
+      <workItem from="1768285514836" duration="1059000" />
+      <workItem from="1768286589279" duration="9342000" />
+      <workItem from="1768304683979" duration="14313000" />
+      <workItem from="1768321331288" duration="20808000" />
+      <workItem from="1768354237792" duration="6585000" />
+      <workItem from="1768459447543" duration="1539000" />
+      <workItem from="1768461310203" duration="4597000" />
+      <workItem from="1768474945262" duration="463000" />
+      <workItem from="1768658628487" duration="852000" />
+      <workItem from="1769004458180" duration="776000" />
+      <workItem from="1769312313506" duration="2029000" />
+      <workItem from="1773287531978" duration="1062000" />
+      <workItem from="1773300652051" duration="1114000" />
+      <workItem from="1773314012865" duration="6000" />
+      <workItem from="1773322880917" duration="264000" />
+      <workItem from="1773323222925" duration="626000" />
+      <workItem from="1773365622680" duration="40000" />
+      <workItem from="1773646502142" duration="14000" />
+      <workItem from="1773646524350" duration="428000" />
+      <workItem from="1773647413820" duration="1218000" />
+      <workItem from="1773648651743" duration="1432000" />
+      <workItem from="1773650132073" duration="2267000" />
+      <workItem from="1773746223482" duration="75000" />
+      <workItem from="1773746306760" duration="72000" />
+      <workItem from="1773904540215" duration="1935000" />
+      <workItem from="1773918399061" duration="323000" />
+      <workItem from="1773918732281" duration="172000" />
+      <workItem from="1773918916656" duration="6515000" />
+      <workItem from="1773966998988" duration="1868000" />
+      <workItem from="1773968911334" duration="3364000" />
+      <workItem from="1773972363770" duration="2270000" />
+      <workItem from="1774246729711" duration="319000" />
+      <workItem from="1774247628387" duration="6440000" />
+      <workItem from="1774254425443" duration="1815000" />
+      <workItem from="1774269493978" duration="2252000" />
+      <workItem from="1774283678156" duration="3840000" />
+      <workItem from="1774350405398" duration="15000" />
+      <workItem from="1774400527051" duration="15000" />
+      <workItem from="1774400559500" duration="130000" />
+      <workItem from="1774400709503" duration="4206000" />
+      <workItem from="1774436565278" duration="3414000" />
+      <workItem from="1774505324153" duration="1127000" />
+      <workItem from="1774506710287" duration="3090000" />
+      <workItem from="1774544690898" duration="1052000" />
+      <workItem from="1774574702759" duration="712000" />
+      <workItem from="1774710355266" duration="61000" />
+      <workItem from="1774851246347" duration="4543000" />
+      <workItem from="1774857386874" duration="229000" />
+      <workItem from="1774858054936" duration="1000" />
+      <workItem from="1774879920681" duration="2874000" />
+      <workItem from="1774929250260" duration="7835000" />
+      <workItem from="1774943029973" duration="5304000" />
+      <workItem from="1774956031170" duration="445000" />
+      <workItem from="1775543631489" duration="1383000" />
+      <workItem from="1775545334615" duration="335000" />
+      <workItem from="1775545689588" duration="790000" />
+      <workItem from="1775608772949" duration="16000" />
+      <workItem from="1775608797865" duration="332000" />
+      <workItem from="1775609374518" duration="6000" />
+      <workItem from="1776073107594" duration="2287000" />
+      <workItem from="1776090298768" duration="24000" />
+      <workItem from="1776091481031" duration="1000" />
+      <workItem from="1776132159911" duration="35000" />
+      <workItem from="1776133028480" duration="140000" />
+      <workItem from="1776180645852" duration="39000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="UnknownFeatures">
+    <option featureType="dependencySupport" implementationName="java:org.springframework.security:spring-security-core" />
+    <option featureType="dependencySupport" implementationName="java:org.springframework:spring-core" />
+    <option featureType="dependencySupport" implementationName="java:jakarta.validation:jakarta.validation-api" />
+    <option featureType="dependencySupport" implementationName="javascript:npm:vite" />
+    <option featureType="dependencySupport" implementationName="java:io.projectreactor:reactor-core" />
+    <option featureType="com.intellij.configurationType" implementationName="PythonConfigurationType" />
+    <option featureType="dependencySupport" implementationName="javascript:npm:webpack" />
+    <option featureType="dependencySupport" implementationName="java:org.springframework.cloud:spring-cloud-context" />
+    <option featureType="dependencySupport" implementationName="java:org.hibernate.validator:hibernate-validator" />
+    <option featureType="dependencySupport" implementationName="java:javax.validation:validation-api" />
+    <option featureType="dependencySupport" implementationName="java:org.springframework:spring-webmvc" />
+    <option featureType="com.intellij.configurationType" implementationName="BatchConfigurationType" />
+    <option featureType="dependencySupport" implementationName="java:org.projectlombok:lombok" />
+    <option featureType="dependencySupport" implementationName="java:io.reactivex.rxjava2:rxjava" />
+    <option featureType="com.intellij.fileTypeFactory" implementationName="*.py" />
+    <option featureType="dependencySupport" implementationName="javascript:npm:vue" />
+    <option featureType="dependencySupport" implementationName="java:org.springframework.boot:spring-boot" />
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
+  </component>
+  <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/Sling$generate_icons.coverage" NAME="generate_icons 覆盖结果" MODIFIED="1773921905364" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Uni-app" />
+  </component>
+</project>

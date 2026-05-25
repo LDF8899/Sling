@@ -1,0 +1,435 @@
+蛇类应急指南前端页面详细设计方案
+一、核心页面设计（按功能模块划分）
+（一）应急指南主页（EmergencyGuide.vue）
+1. 页面定位
+应急指南功能的入口枢纽，核心目标是让用户快速选择查询模式，降低应急场景下的操作门槛。
+2. 布局结构
+顶部区域：
+页面标题：「蛇类咬伤应急指南」（字体加粗，字号 24px，主色调蓝色）
+简短说明：「通过图片识别或学名查询，获取专业应急处理方案」（灰色 14px 字体，下方加 1px 浅灰分隔线）
+核心功能区（占据页面 60% 高度，居中布局）：
+双模式切换卡片：采用左右分栏或上下堆叠设计（响应式适配），卡片尺寸 300px×200px，带毛玻璃效果（背景模糊 10px，透明度 80%）、12px 圆角和微妙阴影（0 4px 12px rgba (0,0,0,0.08)）。
+模式卡片内容：
+图片识别模式：图标（相机图标，48px×48px）+ 标题「图片识别」+ 说明「上传伤口或蛇类图片快速识别」，卡片背景渐变（浅蓝→白）。
+学名查询模式：图标（搜索图标，48px×48px）+ 标题「学名查询」+ 说明「输入蛇类学名精准查询指南」，卡片背景渐变（浅绿→白）。
+切换交互：点击卡片激活（边框变色为对应主色调，缩放 1.02 倍，过渡动画 0.3s），默认无激活状态，用户需明确选择。
+底部辅助区：
+紧急提示：「温馨提示：应急处理仅为临时措施，识别后请立即联系医疗救援」（橙色字体，左侧带感叹号图标）
+快捷入口：「查看历史记录」链接（蓝色字体，hover 下划线效果），跳转至历史记录页面。
+3. 交互设计
+卡片点击反馈：点击瞬间出现轻微下沉效果（scale 0.98），松开后恢复并激活。
+响应式适配：屏幕宽度＜768px 时，双模式卡片上下堆叠，间距 20px。
+快捷键支持：按「I」快速切换至图片识别模式，按「N」快速切换至学名查询模式。
+（二）图片识别模式页面（EmergencyImageMode.vue）
+1. 页面定位
+通过图片上传实现蛇种识别，核心目标是简化上传流程、清晰展示识别进度和结果，快速引导用户获取应急指南。
+2. 布局结构
+顶部导航：
+返回按钮（箭头图标 +「返回主页」文字），点击返回 EmergencyGuide.vue。
+页面标题：「图片识别模式」。
+图片上传区域（占页面 30% 高度）：
+上传容器：边框 dashed 2px（浅灰色），12px 圆角，背景色 rgba (255,255,255,0.8)，毛玻璃效果。
+上传触发：
+上传按钮：Element Plus 的 ElUpload 组件，按钮文字「点击上传图片」，主色调蓝色，hover 加深。
+拖拽提示：「或直接拖拽图片至此处」（灰色 14px 字体，居中显示）。
+格式限制：提示「支持 JPG、PNG 格式，图片大小不超过 5MB」（灰色 12px 字体，位于容器底部）。
+预览区域：上传后显示图片缩略图（最大宽度 300px，高度自适应），右上角带删除按钮（hover 显示）。
+AI 分析结果显示区：
+识别进度条：Element Plus 的 ElProgress 组件，默认隐藏，上传图片后显示，动态展示识别进度（0%→100%），搭配文字提示「AI 正在识别蛇种...」。
+候选蛇种列表：识别完成后显示，采用网格布局（桌面端 3 列，移动端 1 列），每个蛇种卡片包含：
+蛇种图片（80px×80px，圆角 8px）。
+蛇种学名 + 别名（加粗 16px 字体）。
+匹配度（例如「匹配度 92%」，绿色字体）。
+选择按钮：「确认此蛇种」（小型蓝色按钮，点击后激活边框）。
+空状态处理：识别失败时显示「未识别到有效蛇种，请上传清晰图片或尝试学名查询」（灰色 16px 字体，搭配警告图标）。
+应急指南展示区：
+选择蛇种后，通过 EmergencyGuideDetail.vue 组件嵌入展示指南内容，区域高度自适应，带滚动条。
+切换蛇种时，指南内容平滑替换（过渡动画 0.5s，淡入淡出）。
+3. 交互设计
+上传反馈：图片拖拽至上传区域时，容器边框变色（蓝色），提示文字加粗。
+识别状态反馈：进度条加载时，搭配脉冲动画；识别成功 / 失败时，分别显示绿色对勾 / 红色叉号图标。
+蛇种选择：支持单选，选中的蛇种卡片边框变为蓝色（2px），其他卡片恢复默认样式。
+错误处理：上传格式错误 / 文件过大时，实时显示红色错误提示，点击「关闭」可清除提示并重新上传。
+（三）学名查询模式页面（EmergencyNameMode.vue）
+1. 页面定位
+通过精准输入蛇类学名查询应急指南，核心目标是提供高效、精准的查询体验，支持自动补全减少输入错误。
+2. 布局结构
+顶部导航：与图片识别模式页面一致（返回按钮 + 页面标题「学名查询模式」）。
+查询输入区域（居中布局，宽度 60%，最大宽度 500px）：
+输入框组：
+Element Plus 的 ElInput 组件，占位提示「请输入蛇类学名（例如：眼镜王蛇）」，支持输入防抖（300ms）。
+自动补全功能：基于后端返回的蛇种列表，输入时实时显示匹配结果（下拉菜单，最多显示 10 条，hover 背景色浅蓝）。
+输入验证：输入为空 / 包含特殊字符时，输入框边框变红，下方显示红色提示文字（「请输入有效学名」/「学名不可包含特殊字符」）。
+查询按钮：ElButton 组件，主色调蓝色，与输入框同行排列（桌面端）/ 换行排列（移动端），按钮文字「查询指南」，点击后触发加载状态（按钮置灰 + 加载图标）。
+应急指南展示区：
+查询成功：直接嵌入 EmergencyGuideDetail.vue 组件展示指南内容。
+查询失败：显示「未查询到该蛇种的应急指南，请检查学名是否正确或尝试图片识别」（灰色 16px 字体，搭配警告图标，下方提供「返回主页」按钮）。
+3. 交互设计
+自动补全交互：输入≥2 个字符时触发补全，点击补全项直接填充输入框并自动提交查询。
+快捷键支持：输入完成后按「Enter」键直接触发查询。
+加载状态：查询过程中，输入框和按钮置灰，禁止重复点击，展示加载动画。
+结果反馈：查询成功时，指南区域淡入；查询失败时，提示文字从顶部滑入（过渡动画 0.3s）。
+（四）应急指南详情组件（EmergencyGuideDetail.vue）
+1. 组件定位
+可复用组件，统一展示蛇类应急指南的详细信息，核心目标是信息层级清晰、重点突出，方便用户快速获取关键处理步骤。
+2. 布局结构
+头部信息栏（背景渐变：蓝色→浅蓝，12px 圆角， padding 20px）：
+蛇类图片：右侧浮动，宽度 120px，高度 120px，圆角 8px，边框 2px 白色边框。
+基础信息：
+学名：字体 20px，加粗，主色调。
+别名：字体 16px，灰色，格式「别名：XXX、XXX」。
+毒液类型：标签样式（例如「神经毒」→ 红色标签，「血液毒」→ 橙色标签，「混合毒」→ 紫色标签），标签圆角 20px，padding 4px 12px。
+核心内容区（卡片式布局，每个卡片间距 16px，毛玻璃效果，12px 圆角，padding 16px）：
+典型症状：
+标题：「典型症状」（字体 18px，加粗，左侧带红色圆点标记）。
+内容：Markdown 渲染，支持换行、列表，字体 14px，行高 1.6。
+紧急处理方法：
+标题：「紧急处理方法」（字体 18px，加粗，左侧带绿色圆点标记）。
+内容：按步骤编号（1. 2. 3.），Markdown 渲染，关键步骤（如「远离蛇体」「禁止切开伤口」）加粗并标红。
+医疗注意要点：
+标题：「医疗注意要点」（字体 18px，加粗，左侧带蓝色圆点标记）。
+内容：Markdown 渲染，包含就医建议、禁忌事项，重要提示用橙色背景高亮（透明度 20%）。
+底部操作栏：
+按钮组：「分享指南」（图标 + 文字，蓝色）、「保存到本地」（图标 + 文字，绿色）、「添加到收藏」（图标 + 文字，橙色），按钮间距 10px，圆角 8px，padding 8px 16px。
+打印功能：「打印指南」（图标 + 文字，灰色），点击触发浏览器打印功能，自动优化打印样式（隐藏按钮，保留核心内容）。
+3. 交互设计
+图片交互：点击蛇类图片可放大预览（模态框，背景半透明黑色，图片自适应屏幕尺寸）。
+内容交互：支持文字选中复制，Markdown 渲染的列表项 hover 时背景色浅灰（透明度 10%）。
+操作反馈：点击按钮时，按钮轻微缩放（scale 0.95），松开后恢复，操作成功后显示绿色对勾提示（3 秒后自动消失）。
+响应式适配：屏幕宽度＜768px 时，头部信息栏的蛇类图片改为居中显示，下方排列基础信息；核心内容区卡片全屏宽度，间距 12px。
+（五）历史记录页面（EmergencyHistory.vue）
+1. 页面定位
+展示用户过往查询记录，核心目标是支持快速回访、管理记录，提升用户二次使用效率。
+2. 布局结构
+顶部操作区：
+页面标题：「查询历史记录」（字体 24px，加粗，主色调）。
+操作按钮：「清空全部历史」（右侧浮动，红色文字按钮，hover 带下划线），点击后弹出确认弹窗（「确定要清空所有历史记录吗？此操作不可恢复」）。
+历史记录列表（卡片式布局，网格排列：桌面端 2 列，移动端 1 列，间距 16px）：
+每条记录卡片（毛玻璃效果，12px 圆角，padding 16px，hover 阴影加深）：
+左侧：蛇类缩略图（80px×80px，圆角 8px）。
+中间：
+蛇类学名：字体 16px，加粗。
+查询时间：字体 12px，灰色，格式「查询时间：2024-05-20 14:30」。
+右侧：
+快速访问按钮：「查看指南」（蓝色按钮，圆角 8px，padding 4px 12px）。
+删除按钮：图标按钮（垃圾桶图标，灰色，hover 变红）。
+空状态处理：
+无历史记录时，居中显示：
+图标：历史记录空图标（100px×100px，灰色）。
+文字：「暂无查询历史」（字体 16px，灰色）。
+引导按钮：「去查询指南」（蓝色按钮，12px 圆角，padding 8px 24px），点击跳转至应急指南主页。
+3. 交互设计
+记录操作：
+点击「查看指南」：直接跳转至该蛇种的应急指南详情页（/emergency/guide/:snakeName）。
+点击「删除」：单条记录从右侧滑出删除（过渡动画 0.3s），同时底部显示「已删除」提示（2 秒后消失）。
+批量操作：支持勾选多条记录（卡片左侧添加复选框），顶部显示「删除选中」按钮（红色），批量删除后显示删除成功提示。
+排序功能：默认按查询时间倒序排列，顶部提供「按时间排序」下拉菜单（支持「最新在前」「最早在前」）。
+搜索功能：顶部添加搜索框（占位提示「搜索历史记录」），实时筛选包含关键词的记录（支持学名、别名搜索）。
+二、路由配置
+路由路径	对应页面 / 组件	路由说明
+/emergency	EmergencyGuide.vue	应急指南主页，默认入口
+/emergency/guide/:snakeName	EmergencyGuideDetail.vue	特定蛇类的应急指南详情页，通过蛇类学名参数匹配
+/emergency/image	EmergencyImageMode.vue	图片识别模式页面
+/emergency/name	EmergencyNameMode.vue	学名查询模式页面
+/emergency/history	EmergencyHistory.vue	查询历史页面
+路由守卫：未匹配路由自动跳转至 /emergency；详情页若蛇种不存在，跳转至「查询失败」页面。
+路由切换动画：页面切换时采用淡入淡出效果（过渡动画 0.3s）。
+三、状态管理设计（Pinia Store）
+（一）Store 结构
+javascript
+运行
+// src/store/modules/emergency.js
+import { defineStore } from 'pinia'
+
+export const useEmergencyStore = defineStore('emergency', {
+  state: () => ({
+    // 当前查询的应急指南信息
+    currentGuide: null, // 存储 EmergencyGuideDetail 需要的完整数据
+    // 历史记录列表
+    historyList: [], // 每条记录格式：{ snakeName, alias, venomType, queryTime, imageUrl }
+    // 加载状态
+    loading: false, // 全局加载状态（查询、识别时）
+    // 错误信息
+    errorMsg: '', // 存储错误提示文字，为空时不显示
+    // 图片识别候选列表
+    candidateSnakes: [] // 存储识别后的蛇种候选数据
+  }),
+  actions: {
+    // 设置当前指南
+    setCurrentGuide(guide) {
+      this.currentGuide = guide
+      // 自动保存到历史记录
+      if (guide) {
+        this.saveToHistory(guide)
+      }
+    },
+    // 保存到历史记录
+    saveToHistory(guide) {
+      // 去重：若已存在相同学名的记录，删除旧记录
+      this.historyList = this.historyList.filter(
+        item => item.snakeName !== guide.snakeName
+      )
+      // 添加新记录（时间戳转换为格式化时间）
+      const queryTime = new Date().toLocaleString('zh-CN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+      this.historyList.unshift({ ...guide, queryTime })
+      // 本地存储持久化
+      localStorage.setItem('emergencyHistory', JSON.stringify(this.historyList))
+    },
+    // 获取历史记录（初始化时从本地存储加载）
+    fetchHistory() {
+      const storedHistory = localStorage.getItem('emergencyHistory')
+      if (storedHistory) {
+        this.historyList = JSON.parse(storedHistory)
+      }
+    },
+    // 删除单条历史记录
+    deleteHistoryItem(snakeName) {
+      this.historyList = this.historyList.filter(
+        item => item.snakeName !== snakeName
+      )
+      localStorage.setItem('emergencyHistory', JSON.stringify(this.historyList))
+    },
+    // 清空所有历史记录
+    clearAllHistory() {
+      this.historyList = []
+      localStorage.removeItem('emergencyHistory')
+    },
+    // 设置加载状态
+    setLoading(status) {
+      this.loading = status
+    },
+    // 设置错误信息
+    setErrorMsg(msg) {
+      this.errorMsg = msg
+      // 3秒后自动清除错误信息
+      if (msg) {
+        setTimeout(() => {
+          this.errorMsg = ''
+        }, 3000)
+      }
+    },
+    // 设置图片识别候选列表
+    setCandidateSnakes(snakes) {
+      this.candidateSnakes = snakes
+    }
+  }
+})
+（二）核心功能说明
+持久化存储：历史记录通过 localStorage 持久化，页面刷新后不丢失。
+状态共享：currentGuide 供详情组件使用，candidateSnakes 供图片识别页面使用，loading 和 errorMsg 全局共享，统一控制加载状态和错误提示。
+自动同步：设置当前指南时自动保存到历史记录，确保历史记录实时更新。
+四、API 服务接口设计（src/services/emergency.js）
+javascript
+运行
+import axios from 'axios'
+
+// 创建axios实例，统一配置
+const service = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE_URL, // 从环境变量获取基础地址
+  timeout: 30000, // 超时时间30秒（图片上传需较长时间）
+  headers: {
+    'Content-Type': 'application/json'
+  }
+})
+
+// 请求拦截器：添加token等公共参数
+service.interceptors.request.use(
+  config => {
+    // 若有用户登录态，添加token（根据实际项目调整）
+    const token = localStorage.getItem('token')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+  },
+  error => Promise.reject(error)
+)
+
+// 响应拦截器：统一处理响应结果和错误
+service.interceptors.response.use(
+  response => response.data,
+  error => {
+    // 统一错误提示（可结合Pinia的errorMsg状态）
+    let errorMsg = '请求失败，请重试'
+    if (error.response) {
+      switch (error.response.status) {
+        case 404:
+          errorMsg = '资源不存在'
+          break
+        case 500:
+          errorMsg = '服务器错误，请稍后重试'
+          break
+        case 400:
+          errorMsg = error.response.data.msg || '请求参数错误'
+          break
+      }
+    } else if (error.message.includes('timeout')) {
+      errorMsg = '请求超时，请检查网络'
+    }
+    return Promise.reject(new Error(errorMsg))
+  }
+)
+
+/**
+ * 根据蛇类名称获取应急指南
+ * @param {string} snakeName - 蛇类学名
+ * @returns {Promise} - 指南详情数据
+ */
+export const getEmergencyGuideByName = (snakeName) => {
+  return service({
+    url: '/emergency/guide',
+    method: 'GET',
+    params: { snakeName }
+  })
+}
+
+/**
+ * 上传伤口图片进行识别
+ * @param {File} image - 图片文件
+ * @returns {Promise} - 候选蛇种列表
+ */
+export const uploadWoundImage = (image) => {
+  const formData = new FormData()
+  formData.append('image', image)
+  return service({
+    url: '/emergency/image/recognize',
+    method: 'POST',
+    data: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+}
+
+/**
+ * 获取查询历史（从后端同步，若无需后端同步可直接用本地存储）
+ * @returns {Promise} - 历史记录列表
+ */
+export const getEmergencyHistory = () => {
+  return service({
+    url: '/emergency/history',
+    method: 'GET'
+  })
+}
+
+/**
+ * 保存查询历史到后端（可选，根据项目需求）
+ * @param {object} guide - 指南详情数据
+ * @returns {Promise} - 保存结果
+ */
+export const saveToHistory = (guide) => {
+  return service({
+    url: '/emergency/history',
+    method: 'POST',
+    data: guide
+  })
+}
+五、设计风格与技术规范
+（一）视觉设计规范
+1. 色彩系统
+主色调：#165DFF（蓝色，体现科技感、专业性）
+辅助色：
+绿色：#36D399（成功状态、安全提示）
+红色：#F87272（错误状态、危险提示）
+橙色：#FBBD23（警告提示、操作按钮）
+紫色：#9333EA（特殊标签、混合毒提示）
+中性色：
+#1F2937（一级文字，标题、重要内容）
+#4B5563（二级文字，正文内容）
+#9CA3AF（三级文字，说明、辅助信息）
+#E5E7EB（边框、分隔线）
+#F3F4F6（背景色、卡片底色）
+#FFFFFF（白色，文字背景、卡片前景）
+2. 字体系统
+字体族：无衬线字体（优先使用系统默认无衬线字体， fallback 为 sans-serif）
+字号层级：
+页面标题：24px（font-weight: 600）
+卡片标题：20px（font-weight: 600）
+模块标题：18px（font-weight: 600）
+正文文字：16px（font-weight: 400）
+辅助文字：14px（font-weight: 400）
+说明文字：12px（font-weight: 400）
+行高：
+标题行高：1.2
+正文字高：1.6
+辅助文字行高：1.5
+3. 组件样式规范
+圆角：统一使用 12px（卡片、按钮），特殊标签使用 20px（毒液类型标签），小图标使用 8px。
+阴影：
+普通卡片：0 4px 12px rgba (0,0,0,0.08)
+hover 状态：0 8px 24px rgba (0,0,0,0.12)
+模态框：0 10px 30px rgba (0,0,0,0.15)
+毛玻璃效果：backdrop-filter: blur (10px)，background-color: rgba (255,255,255,0.8)（浅色背景）或 rgba (0,0,0,0.7)（深色背景）。
+（二）技术实现规范
+1. 框架与库
+核心框架：Vue3（Composition API 语法）
+状态管理：Pinia
+路由：Vue Router 4.x
+UI 组件库：Element Plus（按需引入）
+HTTP 客户端：Axios
+富文本渲染：markdown-it
+图标库：Element Plus Icons（统一图标体系）
+2. 代码组织规范
+目录结构：
+plaintext
+src/
+├── components/
+│   ├── EmergencyGuideDetail.vue（详情组件）
+│   └── ...（其他自定义组件）
+├── views/
+│   ├── EmergencyGuide.vue（主页）
+│   ├── EmergencyImageMode.vue（图片识别页）
+│   ├── EmergencyNameMode.vue（学名查询页）
+│   └── EmergencyHistory.vue（历史记录页）
+├── router/
+│   └── index.js（路由配置）
+├── store/
+│   ├── index.js（Pinia入口）
+│   └── modules/
+│       └── emergency.js（应急指南状态）
+├── services/
+│   └── emergency.js（API服务）
+├── assets/
+│   ├── styles/（全局样式）
+│   └── icons/（自定义图标）
+└── utils/（工具函数）
+组件命名：PascalCase 格式（如 EmergencyGuideDetail.vue），与业务功能相关。
+路由命名：kebab-case 格式（如 /emergency/guide/:snakeName），语义化清晰。
+代码规范：遵循 ESLint + Prettier 规则，统一代码风格（缩进 2 空格、单引号、无尾逗号等）。
+3. 性能优化规范
+图片优化：上传图片自动压缩（前端压缩至 1MB 以内），详情页图片懒加载。
+组件懒加载：路由组件采用动态导入（import () 语法），减少初始加载体积。
+接口优化：
+输入查询防抖（300ms），避免重复请求。
+图片上传设置超时时间 30 秒，适配大文件上传。
+接口错误重试（重要接口最多重试 1 次）。
+本地存储：历史记录、常用配置等数据通过 localStorage 缓存，减少后端请求。
+4. 兼容性规范
+浏览器兼容：支持 Chrome 90+、Firefox 88+、Edge 90+、Safari 14+。
+响应式适配：支持屏幕宽度≥320px（移动端）、≥768px（平板）、≥1200px（桌面端）。
+无障碍适配：
+按钮、输入框等可交互元素支持键盘聚焦。
+重要信息提供文字描述（如图片识别区域的文字提示）。
+颜色对比度符合 WCAG 标准（文字与背景对比度≥4.5:1）。
+六、用户体验优化细节
+应急场景适配：
+页面加载速度优化（首屏加载≤2 秒），适配弱网络环境。
+核心操作（上传图片、输入查询）流程简化，最多 3 步即可获取指南。
+紧急处理方法的关键步骤（如「拨打 120」）固定在页面顶部，不随滚动消失。
+错误处理优化：
+所有错误提示提供解决方案（如「图片识别失败→请上传清晰图片」）。
+网络断开时，显示离线提示，并提供缓存的历史指南访问入口。
+辅助功能：
+支持夜间模式切换（按钮位于顶部导航栏），适配低光环境使用。
+指南内容支持字体大小调整（小、中、大），方便视力不佳用户。
+紧急处理步骤支持语音朗读（按钮位于详情页顶部），解放双手操作。
+引导提示：
+新用户首次进入页面时，显示操作引导浮层（分步引导选择查询模式），可关闭并记住偏好。
+图片上传区域提供示例图片（「点击查看示例图片」链接），帮助用户理解上传要求。
+通过以上详细设计方案，可实现一个功能完整、体验优良、技术规范的蛇类应急指南前端页面，既满足双模式查询需求，又能在应急场景下为用户提供快速、准确的指导。

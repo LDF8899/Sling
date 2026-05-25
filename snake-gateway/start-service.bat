@@ -1,0 +1,3 @@
+@echo off
+echo Starting Gateway Service...
+mvn spring-boot:run

@@ -1,0 +1,58 @@
+package com.sling.emergency.entity;
+
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.Data;
+
+import java.util.Date;
+
+@Data
+@TableName("emergency_help")
+public class EmergencyHelp {
+    
+    @TableId(type = IdType.AUTO)
+    private Long id;
+    
+    // 求助类型 (snake_bite, animal_harm, other)
+    private String type;
+    
+    // 位置信息
+    private String location;
+    
+    // 详细描述
+    private String description;
+    
+    // 联系电话
+    private String phone;
+    
+    // 是否公开求助
+    private Boolean isPublic;
+    
+    // 图片数量
+    private Integer imageCount;
+    
+    // 创建时间
+    private Date createTime;
+    
+    // 更新时间
+    private Date updateTime;
+    
+    // 是否已报警
+    private Boolean isAlerted;
+    
+    // 报警时间
+    private Date alertTime;
+    
+    // 状态 (pending, processing, resolved)
+    private String status;
+    
+    // 创建时初始化时间
+    public EmergencyHelp() {
+        this.createTime = new Date();
+        this.updateTime = new Date();
+        this.isPublic = false;
+        this.isAlerted = false;
+        this.status = "pending"; // 默认为待处理
+    }
+}

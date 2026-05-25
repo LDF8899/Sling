@@ -1,0 +1,286 @@
+.hospital-container.data-v-4e3f1300 {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  position: relative;
+}
+
+/* Main content */
+.main-content.data-v-4e3f1300 {
+  padding-top: 110px;
+  padding-bottom: 40px;
+}
+
+/* Glass card */
+.glass-card.data-v-4e3f1300 {
+  background: rgba(255, 255, 255, 0.8);
+  -webkit-backdrop-filter: blur(20px);
+          backdrop-filter: blur(20px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  margin: 0 16px 20px;
+  animation: fadeInUp-4e3f1300 0.6s ease-out;
+}
+
+/* Card header */
+.card-header.data-v-4e3f1300 {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 24px 24px 0;
+}
+.header-icon.data-v-4e3f1300 {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+.map-icon.data-v-4e3f1300 {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+}
+.location-icon.data-v-4e3f1300 {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+}
+.result-icon.data-v-4e3f1300 {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+.detail-icon.data-v-4e3f1300 {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+.header-content.data-v-4e3f1300 {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.header-title.data-v-4e3f1300 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1e293b;
+}
+.header-subtitle.data-v-4e3f1300 {
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* Location form */
+.location-form.data-v-4e3f1300 {
+  padding: 24px;
+}
+.form-item.data-v-4e3f1300 {
+  margin-bottom: 20px;
+}
+.form-label.data-v-4e3f1300 {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 8px;
+}
+.form-input.data-v-4e3f1300 {
+  width: 100%;
+  padding: 12px;
+  background: rgba(248, 250, 252, 0.8);
+  border-radius: 12px;
+  font-size: 15px;
+  color: #1e293b;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+.slider-container.data-v-4e3f1300 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.slider-value.data-v-4e3f1300 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #10b981;
+  min-width: 70px;
+}
+.form-actions.data-v-4e3f1300 {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.action-btn.data-v-4e3f1300 {
+  width: 100%;
+  padding: 14px 0;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 16px;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+.action-btn.data-v-4e3f1300:active {
+  transform: scale(0.95);
+}
+.action-btn.primary.data-v-4e3f1300 {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+}
+.action-btn.secondary.data-v-4e3f1300 {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+}
+.action-btn.loading.data-v-4e3f1300 {
+  opacity: 0.7;
+}
+.full-width.data-v-4e3f1300 {
+  width: 100%;
+}
+
+/* Map card */
+.map-card.data-v-4e3f1300 {
+  padding: 0;
+  overflow: hidden;
+}
+.map-container.data-v-4e3f1300 {
+  width: 100%;
+  height: 300px;
+}
+.hospital-map.data-v-4e3f1300 {
+  width: 100%;
+  height: 100%;
+}
+
+/* Search results list */
+.results-list.data-v-4e3f1300 {
+  padding: 24px;
+}
+.result-item.data-v-4e3f1300 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 12px;
+  margin-bottom: 12px;
+  transition: all 0.3s ease;
+}
+.result-item.data-v-4e3f1300:active {
+  transform: scale(0.98);
+  background: rgba(16, 185, 129, 0.1);
+}
+.hospital-info.data-v-4e3f1300 {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.hospital-name.data-v-4e3f1300 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+}
+.hospital-address.data-v-4e3f1300, .hospital-contact.data-v-4e3f1300 {
+  font-size: 13px;
+  color: #64748b;
+}
+.hospital-meta.data-v-4e3f1300 {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+.distance-tag.data-v-4e3f1300, .type-tag.data-v-4e3f1300 {
+  padding: 4px 10px;
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+}
+.arrow-icon.data-v-4e3f1300 {
+  font-size: 24px;
+  color: #94a3b8;
+  margin-left: 12px;
+}
+
+/* Hospital detail */
+.detail-content.data-v-4e3f1300 {
+  padding: 24px;
+}
+.detail-section.data-v-4e3f1300 {
+  margin-bottom: 24px;
+}
+.detail-item.data-v-4e3f1300 {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  background: rgba(248, 250, 252, 0.8);
+  border-radius: 10px;
+  margin-bottom: 12px;
+}
+.detail-label.data-v-4e3f1300 {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+}
+.detail-value.data-v-4e3f1300 {
+  font-size: 15px;
+  color: #1e293b;
+  font-weight: 600;
+}
+.detail-actions.data-v-4e3f1300 {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Empty state */
+.empty-state.data-v-4e3f1300 {
+  text-align: center;
+  padding: 60px 20px;
+}
+.empty-icon.data-v-4e3f1300 {
+  font-size: 64px;
+  margin-bottom: 16px;
+  display: block;
+}
+.empty-title.data-v-4e3f1300 {
+  display: block;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 8px;
+}
+.empty-subtitle.data-v-4e3f1300 {
+  display: block;
+  font-size: 14px;
+  color: #64748b;
+  margin-bottom: 24px;
+}
+.empty-tips.data-v-4e3f1300 {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 300px;
+  margin: 0 auto;
+}
+.tip-item.data-v-4e3f1300 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  background: rgba(59, 130, 246, 0.05);
+  border-radius: 8px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+/* Animations */
+@keyframes fadeInUp-4e3f1300 {
+from {
+    opacity: 0;
+    transform: translateY(20px);
+}
+to {
+    opacity: 1;
+    transform: translateY(0);
+}
+}

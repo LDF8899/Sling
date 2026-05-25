@@ -1,0 +1,176 @@
+.detail-container.data-v-c9a47689 {
+  min-height: 100vh;
+  background: #f5f5f5;
+}
+
+/* Top navbar */
+.navbar.data-v-c9a47689 {
+  position: -webkit-sticky;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(255, 255, 255, 0.95);
+  -webkit-backdrop-filter: blur(20px);
+          backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.5);
+  padding: 15px;
+}
+.navbar-content.data-v-c9a47689 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.back-btn.data-v-c9a47689 {
+  font-size: 32px;
+  color: #1e293b;
+  padding: 0 10px;
+}
+.navbar-title.data-v-c9a47689 {
+  font-size: 18px;
+  font-weight: bold;
+  color: #1e293b;
+  flex: 1;
+  text-align: center;
+}
+.favorite-btn.data-v-c9a47689 {
+  font-size: 28px;
+  color: #fbbf24;
+  padding: 0 10px;
+}
+
+/* Main content */
+.main-content.data-v-c9a47689 {
+  height: calc(100vh - 60px);
+}
+
+/* Image section */
+.image-section.data-v-c9a47689 {
+  position: relative;
+  background: white;
+  padding-bottom: 10px;
+}
+.image-swiper.data-v-c9a47689 {
+  width: 100%;
+  height: 300px;
+}
+.snake-image.data-v-c9a47689 {
+  width: 100%;
+  height: 100%;
+}
+.image-count.data-v-c9a47689 {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+}
+
+/* Basic info */
+.info-section.data-v-c9a47689 {
+  background: white;
+  padding: 20px;
+  margin-bottom: 15px;
+}
+.snake-header.data-v-c9a47689 {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.snake-name.data-v-c9a47689 {
+  font-size: 24px;
+  font-weight: bold;
+  color: #1e293b;
+}
+.snake-alias.data-v-c9a47689 {
+  font-size: 14px;
+  color: #64748b;
+}
+.snake-tags.data-v-c9a47689 {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.tag.data-v-c9a47689 {
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-weight: 500;
+}
+.venom-tag.neurotoxic.data-v-c9a47689 {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+.venom-tag.hemotoxic.data-v-c9a47689 {
+  background: #fee2e2;
+  color: #dc2626;
+}
+.venom-tag.mixed.data-v-c9a47689 {
+  background: #fef3c7;
+  color: #d97706;
+}
+.region-tag.data-v-c9a47689 {
+  background: #e0e7ff;
+  color: #4338ca;
+}
+
+/* Detail sections */
+.detail-section.data-v-c9a47689 {
+  background: white;
+  padding: 20px;
+  margin-bottom: 15px;
+}
+.section-title.data-v-c9a47689 {
+  font-size: 16px;
+  font-weight: bold;
+  color: #1e293b;
+  margin-bottom: 12px;
+}
+.section-content.data-v-c9a47689 {
+  font-size: 14px;
+  line-height: 1.8;
+  color: #475569;
+  display: block;
+}
+.section-content.danger.data-v-c9a47689 {
+  color: #dc2626;
+}
+.section-content.highlight.data-v-c9a47689 {
+  color: #059669;
+  font-weight: 500;
+}
+
+/* Bottom action bar */
+.bottom-bar.data-v-c9a47689 {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  padding: 10px 15px;
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom);
+  display: flex;
+  gap: 10px;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+}
+.action-btn.data-v-c9a47689 {
+  flex: 1;
+  height: 44px;
+  border-radius: 22px;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+}
+.action-btn.emergency-btn.data-v-c9a47689 {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+}
+.action-btn.favorite-btn-outline.data-v-c9a47689 {
+  background: white;
+  color: #fbbf24;
+  border: 2px solid #fbbf24;
+}

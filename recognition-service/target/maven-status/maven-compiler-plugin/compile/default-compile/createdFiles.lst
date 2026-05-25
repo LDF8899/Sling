@@ -1,0 +1,4 @@
+com\sling\recognition\service\impl\RecognitionServiceImpl.class
+com\sling\recognition\RecognitionApplication.class
+com\sling\recognition\controller\RecognitionController.class
+com\sling\recognition\service\RecognitionService.class

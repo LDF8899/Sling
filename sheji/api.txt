@@ -1,0 +1,122 @@
+以下是火山引擎方舟平台调用 Doubao-Seed-1.6（文本模型）和 Doubao-Seed-1.6-vision（多模态模型）的完整代码示例（Python 版），基于火山官方 OpenAI 兼容接口实现，全程使用同一个 API Key，仅需替换模型标识即可：
+前置准备
+安装依赖：
+bash
+运行
+pip install openai  # 推荐使用 openai 1.x 版本
+替换代码中的以下参数：
+YOUR_API_KEY：你的火山引擎 API Key
+YOUR_ENDPOINT：火山方舟控制台获取的接口端点（格式如 https://ark.cn-beijing.volces.com/api/v3）
+示例 1：调用 Doubao-Seed-1.6（纯文本对话）
+python
+运行
+from openai import OpenAI
+
+# 初始化客户端（核心：使用同一个API Key）
+client = OpenAI(
+    api_key="YOUR_API_KEY",  # 你的唯一API Key
+    base_url="YOUR_ENDPOINT"  # 火山方舟接口端点
+)
+
+def call_doubao_seed_1_6(prompt):
+    """调用Doubao-Seed-1.6文本模型"""
+    try:
+        # 关键：指定文本模型的Model ID（以控制台实际值为准）
+        completion = client.chat.completions.create(
+            model="doubao-seed-1.6",  # 替换为控制台显示的Doubao-Seed-1.6模型ID
+            messages=[
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7,  # 可根据需求调整
+            max_tokens=2048   # 可根据需求调整
+        )
+        # 返回模型回复
+        return completion.choices[0].message.content.strip()
+    except Exception as e:
+        print(f"调用文本模型失败：{e}")
+        return None
+
+# 测试调用
+if __name__ == "__main__":
+    response = call_doubao_seed_1_6("请解释一下大语言模型的核心原理")
+    print("Doubao-Seed-1.6 回复：", response)
+示例 2：调用 Doubao-Seed-1.6-vision（多模态 / 图文对话）
+python
+运行
+from openai import OpenAI
+
+# 初始化客户端（使用同一个API Key）
+client = OpenAI(
+    api_key="YOUR_API_KEY",
+    base_url="YOUR_ENDPOINT"
+)
+
+def call_doubao_seed_1_6_vision(prompt, image_url):
+    """调用Doubao-Seed-1.6-vision多模态模型"""
+    try:
+        # 关键：指定视觉模型的Model ID + 构造图文消息
+        completion = client.chat.completions.create(
+            model="doubao-seed-1.6-vision",  # 替换为控制台显示的视觉模型ID
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {"type": "image_url", "image_url": {"url": image_url}}
+                    ]
+                }
+            ],
+            temperature=0.7,
+            max_tokens=2048
+        )
+        return completion.choices[0].message.content.strip()
+    except Exception as e:
+        print(f"调用视觉模型失败：{e}")
+        return None
+
+# 测试调用（图片URL需为公网可访问地址，或火山OSS地址）
+if __name__ == "__main__":
+    image_url = "https://example.com/your-image.jpg"  # 替换为实际图片地址
+    response = call_doubao_seed_1_6_vision("请描述这张图片的内容", image_url)
+    print("Doubao-Seed-1.6-vision 回复：", response)
+关键注意事项
+Model ID 确认：代码中的 doubao-seed-1.6 / doubao-seed-1.6-vision 为通用标识，需替换为火山方舟控制台「模型管理」中显示的实际 Model ID（格式可能带版本号，如 doubao-seed-1.6-251015）。
+图片地址要求：调用视觉模型时，图片 URL 需满足：
+公网可直接访问（无防盗链）；
+或使用火山引擎对象存储（OSS）的私网地址（需配置权限）；
+支持格式：JPG/PNG/WebP 等，大小建议≤10MB。
+权限验证：若调用报错「权限不足」，登录火山方舟控制台 → 「API Key 管理」→ 查看该 Key 的权限范围是否为「全部」，或是否包含这两个模型的访问权限。
+批量调用优化：若需在同一模块中频繁调用两个模型，可复用同一个 OpenAI 客户端实例，无需重复初始化。
+错误处理补充
+如果需要更健壮的异常捕获（如超时、接口限流），可添加：
+python
+运行
+import time
+from openai import APIError, RateLimitError, APIConnectionError
+
+def safe_call_model(model_id, messages):
+    """带重试机制的通用调用函数"""
+    max_retries = 3
+    retry_delay = 2
+    for i in range(max_retries):
+        try:
+            completion = client.chat.completions.create(
+                model=model_id,
+                messages=messages,
+                temperature=0.7,
+                max_tokens=2048,
+                timeout=30  # 超时时间
+            )
+            return completion.choices[0].message.content
+        except RateLimitError:
+            print(f"触发限流，{retry_delay}秒后重试（第{i+1}次）")
+            time.sleep(retry_delay)
+            retry_delay *= 2
+        except (APIError, APIConnectionError) as e:
+            print(f"接口异常：{e}，{retry_delay}秒后重试（第{i+1}次）")
+            time.sleep(retry_delay)
+    return "调用失败，请稍后重试"
+以上示例可直接集成到你的模块中，核心逻辑是保持 API Key 不变，仅通过 Model ID 区分不同模型，完全符合你 “一个 Key 访问全部模型” 的场景。
+Doubao - Seed - 1.6 为语言模型
+Doubao - Seed - 1.6 - vision为视觉识别模型
+共用一个key8370e071-1279-4636-9ab6-da098db74f0d

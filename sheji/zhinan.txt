@@ -1,0 +1,264 @@
+1. 视觉模型调用（蛇类图片识别）
+参考火山引擎豆包视觉 API 官方文档（假设规范），补充调用细节：
+接口信息
+接口地址：https://vision.volcengineapi.com
+认证方式：Access Key + Secret Key 签名认证（火山标准签名算法）
+接口版本：2024-08-01
+服务路径：/api/v1/animal/recognize
+请求参数（HTTP POST）
+json
+{
+  "Service": "animal_recognition",
+  "Version": "2024-08-01",
+  "Image": {
+    "Data": "base64编码的图片字符串",  // 要求：JPG/PNG格式，大小≤5MB，分辨率≥200x200
+    "Format": "jpg"  // 可选，自动识别时可省略
+  },
+  "Parameters": {
+    "Category": "reptile",  // 固定值，限定爬行动物识别
+    "TopN": 5,  // 返回置信度前5的结果
+    "Detail": true  // 是否返回详细特征（如花纹、体型描述）
+  }
+}
+响应格式
+json
+{
+  "ResponseMetadata": {
+    "RequestId": "req-xxxx-xxxx",  // 唯一请求ID，用于日志追踪
+    "StatusCode": 200,  // 200成功，其他为错误码（如400参数错误、429频率超限）
+    "Error": null  // 错误信息，成功时为null
+  },
+  "Result": {
+    "Animals": [
+      {
+        "Name": "竹叶青",  // 蛇类名称
+        "Confidence": 0.92,  // 置信度（0-1）
+        "Features": {  // 详细特征，与snake_info.characteristics匹配
+          "Color": "绿色",
+          "Pattern": "体侧有白色环纹",
+          "Length": "约50-80cm"
+        },
+        "Taxonomy": "蝰科竹叶青属"  // 分类学信息，辅助精准匹配
+      },
+      {
+        "Name": "翠青蛇",
+        "Confidence": 0.78,
+        "Features": {
+          "Color": "纯绿色",
+          "Pattern": "无环纹",
+          "Length": "约60-100cm"
+        },
+        "Taxonomy": "游蛇科翠青蛇属"
+      }
+    ]
+  }
+}
+处理逻辑补充
+错误处理：
+若StatusCode=429（频率超限），使用指数退避策略重试（最多 3 次，间隔 1s、2s、4s）；
+若Animals数组为空（识别失败），返回预设提示 “无法识别，请上传更清晰的图片或补充文字描述”；
+若最高置信度＜0.5，自动触发 “图片 + 文本” 混合识别流程（提示用户补充文字描述）。
+匹配优化：结合Taxonomy和Features与snake_info表的characteristics进行模糊匹配（如通过LIKE '%绿色%环纹%'），提升跨名称别名的匹配准确率（如 “青竹蛇” 与 “竹叶青”）。
+2. 语言模型调用（文本解析 / 方案生成）
+参考火山引擎豆包大模型 API 官方文档，补充调用细节：
+接口信息
+接口地址：https://aquasearch.volcengineapi.com
+认证方式：同上（Access Key 签名）
+接口版本：2023-10-01
+服务路径：/api/v1/chat/completions
+请求参数（文本描述解析场景）
+json
+{
+  "Model": "doubao-pro-12b",  // 选用支持多轮解析的模型
+  "Messages": [
+    {
+      "Role": "System",
+      "Content": "你是蛇类特征解析专家，需从用户描述中提取关键特征（颜色、花纹、体型、行为等），输出JSON格式：{\"color\":\"\",\"pattern\":\"\",\"length\":\"\",\"behavior\":\"\"}。若信息不全，留空不猜测。"
+    },
+    {
+      "Role": "User",
+      "Content": "描述：绿色蛇，有白色环纹，约50cm长，咬伤后伤口立即红肿"
+    }
+  ],
+  "Parameters": {
+    "Temperature": 0.1,  // 低随机性，确保解析结果稳定
+    "MaxTokens": 200,
+    "ResponseFormat": { "Type": "json_object" }  // 强制返回JSON
+  }
+}
+请求参数（应急方案生成场景）
+json
+{
+  "Model": "doubao-pro-12b",
+  "Messages": [
+    {
+      "Role": "System",
+      "Content": "基于以下蛇类应急数据，生成结构化急救方案：\n{\"snakeName\":\"${snakeName}\",\"venomType\":\"${venomType}\",\"symptoms\":\"${symptoms}\",\"firstAid\":\"${firstAid}\",\"taboo\":\"${taboo}\"}\n要求：1. 分点说明急救步骤（每步不超过20字）；2. 突出禁忌事项；3. 语言口语化，避免专业术语。"
+    },
+    {
+      "Role": "User",
+      "Content": "生成上述蛇类的应急处理方案"
+    }
+  ],
+  "Parameters": {
+    "Temperature": 0.3,  // 中等随机性，保证信息准确且灵活
+    "MaxTokens": 500,
+    "ResponseFormat": { "Type": "text" }
+  }
+}
+响应格式
+json
+{
+  "ResponseMetadata": {
+    "RequestId": "chat-xxxx-xxxx",
+    "StatusCode": 200,
+    "Error": null
+  },
+  "Result": {
+    "Choices": [
+      {
+        "Message": {
+          "Role": "assistant",
+          "Content": "1. 保持镇定，缓慢移动\n2. 清水冲洗伤口5分钟\n3. 用布轻压止血（勿绑止血带）\n禁忌：不可用嘴吸毒液、不可切开伤口"
+        },
+        "FinishReason": "stop"  // 正常结束标识
+      }
+    ],
+    "Usage": {
+      "PromptTokens": 180,
+      "CompletionTokens": 120,
+      "TotalTokens": 300
+    }
+  }
+}
+处理逻辑补充
+文本解析校验：若模型返回的 JSON 格式错误（如字段缺失），使用预设规则兜底解析（如正则提取 “颜色：绿色” 等关键词）。
+方案准确性保障：生成方案后，通过规则引擎校验是否包含snake_emergency_info中的核心信息（如 “不可用止血带”），缺失则重新调用模型并追加提示 “必须包含禁忌事项”。
+五、核心业务流程伪代码（细化版）
+java
+运行
+// 1. 图片识别流程（补充错误处理与重试）
+public RecognitionResult recognizeByImage(String imageBase64, Long userId) {
+    // 图片预处理：压缩至2MB以内（避免模型调用失败）
+    String compressedImage = ImageUtils.compress(imageBase64, 2 * 1024 * 1024);
+    if (compressedImage == null) {
+        throw new BusinessException("图片格式错误，请上传JPG/PNG");
+    }
+
+    // 调用豆包视觉模型（带重试）
+    VisionResponse visionResp = retryTemplate.execute(context -> {
+        return doubaoVisionClient.recognize(compressedImage, "reptile");
+    }, 3);  // 最多重试3次
+
+    // 处理模型响应
+    if (visionResp.getResponseMetadata().getStatusCode() != 200) {
+        String errorMsg = visionResp.getResponseMetadata().getError().getMessage();
+        log.error("视觉模型调用失败：{}", errorMsg);
+        throw new BusinessException("识别服务暂不可用，请稍后再试");
+    }
+
+    // 匹配数据库蛇类（结合特征模糊查询）
+    List<SnakeCandidate> candidates = visionResp.getResult().getAnimals().stream()
+            .filter(animal -> animal.getConfidence() >= 0.5)  // 过滤低置信度结果
+            .map(animal -> {
+                SnakeInfo snake = snakeInfoMapper.matchByFeatures(
+                    animal.getFeatures().getColor(),
+                    animal.getFeatures().getPattern()
+                );
+                return new SnakeCandidate(
+                    snake.getSnakeId(),
+                    snake.getSnakeName(),
+                    snake.getImageUrl(),
+                    animal.getConfidence()
+                );
+            })
+            .collect(Collectors.toList());
+
+    // 记录识别记录（含模型元数据）
+    RecognitionRecord record = new RecognitionRecord();
+    record.setUserId(userId);
+    record.setImagePath(uploadImage(compressedImage));
+    record.setSnakeId(candidates.isEmpty() ? null : candidates.get(0).getSnakeId());
+    record.setRecognitionResult(JSON.toJSONString(candidates));
+    record.setRecognitionMetadata(JSON.toJSONString(
+        Map.of("requestId", visionResp.getResponseMetadata().getRequestId(),
+               "modelVersion", "2024-08-01")
+    ));
+    recognitionRecordMapper.insert(record);
+
+    return new RecognitionResult(record.getId(), candidates);
+}
+
+// 2. 生成应急方案流程（补充医院距离计算）
+public EmergencyPlan generatePlan(Long confirmedSnakeId, Double userLat, Double userLng) {
+    // 1. 查询数据库应急信息
+    SnakeEmergencyInfo emergencyInfo = snakeEmergencyMapper.selectBySnakeId(confirmedSnakeId);
+    if (emergencyInfo == null) {
+        throw new BusinessException("未找到该蛇类的应急信息");
+    }
+
+    // 2. 调用语言模型生成自然语言方案
+    String systemPrompt = String.format("基于以下数据生成急救方案：%s", JSON.toJSONString(emergencyInfo));
+    ChatResponse chatResp = doubaoChatClient.complete(systemPrompt, "生成应急方案");
+    String firstAidSteps = parseSteps(chatResp.getResult().getChoices().get(0).getMessage().getContent());
+
+    // 3. 查询附近有对应血清的医院（结合地图API计算距离）
+    List<HospitalSerumDTO> hospitals = serumInventoryMapper.selectHospitalsWithSerum(confirmedSnakeId);
+    List<NearbyHospital> nearbyHospitals = hospitals.stream()
+            .map(hospital -> {
+                // 调用高德地图API计算用户与医院的直线距离
+                double distance = MapApi.calculateDistance(
+                    userLat, userLng,
+                    hospital.getLatitude(), hospital.getLongitude()
+                );
+                return new NearbyHospital(
+                    hospital.getHospitalName(),
+                    hospital.getAddress(),
+                    String.format("%.1f公里", distance),
+                    hospital.getContactInfo()
+                );
+            })
+            .sorted(Comparator.comparing(NearbyHospital::getDistance))  // 按距离排序
+            .limit(3)  // 返回最近3家
+            .collect(Collectors.toList());
+
+    return new EmergencyPlan(
+        emergencyInfo.getSnakeName(),
+        emergencyInfo.getVenomType(),
+        emergencyInfo.getSymptomDescription(),
+        firstAidSteps,
+        emergencyInfo.getMedicalAttention(),
+        nearbyHospitals
+    );
+}
+六、缓存与日志设计（细化版）
+1. 缓存策略补充
+缓存键设计：
+问答缓存：qa:{md5(question)}（MD5 哈希避免长键存储）
+蛇类应急方案缓存：emergency:plan:{snakeId}
+更新机制：
+当snake_emergency_info表更新时（如通过后台管理接口），主动删除对应snakeId的方案缓存；
+问答缓存设置 24 小时过期，同时提供手动清理接口（供管理员操作）。
+缓存穿透防护：
+对无效请求（如 “被龙咬伤怎么办”），缓存空结果（有效期 10 分钟），避免重复调用模型。
+2. 日志记录补充
+模型调用日志：
+在recognition_metadata和action_metadata中必录：
+json
+{
+  "modelType": "vision/chat",  // 模型类型
+  "requestId": "req-xxxx",     // 豆包API返回的RequestId
+  "costMs": 800,               // 模型调用耗时（毫秒）
+  "tokenUsage": 300,           // 语言模型token消耗（仅chat场景）
+  "confidence": 0.92           // 视觉模型最高置信度（仅vision场景）
+}
+用户行为埋点：
+在user_action_log中记录关键节点：
+action_type=recognition_init：用户发起识别
+action_type=snake_confirmed：用户确认蛇类
+action_type=plan_viewed：用户查看应急方案
+便于统计转化漏斗（如 “识别→确认→查看方案” 的转化率）。
+现已开通的文字模型doubao-seed-1-6-251015
+        视觉模型doubao-seed-1-6-vision-250815
+        apikey是同一个api-key-20251209111530
+                  8370e071-1279-4636-9ab6-da098db74f0d

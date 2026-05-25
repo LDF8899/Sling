@@ -1,0 +1,1830 @@
+<template>
+  <div class="emergency-container">
+    <!-- 顶部导航栏 -->
+    <div class="top-navbar">
+      <div class="navbar-content">
+        <div class="logo-section">
+          <el-button icon="ArrowLeft" @click="goBack" circle></el-button>
+          <h2>应急处理</h2>
+        </div>
+      </div>
+    </div>
+
+    <div class="main-content">
+      <el-tabs v-model="activeTab" class="emergency-tabs" @tab-change="handleTabChange">
+        <!-- 图片识别模式 Tab -->
+        <el-tab-pane label="图片识别" name="image">
+          <div class="tab-content">
+            <el-row :gutter="24">
+              <!-- 图片上传区 -->
+              <el-col :span="24" :lg="12">
+                <div class="upload-section">
+                  <h3>上传伤口图片识别蛇类</h3>
+                  <div class="upload-area" @dragover.prevent @drop.prevent="handleDrop">
+                    <div class="upload-content" v-if="!uploadedImage">
+                      <i class="el-icon-picture-outline upload-icon"></i>
+                      <p>拖拽图片到此处或点击上传</p>
+                      <el-button type="primary" @click="triggerUpload" class="upload-btn">选择图片</el-button>
+                      <p class="hint">支持 JPG、PNG 格式，大小不超过 20MB（自动压缩优化）</p>
+                    </div>
+                    <div class="image-preview" v-else>
+                      <img :src="uploadedImage" alt="上传的图片" class="preview-img">
+                      <div class="preview-info">
+                        <span class="file-info">
+                          原始大小: {{ formatFileSize(rawFileSize) }} → 压缩后: {{ formatFileSize(compressedFileSize) }}
+                        </span>
+                      </div>
+                      <div class="preview-actions">
+                        <el-button type="primary" @click="retakePhoto">重新上传</el-button>
+                        <el-button type="success" @click="analyzeImage" :loading="analyzing">开始分析</el-button>
+                      </div>
+                    </div>
+                    <input
+                        type="file"
+                        ref="fileInput"
+                        accept="image/*"
+                        @change="handleFileSelect"
+                        style="display: none;"
+                    >
+                  </div>
+
+                  <div class="upload-actions">
+                    <el-button type="primary" plain @click="triggerUpload" class="extra-upload-btn">
+                      <i class="el-icon-upload2"></i> 上传文件
+                    </el-button>
+                    <div class="compression-info">
+                      <el-tooltip content="系统会自动压缩图片以提升识别速度，不影响识别精度">
+                        <i class="el-icon-info"></i> 自动图片优化
+                      </el-tooltip>
+                    </div>
+                  </div>
+                </div>
+              </el-col>
+
+              <!-- 分析结果区 -->
+              <el-col :span="24" :lg="12">
+                <div class="results-section">
+                  <h3>分析结果</h3>
+                  <div class="result-content" v-if="analysisResult">
+                    <!-- 分析成功 -->
+                    <div class="result-card success-result">
+                      <div class="result-header">
+                        <el-tag type="success" size="large">分析成功</el-tag>
+                        <span class="analysis-time">分析耗时: {{ analysisTime }}s</span>
+                      </div>
+
+                      <div class="markdown-result-wrapper">
+                        <div class="markdown-result" v-html="renderAnalysisResult(analysisResult)"></div>
+                      </div>
+
+                      <div class="find-medical-care">
+                        <el-button type="danger" plain size="large" @click="findMedicalCare">
+                          <i class="el-icon-office-building"></i> 附近可救治医院
+                        </el-button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="result-placeholder" v-else>
+                    <div class="placeholder-content">
+                      <i class="el-icon-document-copy placeholder-icon"></i>
+                      <p>上传图片后将在此显示分析结果</p>
+                      <div class="placeholder-tips">
+                        <el-tag size="small">提示</el-tag>
+                        <span>支持常见图片格式，系统会自动优化图片质量</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </el-col>
+            </el-row>
+          </div>
+        </el-tab-pane>
+
+        <!-- 问题咨询模式 Tab -->
+        <el-tab-pane label="问题咨询" name="question">
+          <div class="tab-content">
+            <el-card class="question-mode-card">
+              <template #header>
+                <div class="card-header">
+                  <span>输入问题获取应急处理建议</span>
+                </div>
+              </template>
+
+              <div class="question-section">
+                <el-input
+                  v-model="userQuestion"
+                  type="textarea"
+                  placeholder="请输入您的问题，例如：被眼镜蛇咬了怎么办？"
+                  class="question-input"
+                  :rows="4"
+                  @keyup.enter="submitQuestion"
+                />
+
+                <el-button
+                  type="primary"
+                  @click="submitQuestion"
+                  :loading="asking"
+                  :disabled="!userQuestion || asking"
+                  class="ask-btn"
+                >
+                  {{ asking ? '获取答案中...' : '获取应急建议' }}
+                </el-button>
+              </div>
+
+              <!-- 历史记录 -->
+              <div class="history-section" v-if="questionHistory.length > 0">
+                <div class="history-header">
+                  <h4>历史记录</h4>
+                  <el-button type="danger" size="small" @click="clearQuestionHistory" plain>清除历史记录</el-button>
+                </div>
+                <div class="history-list">
+                  <el-collapse v-model="activeHistory">
+                    <el-collapse-item
+                      v-for="(record, index) in questionHistory"
+                      :key="index"
+                      :name="index"
+                    >
+                      <template #title>
+                        <span class="history-question">{{ record.question }}</span>
+                      </template>
+                      <div class="history-answer" v-html="renderMarkdown(record.answer)"></div>
+                    </el-collapse-item>
+                  </el-collapse>
+                </div>
+              </div>
+
+              <!-- 回答结果展示 -->
+              <div v-if="answerResult" class="answer-result">
+                <h3>应急处理建议</h3>
+                <div class="result-content" v-html="renderMarkdown(answerResult)"></div>
+                <div class="actions">
+                  <el-button type="primary" @click="saveAnswerToLocal">保存到本地</el-button>
+                  <el-button @click="printAnswer">打印建议</el-button>
+                </div>
+              </div>
+            </el-card>
+          </div>
+        </el-tab-pane>
+
+        <!-- 学名查询模式 Tab -->
+        <el-tab-pane label="学名查询" name="name">
+          <div class="tab-content">
+            <el-card class="name-mode-card">
+              <template #header>
+                <div class="card-header">
+                  <span>输入已知蛇类学名查询应急指南</span>
+                </div>
+              </template>
+
+              <div class="name-query-section">
+                <el-input
+                  v-model="snakeName"
+                  placeholder="请输入蛇类学名，如：眼镜蛇"
+                  class="snake-name-input"
+                  @keyup.enter="queryByName"
+                  @input="updateSuggestions"
+                >
+                  <template #append>
+                    <el-button
+                      type="primary"
+                      @click="queryByName"
+                      :loading="querying"
+                      :disabled="!snakeName || querying"
+                    >
+                      查询
+                    </el-button>
+                  </template>
+                </el-input>
+
+                <div class="auto-complete-suggestions" v-if="suggestions.length > 0">
+                  <el-tag
+                    v-for="suggestion in suggestions"
+                    :key="suggestion"
+                    @click="selectSuggestion(suggestion)"
+                    class="suggestion-tag"
+                  >
+                    {{ suggestion }}
+                  </el-tag>
+                </div>
+
+                <!-- 历史记录 -->
+                <div class="history-section" v-if="historyRecords.length > 0">
+                  <div class="history-header">
+                    <h4>历史记录</h4>
+                    <el-button type="danger" size="small" @click="clearNameHistory" plain>清除历史记录</el-button>
+                  </div>
+                  <div class="history-list">
+                    <el-tag
+                      v-for="record in historyRecords" 
+                      :key="record.timestamp"
+                      @click="selectHistory(record)"
+                      class="history-tag"
+                    >
+                      {{ record.snakeName }}
+                    </el-tag>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 查询结果展示 -->
+              <div v-if="emergencyGuide" class="emergency-guide">
+                <h3>{{ emergencyGuide.snakeName }} 应急处理指南</h3>
+                <div class="guide-content">
+                  <!-- 蛇类图片 -->
+                  <div class="image-container" v-if="getImageUrls().length > 0">
+                    <div class="image-grid">
+                      <img
+                        v-for="(imgUrl, index) in getImageUrls()"
+                        :key="index"
+                        :src="getImageUrlProxy(imgUrl)"
+                        :alt="`${emergencyGuide.snakeName}_${index+1}`"
+                        @load="handleImageLoad"
+                        @error="handleImageError"
+                        class="snake-image-display multiple"
+                        :class="{'error': imageLoadFailed}"
+                      />
+                    </div>
+                    <div class="image-fallback-message" v-show="imageLoadFailed && getImageUrls().length === 0">
+                      图片加载失败，无法显示 {{ emergencyGuide.snakeName }} 的图片
+                    </div>
+                  </div>
+
+                  <!-- 基本信息 -->
+                  <el-descriptions :column="1" border>
+                    <el-descriptions-item label="毒液类型">{{ emergencyGuide.venomType }}</el-descriptions-item>
+                    <el-descriptions-item label="别名">{{ emergencyGuide.snakeAlias }}</el-descriptions-item>
+                    <el-descriptions-item label="典型症状">
+                      <div v-html="renderMarkdown(emergencyGuide.symptomDescription)"></div>
+                    </el-descriptions-item>
+                    <el-descriptions-item label="紧急处理">
+                      <div v-html="renderMarkdown(emergencyGuide.emergencyTreatment)"></div>
+                    </el-descriptions-item>
+                    <el-descriptions-item label="医疗注意">
+                      <div v-html="renderMarkdown(emergencyGuide.medicalAttention)"></div>
+                    </el-descriptions-item>
+                  </el-descriptions>
+
+                  <div class="actions">
+                    <el-button type="primary" @click="saveToLocal">保存到本地</el-button>
+                    <el-button @click="printGuide">打印指南</el-button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 错误信息展示 -->
+              <div v-if="errorMessage" class="error-message">
+                <el-alert
+                  :title="errorMessage"
+                  type="error"
+                  show-icon
+                  :closable="false"
+                />
+              </div>
+            </el-card>
+          </div>
+        </el-tab-pane>
+      </el-tabs>
+    </div>
+
+    <!-- 加载动画遮罩 -->
+    <div class="loading-mask" v-if="analyzing">
+      <el-card class="loading-card">
+        <div class="loading-content">
+          <i class="el-icon-loading" style="font-size: 36px; color: #10b981;"></i>
+          <p>正在分析中，请稍候...</p>
+          <el-progress :percentage="analysisProgress" :stroke-width="8" color="#10b981"></el-progress>
+        </div>
+      </el-card>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { ElMessage, ElNotification } from 'element-plus'
+import api from '@/services/api'
+import MarkdownIt from 'markdown-it'
+
+
+// 初始化 Markdown 渲染器
+const md = new MarkdownIt({
+  html: true,
+  linkify: true,
+  typographer: true,
+  breaks: true,
+  xhtmlOut: true
+})
+
+// 响应式数据
+const activeTab = ref('image')
+const userQuestion = ref('')
+const asking = ref(false)
+const answerResult = ref('')
+const querying = ref(false)
+const emergencyGuide = ref(null)
+const snakeName = ref('')
+const suggestions = ref([])
+const errorMessage = ref('')
+const historyRecords = ref([])
+const questionHistory = ref([])
+const activeHistory = ref([])
+const imageLoadFailed = ref(false)
+const currentImageSrc = ref('')  // 添加当前图片源
+const imageLoading = ref(false)  // 图片加载状态
+
+// 图片上传相关数据
+const uploadedImage = ref(null)
+const uploadedImageFile = ref(null)
+const rawFileSize = ref(0)
+const compressedFileSize = ref(0)
+const analyzing = ref(false)
+const analysisResult = ref('')
+const analysisTime = ref(0)
+const analysisProgress = ref(0)
+const progressTimer = ref(null)
+const fileInput = ref(null)
+
+// 路由实例
+const route = useRoute()
+const router = useRouter()
+
+// 常见蛇类名称，用于自动补全
+const commonSnakeNames = [
+  '银环蛇', '金环蛇', '竹叶青', '蝮蛇', '五步蛇',
+  '眼镜蛇', '眼镜王蛇', '蝰蛇', '烙铁头蛇', '白唇竹叶青'
+]
+
+// 图片引用
+const snakeImage = ref(null)
+
+// 获取图片URL数组
+const getImageUrls = () => {
+  if (!emergencyGuide.value || !emergencyGuide.value.imageUrl) {
+    return [];
+  }
+
+  // 从imageUrl中提取基础名称，构建多张图片的URL
+  const snakeName = emergencyGuide.value.snakeName;
+  const mainImageUrl = emergencyGuide.value.imageUrl;
+
+  // 从主图片URL中提取基础名称（去掉编号和扩展名）
+  const baseName = mainImageUrl.replace(/(_\d+)?\.\w+$/, '');
+
+  // 构建多张图片的URL数组
+  const imageUrls = [];
+  for (let i = 1; i <= 3; i++) { // 假设有3张图片
+    const imageUrl = `${baseName}_${i}.jpg`;
+    imageUrls.push(imageUrl);
+  }
+
+  return imageUrls.filter(url => url && url.trim() !== '');
+}
+
+// 获取图片代理URL
+const getImageUrlProxy = (imageUrl) => {
+  if (!imageUrl) return null;
+
+  // 如果图片URL是在线URL，则使用后端代理接口
+  if (imageUrl.startsWith('http')) {
+    const encodedUrl = encodeURIComponent(imageUrl)
+    return `/api/emergency/images/online?url=${encodedUrl}`
+  } else {
+    // 如果是本地图片名称（如 蛇名.jpg），则使用本地图片接口
+    const encodedPath = encodeURIComponent(imageUrl);
+    return `/api/emergency/images/local?path=${encodedPath}`;
+  }
+}
+
+// 获取后端代理的图片URL
+
+// 获取后端代理的图片URL
+const getBackendImageUrl = (emergencyGuide) => {
+  if (emergencyGuide && emergencyGuide.imageUrl) {
+    // 如果图片URL是在线URL，则使用后端代理接口
+    if (emergencyGuide.imageUrl.startsWith('http')) {
+      // 使用后端代理接口访问在线图片
+      const encodedUrl = encodeURIComponent(emergencyGuide.imageUrl)
+      return `/api/emergency/images/online?url=${encodedUrl}`
+    } else {
+      // 如果是本地图片名称（如 蛇名.jpg），则使用本地图片接口
+      // 提取文件名部分，不包含路径
+      let fileName = emergencyGuide.imageUrl;
+      if (fileName.includes('/')) {
+        // 如果路径中包含斜杠，提取最后一部分作为文件名
+        fileName = fileName.split('/').pop();
+      }
+      const encodedPath = encodeURIComponent(fileName);
+      return `/api/emergency/images/local?path=${encodedPath}`;
+    }
+  }
+  return null
+}
+
+// 处理图片加载成功
+const handleImageLoad = () => {
+  imageLoading.value = false
+  imageLoadFailed.value = false
+  console.log('图片加载成功')
+}
+
+// 处理图片加载错误
+const handleImageError = async (event) => {
+  console.error('图片加载失败:', event)
+  imageLoading.value = false
+
+  // 如果当前使用的是后端代理URL，尝试使用备用方案
+  if (emergencyGuide.value && emergencyGuide.value.imageUrl) {
+    if (emergencyGuide.value.imageUrl.startsWith('http')) {
+      // 如果原始URL是在线图片，尝试直接使用（可能绕过后端代理，但仍可能遇到CORS问题）
+      currentImageSrc.value = emergencyGuide.value.imageUrl
+      imageLoadFailed.value = false
+      console.log('尝试使用原始图片URL作为备用方案')
+    } else {
+      // 如果原始URL是本地文件名，尝试构建本地文件路径
+      const localFileName = emergencyGuide.value.imageUrl
+      if (localFileName && !localFileName.startsWith('/')) {
+        // 如果是文件名，尝试构建本地路径
+        currentImageSrc.value = `/api/emergency/images/local?path=${encodeURIComponent(localFileName)}`
+        imageLoadFailed.value = false
+        console.log('尝试使用本地图片路径作为备用方案')
+      } else {
+        imageLoadFailed.value = true
+        ElMessage.warning('蛇类图片加载失败，将继续显示其他信息')
+      }
+    }
+  } else {
+    imageLoadFailed.value = true
+    ElMessage.warning('蛇类图片加载失败，将继续显示其他信息')
+  }
+}
+
+// 清空结果
+const clearResults = () => {
+  answerResult.value = ''
+  emergencyGuide.value = null
+  snakeName.value = ''
+  suggestions.value = []
+  errorMessage.value = ''
+  userQuestion.value = ''
+  imageLoadFailed.value = false
+
+  // 清空图片相关数据
+  uploadedImage.value = null
+  uploadedImageFile.value = null
+  rawFileSize.value = 0
+  compressedFileSize.value = 0
+  analysisResult.value = ''
+  analysisTime.value = 0
+}
+
+// 加载历史记录
+const loadHistory = () => {
+  const history = localStorage.getItem('emergency_guide_history')
+  if (history) {
+    historyRecords.value = JSON.parse(history)
+  }
+
+  const questionHistoryStr = localStorage.getItem('emergency_question_history')
+  if (questionHistoryStr) {
+    questionHistory.value = JSON.parse(questionHistoryStr)
+  }
+}
+
+// 保存问题咨询历史记录
+const saveQuestionToHistory = (question, answer) => {
+  const record = {
+    question,
+    answer,
+    timestamp: new Date().getTime(),
+    date: new Date().toLocaleString()
+  }
+
+  // 添加到历史记录开头
+  questionHistory.value.unshift(record)
+
+  // 限制历史记录数量为10条
+  if (questionHistory.value.length > 10) {
+    questionHistory.value = questionHistory.value.slice(0, 10)
+  }
+
+  // 保存到localStorage
+  localStorage.setItem('emergency_question_history', JSON.stringify(questionHistory.value))
+}
+
+// 保存学名查询历史记录
+const saveNameToHistory = (snakeName) => {
+  const record = {
+    snakeName,
+    timestamp: new Date().getTime(),
+    date: new Date().toLocaleString()
+  }
+
+  // 添加到历史记录开头
+  historyRecords.value.unshift(record)
+
+  // 限制历史记录数量为10条
+  if (historyRecords.value.length > 10) {
+    historyRecords.value = historyRecords.value.slice(0, 10)
+  }
+
+  // 保存到localStorage
+  localStorage.setItem('emergency_guide_history', JSON.stringify(historyRecords.value))
+}
+
+// 处理 Tab 切换
+const handleTabChange = () => {
+  // 清空之前的结果
+  clearResults()
+}
+
+// 提交问题
+const submitQuestion = async () => {
+  if (!userQuestion.value.trim()) {
+    ElMessage.warning('请输入问题')
+    return
+  }
+
+  asking.value = true
+  try {
+    const response = await api.emergency.askEmergencyQuestion(userQuestion.value.trim())
+
+    if (response.data.code === 200) {
+      answerResult.value = response.data.data
+      saveQuestionToHistory(userQuestion.value.trim(), response.data.data)
+      ElMessage.success('获取应急建议成功')
+    } else {
+      ElMessage.error(response.data.message || '获取应急建议失败')
+    }
+  } catch (error) {
+    console.error('获取应急建议失败:', error)
+    ElMessage.error('获取应急建议失败: ' + (error.message || '未知错误'))
+  } finally {
+    asking.value = false
+  }
+}
+
+// 根据学名查询
+const queryByName = async () => {
+  if (!snakeName.value.trim()) {
+    ElMessage.warning('请输入蛇类学名')
+    return
+  }
+
+  querying.value = true
+  errorMessage.value = ''
+  imageLoadFailed.value = false // 重置图片加载状态
+  currentImageSrc.value = ''    // 重置当前图片源
+  imageLoading.value = true     // 设置图片加载状态
+
+  try {
+    // 首先尝试通过学名查询接口获取完整信息（包括AI生成的内容）
+    const response = await api.emergency.getEmergencyGuideByName(snakeName.value.trim())
+
+    if (response.data.code === 200) {
+      emergencyGuide.value = response.data.data
+      // 初始化图片源
+      if (emergencyGuide.value && emergencyGuide.value.imageUrl) {
+        currentImageSrc.value = getBackendImageUrl(emergencyGuide.value)
+      }
+      saveNameToHistory(snakeName.value.trim())
+      ElMessage.success('查询成功')
+    } else {
+      errorMessage.value = response.data.message || '未找到该蛇类的应急信息'
+      emergencyGuide.value = null
+    }
+  } catch (error) {
+    console.error('查询失败:', error)
+    errorMessage.value = '查询失败: ' + (error.message || '未知错误')
+    emergencyGuide.value = null
+  } finally {
+    querying.value = false
+    imageLoading.value = false
+  }
+}
+
+// 输入学名时更新建议列表
+const updateSuggestions = () => {
+  if (!snakeName.value.trim()) {
+    suggestions.value = []
+    return
+  }
+
+  const input = snakeName.value.trim()
+  suggestions.value = commonSnakeNames.filter(name =>
+    name.includes(input) && name !== input
+  )
+}
+
+// 选择自动补全建议
+const selectSuggestion = (suggestion) => {
+  snakeName.value = suggestion
+  suggestions.value = []
+  queryByName()
+}
+
+// 选择历史记录
+const selectHistory = (record) => {
+  snakeName.value = record.snakeName
+  queryByName()
+}
+
+// 渲染 Markdown 内容
+const renderMarkdown = (content) => {
+  if (!content) return ''
+  // 确保传入的是字符串
+  if (typeof content !== 'string') {
+    console.warn('renderMarkdown expects a string, got:', content)
+    // 如果是对象，尝试转换为字符串
+    if (typeof content === 'object') {
+      try {
+        content = JSON.stringify(content, null, 2)
+      } catch (e) {
+        content = String(content)
+      }
+    } else {
+      content = String(content)
+    }
+  }
+  // 处理后端返回的多余换行/空格
+  const cleanedText = content.replace(/\n{3,}/g, '\n\n').trim()
+  try {
+    return md.render(cleanedText)
+  } catch (e) {
+    console.error('Markdown rendering error:', e)
+    return `<pre>${cleanedText}</pre>`
+  }
+}
+
+// 渲染分析结果
+const renderAnalysisResult = (result) => {
+  // 如果结果为空，返回空字符串
+  if (!result) return ''
+
+  // 如果结果是数组，将其转换为合适的格式
+  if (Array.isArray(result)) {
+    if (result.length === 0) {
+      return '<p>未检测到任何蛇类信息。</p>'
+    }
+
+    // 构建显示内容
+    let content = '<h2>分析结果</h2>'
+
+    result.forEach((snake, index) => {
+      content += `
+        <div class="snake-result-item">
+          <h3>${index + 1}. ${snake.snakeName || '未知蛇类'}</h3>
+          <div class="snake-details">
+            <p><strong>毒液类型：</strong>${snake.venomType || '未知'}</p>
+            <p><strong>别名：</strong>${snake.snakeAlias || '无'}</p>
+          </div>
+
+          <div class="emergency-section">
+            <h4>典型症状：</h4>
+            ${snake.symptomDescription ? md.render(snake.symptomDescription) : '<p>暂无症状描述</p>'}
+          </div>
+
+          <div class="emergency-section">
+            <h4>紧急处理方法：</h4>
+            ${snake.emergencyTreatment ? md.render(snake.emergencyTreatment) : '<p>暂无处理建议</p>'}
+          </div>
+
+          <div class="emergency-section">
+            <h4>医疗注意事项：</h4>
+            ${snake.medicalAttention ? md.render(snake.medicalAttention) : '<p>暂无医疗注意事项</p>'}
+          </div>
+        </div>
+      `
+    })
+
+    return content
+  }
+
+  // 如果是字符串，直接渲染
+  if (typeof result === 'string') {
+    return renderMarkdown(result)
+  }
+
+  // 其他情况，转换为字符串
+  console.warn('Unexpected analysis result type:', typeof result, result)
+  return `<pre>${JSON.stringify(result, null, 2)}</pre>`
+}
+
+// 保存答案到本地
+const saveAnswerToLocal = () => {
+  if (!answerResult.value) {
+    ElMessage.warning('请先获取应急建议')
+    return
+  }
+
+  const answerData = {
+    question: userQuestion.value,
+    answer: answerResult.value,
+    savedAt: new Date().toLocaleString()
+  }
+
+  localStorage.setItem(`emergency_answer_${Date.now()}`, JSON.stringify(answerData))
+  ElNotification({
+    title: '保存成功',
+    message: '应急建议已保存到本地',
+    type: 'success'
+  })
+}
+
+// 打印应急建议
+const printAnswer = () => {
+  if (!answerResult.value) {
+    ElMessage.warning('请先获取应急建议')
+    return
+  }
+
+  const printContent = `
+    <html>
+      <head>
+        <title>应急处理建议</title>
+        <style>
+          body { font-family: Arial, sans-serif; }
+          h1, h2, h3 { color: #333; }
+          .section { margin-bottom: 20px; }
+          .label { font-weight: bold; }
+        </style>
+      </head>
+      <body>
+        <h1>应急处理建议</h1>
+        <div class="section">
+          <div class="label">问题:</div>
+          <div>${userQuestion.value}</div>
+        </div>
+        <div class="section">
+          <div class="label">建议:</div>
+          <div>${answerResult.value}</div>
+        </div>
+      </body>
+    </html>
+  `
+
+  const printWindow = window.open('', '_blank')
+  printWindow.document.write(printContent)
+  printWindow.document.close()
+  printWindow.print()
+}
+
+// 保存指南到本地
+const saveToLocal = () => {
+  if (!emergencyGuide.value) {
+    ElMessage.warning('请先获取应急指南')
+    return
+  }
+
+  const guideData = {
+    ...emergencyGuide.value,
+    savedAt: new Date().toLocaleString()
+  }
+
+  localStorage.setItem(`emergency_guide_${emergencyGuide.value.snakeName}`, JSON.stringify(guideData))
+  ElNotification({
+    title: '保存成功',
+    message: `${emergencyGuide.value.snakeName} 应急指南已保存到本地`,
+    type: 'success'
+  })
+}
+
+// 打印指南
+const printGuide = () => {
+  if (!emergencyGuide.value) {
+    ElMessage.warning('请先获取应急指南')
+    return
+  }
+
+  const printContent = `
+    <html>
+      <head>
+        <title>${emergencyGuide.value.snakeName} 应急处理指南</title>
+        <style>
+          body { font-family: Arial, sans-serif; }
+          h1, h2, h3 { color: #333; }
+          .section { margin-bottom: 20px; }
+          .label { font-weight: bold; }
+        </style>
+      </head>
+      <body>
+        <h1>${emergencyGuide.value.snakeName} 应急处理指南</h1>
+        <div class="section">
+          <div class="label">毒液类型:</div>
+          <div>${emergencyGuide.value.venomType}</div>
+        </div>
+        <div class="section">
+          <div class="label">别名:</div>
+          <div>${emergencyGuide.value.snakeAlias}</div>
+        </div>
+        <div class="section">
+          <div class="label">典型症状:</div>
+          <div>${emergencyGuide.value.symptomDescription}</div>
+        </div>
+        <div class="section">
+          <div class="label">紧急处理:</div>
+          <div>${emergencyGuide.value.emergencyTreatment}</div>
+        </div>
+        <div class="section">
+          <div class="label">医疗注意:</div>
+          <div>${emergencyGuide.value.medicalAttention}</div>
+        </div>
+      </body>
+    </html>
+  `
+
+  const printWindow = window.open('', '_blank')
+  printWindow.document.write(printContent)
+  printWindow.document.close()
+  printWindow.print()
+}
+
+// 图片上传相关方法
+const formatFileSize = (bytes) => {
+  if (!bytes || isNaN(bytes)) return '0 B'
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+}
+
+const startProgressSimulation = () => {
+  analysisProgress.value = 0
+  progressTimer.value = setInterval(() => {
+    if (analysisProgress.value < 90) {
+      analysisProgress.value += Math.random() * 10
+      if (analysisProgress.value > 90) {
+        analysisProgress.value = 90
+      }
+    }
+  }, 500)
+}
+
+const goBack = () => {
+  window.history.go(-1)
+}
+
+const triggerUpload = () => {
+  fileInput.value.click()
+}
+
+const handleFileSelect = (event) => {
+  const file = event.target.files[0]
+  if (file) {
+    rawFileSize.value = file.size
+    compressImage(file)
+  }
+}
+
+const handleDrop = (event) => {
+  const file = event.dataTransfer.files[0]
+  if (file && file.type.startsWith('image/')) {
+    rawFileSize.value = file.size
+    compressImage(file)
+  }
+}
+
+const compressImage = (file) => {
+  const reader = new FileReader()
+  reader.readAsDataURL(file)
+
+  reader.onload = (e) => {
+    const imgSrc = e.target.result || ''
+    const img = new Image()
+    img.src = imgSrc
+
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+
+      let width = img.width || 800
+      let height = img.height || 600
+
+      const maxWidth = 1920
+      const maxHeight = 1080
+
+      if (width > 0 && height > 0) {
+        if (width > maxWidth) {
+          height = height * (maxWidth / width)
+          width = maxWidth
+        }
+        if (height > maxHeight) {
+          width = width * (maxHeight / height)
+          height = maxHeight
+        }
+      }
+
+      canvas.width = Math.round(width)
+      canvas.height = Math.round(height)
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+
+      let quality = 0.8
+      if (file.size > 5 * 1024 * 1024) {
+        quality = 0.6
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        quality = 0.4
+      }
+
+      canvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              ElMessage.error('图片压缩失败，请重试')
+              return
+            }
+
+            compressedFileSize.value = blob.size
+            uploadedImageFile.value = new File([blob], file.name, {
+              type: file.type || 'image/jpeg',
+              lastModified: Date.now()
+            })
+
+            const previewReader = new FileReader()
+            previewReader.onload = (previewEvent) => {
+              uploadedImage.value = previewEvent.target.result
+            }
+            previewReader.readAsDataURL(blob)
+
+            const savedPercent = Math.round((1 - blob.size / file.size) * 100)
+            ElMessage.success(`图片压缩完成，节省${savedPercent}%存储空间`)
+          },
+          file.type || 'image/jpeg',
+          quality
+      )
+    }
+
+    img.onerror = () => {
+      ElMessage.error('图片加载失败，请选择有效的图片文件')
+    }
+  }
+
+  reader.onerror = () => {
+    ElMessage.error('文件读取失败，请重试')
+  }
+}
+
+const retakePhoto = () => {
+  uploadedImage.value = null
+  uploadedImageFile.value = null
+  rawFileSize.value = 0
+  compressedFileSize.value = 0
+  analysisResult.value = ''
+  analysisTime.value = 0
+}
+
+const analyzeImage = async () => {
+  if (!uploadedImage.value) {
+    ElMessage.warning('请先上传图片')
+    return
+  }
+
+  analyzing.value = true
+  startProgressSimulation()
+  const startTime = Date.now()
+
+  try {
+    const formData = new FormData()
+    formData.append('image', uploadedImageFile.value)
+
+    const response = await api.emergency.analyzeWoundImage(formData)
+
+    analysisTime.value = ((Date.now() - startTime) / 1000).toFixed(1)
+    const resultData = response.data
+
+    if (resultData && resultData.code === 200 && resultData.data) {
+      // 确保数据是数组格式
+      if (Array.isArray(resultData.data)) {
+        analysisResult.value = resultData.data
+      } else {
+        // 如果不是数组，包装成数组
+        analysisResult.value = [resultData.data]
+      }
+    } else {
+      analysisResult.value = []
+    }
+
+    ElMessage.success('分析完成')
+  } catch (error) {
+    console.error('分析失败:', error)
+    let errorMsg = '分析失败'
+    if (error.message && error.message.includes('timeout')) {
+      errorMsg = '分析请求超时，请检查网络或后端服务'
+    } else if (error.response?.data?.message) {
+      errorMsg += ': ' + error.response.data.message
+    } else if (error.message) {
+      errorMsg += ': ' + error.message
+    } else {
+      errorMsg += ': 未知错误'
+    }
+    ElMessage.error(errorMsg)
+  } finally {
+    analyzing.value = false
+    analysisProgress.value = 100
+    clearInterval(progressTimer.value)
+    setTimeout(() => {
+      analysisProgress.value = 0
+    }, 1000)
+  }
+}
+
+const findMedicalCare = () => {
+  ElMessage.info('正在跳转到寻医页面...')
+}
+
+// 清除问题咨询历史记录
+const clearQuestionHistory = () => {
+  questionHistory.value = []
+  localStorage.removeItem('emergency_question_history')
+  ElMessage.success('问题咨询历史记录已清除')
+}
+
+// 清除学名查询历史记录
+const clearNameHistory = () => {
+  historyRecords.value = []
+  localStorage.removeItem('emergency_guide_history')
+  ElMessage.success('学名查询历史记录已清除')
+}
+
+// 清除所有问答缓存（后端）
+const clearAllQaCache = async () => {
+  try {
+    const response = await api.emergency.clearQaCache()
+    if (response.data.code === 200) {
+      ElMessage.success('问答缓存已清除')
+    } else {
+      ElMessage.error(response.data.message || '清除问答缓存失败')
+    }
+  } catch (error) {
+    console.error('清除问答缓存失败:', error)
+    ElMessage.error('清除问答缓存失败: ' + (error.message || '未知错误'))
+  }
+}
+
+// 组件挂载时的操作
+onMounted(() => {
+  loadHistory()
+
+  // 检查 URL 参数，如果有 snakeName 和 tab 参数，则自动切换到学名查询模式并执行查询
+  const { snakeName: urlSnakeName, tab } = route.query
+
+  if (tab === 'name' && urlSnakeName) {
+    // 切换到学名查询标签
+    activeTab.value = 'name'
+
+    // 设置蛇类名称
+    snakeName.value = urlSnakeName
+
+    // 自动执行查询
+    queryByName()
+  }
+})
+</script>
+
+<style scoped>
+.emergency-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  padding: 0;
+  box-sizing: border-box;
+  position: relative;
+  font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+
+/* 顶部导航栏 */
+.top-navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid #e2e8f0;
+  z-index: 1000;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.06);
+}
+
+.navbar-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 24px;
+  height: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.logo-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.logo-section h2 {
+  margin: 0;
+  color: #059669;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+/* 主要内容区 */
+.main-content {
+  padding: 84px 24px 40px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.emergency-tabs {
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+  background: white;
+}
+
+.tab-content {
+  padding: 20px;
+}
+
+.question-mode-card,
+.name-mode-card {
+  border: none;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+  font-weight: bold;
+  font-size: 16px;
+  color: #333;
+}
+
+.question-section {
+  max-width: 800px;
+  margin: 0 auto 30px;
+}
+
+.question-input {
+  margin-bottom: 20px;
+}
+
+.ask-btn {
+  width: 100%;
+}
+
+.answer-result {
+  margin-top: 30px;
+  padding: 20px;
+  background-color: #f5f7fa;
+  border-radius: 8px;
+}
+
+.answer-result h3 {
+  margin-top: 0;
+  color: #333;
+}
+
+.result-content {
+  white-space: pre-wrap;
+  line-height: 1.6;
+}
+
+.name-query-section {
+  max-width: 600px;
+  margin: 0 auto 30px;
+}
+
+.snake-name-input {
+  margin-bottom: 15px;
+}
+
+.auto-complete-suggestions {
+  text-align: left;
+  margin-bottom: 20px;
+}
+
+.suggestion-tag {
+  margin-right: 10px;
+  margin-bottom: 10px;
+  cursor: pointer;
+}
+
+.history-section {
+  margin-top: 30px;
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.history-header h4 {
+  margin: 0;
+}
+
+.history-list {
+  text-align: left;
+}
+
+.history-tag {
+  margin-right: 10px;
+  margin-bottom: 10px;
+  cursor: pointer;
+}
+
+.history-question {
+  font-weight: bold;
+  color: #333;
+}
+
+.history-answer {
+  white-space: pre-wrap;
+  padding: 10px;
+  background-color: #f9f9f9;
+  border-radius: 4px;
+}
+
+.error-message {
+  margin-top: 20px;
+}
+
+.actions {
+  margin-top: 20px;
+  text-align: center;
+}
+
+/* 图片上传区域 */
+.upload-section, .results-section {
+  background: white;
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
+  margin-bottom: 24px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.upload-section:hover, .results-section:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.06);
+}
+
+.upload-section h3, .results-section h3 {
+  margin-top: 0;
+  margin-bottom: 24px;
+  font-size: 18px;
+  color: #1e293b;
+  font-weight: 600;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 12px;
+  position: relative;
+}
+
+.upload-section h3::after, .results-section h3::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 60px;
+  height: 2px;
+  background: #059669;
+  border-radius: 1px;
+}
+
+/* 上传区域 */
+.upload-area {
+  border: 2px dashed #e2e8f0;
+  border-radius: 16px;
+  padding: 48px 24px;
+  text-align: center;
+  transition: all 0.3s ease;
+  margin-bottom: 24px;
+  background: #f8fafc;
+}
+
+.upload-area:hover {
+  border-color: #059669;
+  background: #f0fdf4;
+}
+
+.upload-icon {
+  font-size: 56px;
+  color: #94a3b8;
+  margin-bottom: 20px;
+  transition: color 0.3s ease;
+}
+
+.upload-area:hover .upload-icon {
+  color: #059669;
+}
+
+.upload-content p {
+  margin: 12px 0;
+  color: #475569;
+  font-size: 15px;
+}
+
+.upload-btn {
+  margin-top: 8px;
+  padding: 10px 24px;
+  font-size: 15px;
+  border-radius: 8px;
+  background: #059669;
+  border-color: #059669;
+}
+
+.hint {
+  font-size: 13px;
+  color: #64748b;
+  margin-top: 16px !important;
+}
+
+.preview-img {
+  max-width: 100%;
+  max-height: 320px;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.preview-info {
+  margin-bottom: 20px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.file-info {
+  background: #f1f5f9;
+  padding: 6px 12px;
+  border-radius: 6px;
+}
+
+.preview-actions {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.upload-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 16px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.extra-upload-btn {
+  padding: 9px 20px;
+  border-radius: 8px;
+  border-color: #059669;
+  color: #059669;
+}
+
+.compression-info {
+  font-size: 13px;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* 结果区域 */
+.result-placeholder {
+  text-align: center;
+  padding: 60px 24px;
+  color: #64748b;
+  background: #f8fafc;
+  border-radius: 12px;
+}
+
+.placeholder-content {
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.placeholder-icon {
+  font-size: 64px;
+  margin-bottom: 20px;
+  color: #cbd5e1;
+}
+
+.placeholder-tips {
+  margin-top: 16px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.result-card {
+  border-radius: 16px;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.success-result {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border: 1px solid #bbf7d0;
+}
+
+.success-result::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 120px;
+  height: 120px;
+  background: rgba(16, 185, 129, 0.05);
+  border-radius: 50%;
+  transform: translate(40%, -40%);
+}
+
+.result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.analysis-time {
+  font-size: 14px;
+  color: #065f46;
+  background: rgba(16, 185, 129, 0.1);
+  padding: 4px 12px;
+  border-radius: 12px;
+}
+
+/* Markdown容器样式 */
+.markdown-result-wrapper {
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.markdown-result, .analysis-result {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  line-height: 1.8;
+}
+
+.snake-result-item {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  background-color: #f8fafc;
+}
+</style>
+
+.snake-result-item h3 {
+  color: #059669;
+  margin-top: 0;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 8px;
+}
+
+.snake-details {
+  background: #e2f8f0;
+  padding: 12px;
+  border-radius: 6px;
+  margin: 12px 0;
+}
+
+.emergency-section {
+  margin: 16px 0;
+}
+
+.emergency-section h4 {
+  color: #065f46;
+  margin-bottom: 8px;
+}
+
+/* 细化Markdown内部元素样式 */
+.markdown-result :deep(h1),
+.markdown-result :deep(h2),
+.markdown-result :deep(h3),
+.markdown-result :deep(h4),
+.analysis-result :deep(h1),
+.analysis-result :deep(h2),
+.analysis-result :deep(h3),
+.analysis-result :deep(h4) {
+  color: #065f46;
+  margin: 1.5em 0 0.8em;
+  font-weight: 600;
+}
+
+.markdown-result :deep(h1) {
+  font-size: 22px;
+  border-bottom: 2px solid #e5e7eb;
+  padding-bottom: 0.5em;
+}
+
+.markdown-result :deep(h2) {
+  font-size: 20px;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 0.4em;
+}
+
+.markdown-result :deep(h3) {
+  font-size: 18px;
+}
+
+.markdown-result :deep(p),
+.analysis-result :deep(p) {
+  margin: 1em 0;
+  color: #334155;
+  line-height: 1.8;
+}
+
+.markdown-result :deep(strong),
+.analysis-result :deep(strong) {
+  color: #1e293b;
+  font-weight: 700;
+}
+
+.markdown-result :deep(em),
+.analysis-result :deep(em) {
+  color: #4b5563;
+  font-style: italic;
+}
+
+.markdown-result :deep(ul),
+.markdown-result :deep(ol),
+.analysis-result :deep(ul),
+.analysis-result :deep(ol) {
+  margin: 1em 0;
+  padding-left: 2em;
+  color: #334155;
+}
+
+.markdown-result :deep(li),
+.analysis-result :deep(li) {
+  margin: 0.5em 0;
+  line-height: 1.8;
+}
+
+.find-medical-care {
+  text-align: center;
+  padding-top: 24px;
+  border-top: 1px solid #bbf7d0;
+}
+
+.find-medical-care .el-button {
+  padding: 10px 32px;
+  border-radius: 8px;
+  font-size: 15px;
+}
+
+/* 加载遮罩 */
+.loading-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+.loading-card {
+  width: 400px;
+  padding: 32px;
+  border-radius: 16px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+  text-align: center;
+  border: none;
+}
+
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.loading-content p {
+  margin: 0;
+  color: #1e293b;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .navbar-content {
+    padding: 0 16px;
+  }
+
+  .main-content {
+    padding: 84px 16px 32px;
+  }
+
+  .upload-section, .results-section {
+    padding: 24px 16px;
+  }
+
+  .upload-actions {
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .preview-actions {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .preview-actions .el-button {
+    width: 100%;
+  }
+
+  .loading-card {
+    width: 90%;
+    max-width: 320px;
+  }
+
+  .emergency-container {
+    padding: 10px;
+  }
+
+  .tab-content {
+    padding: 15px;
+  }
+
+  .snake-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .logo-section h2 {
+    font-size: 18px;
+  }
+
+  .upload-area {
+    padding: 32px 16px;
+  }
+
+  .upload-icon {
+    font-size: 48px;
+  }
+
+  .result-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .placeholder-icon {
+    font-size: 48px;
+  }
+}
+
+/* 按钮样式优化 */
+:deep(.el-button) {
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+:deep(.el-button--primary) {
+  background: #059669;
+  border-color: #059669;
+}
+
+:deep(.el-button--primary:hover) {
+  background: #047857;
+  border-color: #047857;
+  transform: translateY(-1px);
+}
+
+:deep(.el-button--success) {
+  background: #10b981;
+  border-color: #10b981;
+}
+
+:deep(.el-button--success:hover) {
+  background: #059669;
+  border-color: #059669;
+  transform: translateY(-1px);
+}
+
+:deep(.el-button--danger) {
+  border-color: #ef4444;
+}
+
+:deep(.el-button--danger:hover) {
+  background: #dc2626;
+  border-color: #dc2626;
+}
+
+/* 进度条样式 */
+:deep(.el-progress-bar__outer) {
+  height: 8px;
+  border-radius: 4px;
+  background: #f1f5f9;
+}
+
+:deep(.el-progress-bar__inner) {
+  background: #059669;
+  border-radius: 4px;
+}
+
+/* 标签样式 */
+:deep(.el-tag--success) {
+  background: #dcfce7;
+  color: #065f46;
+  border: none;
+  padding: 6px 16px;
+  border-radius: 8px;
+}
+
+/* 提示框样式 */
+:deep(.el-tooltip__popper) {
+  padding: 8px 12px;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* 图片容器样式 */
+.image-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 20px 0;
+}
+
+.snake-image-display {
+  max-width: 100%;
+  max-height: 300px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: opacity 0.3s ease;
+}
+
+.snake-image-display.loading {
+  opacity: 0.6;
+}
+
+.snake-image-display.loaded {
+  opacity: 1;
+}
+
+.image-fallback-message {
+  color: #64748b;
+  font-style: italic;
+  text-align: center;
+  padding: 20px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  margin: 10px 0;
+  background-color: #f8fafc;
+}
+
+/* 多图片网格布局 */
+.image-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  width: 100%;
+  margin: 10px 0;
+}
+
+.image-grid img.snake-image-display {
+  max-width: 100%;
+  max-height: 200px;
+  width: auto;
+  height: auto;
+  object-fit: cover;
+}
+
+.snake-image-display.multiple {
+  max-width: 100%;
+  max-height: 200px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: opacity 0.3s ease, transform 0.2s ease;
+}
+
+.snake-image-display.multiple:hover {
+  transform: scale(1.03);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+.snake-image-display.error {
+  opacity: 0.6;
+}
+

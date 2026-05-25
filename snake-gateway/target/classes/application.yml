@@ -1,0 +1,102 @@
+server:
+  port: 8888
+
+spring:
+  codec:
+    max-in-memory-size: 10MB
+  application:
+    name: snake-gateway
+    
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 20MB
+      enabled: true
+    
+  cloud:
+    nacos:
+      server-addr: localhost:8848
+      discovery:
+        group: SLING_GROUP
+    
+    gateway:
+      # 全局跨域配置
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowed-methods: "*"
+            allowed-headers: "*"
+            allowed-origin-patterns: "*"
+      
+      # 文件上传相关配置
+      httpclient:
+        pool:
+          max-connections: 1000
+        response-timeout: 60s
+      
+      default-filters:
+        - name: RequestSize
+          args:
+            maxSize: 20MB
+            
+      routes:
+        # ============================================
+        # API 路由（透传，Controller 均使用 /api/xxx 路径）
+        # ============================================
+
+        # user-service
+        - id: user-service-api
+          uri: lb://user-service
+          predicates:
+            - Path=/api/user/**
+
+        # admin-service
+        - id: admin-service-api
+          uri: lb://admin-service
+          predicates:
+            - Path=/api/admin/**
+
+        # snake-info-service（无 /api 前缀）
+        - id: snake-info-service
+          uri: lb://snake-info-service
+          predicates:
+            - Path=/snake/**
+
+        # snake-info-service（带 /api 前缀，供管理后台调用）
+        - id: snake-info-service-api
+          uri: lb://snake-info-service
+          predicates:
+            - Path=/api/snake/**
+
+        # hospital-service
+        - id: hospital-service-api
+          uri: lb://hospital-service
+          predicates:
+            - Path=/api/hospital/**
+
+        # recognition-service
+        - id: recognition-service-api
+          uri: lb://recognition-service
+          predicates:
+            - Path=/api/recognition/**
+
+        # warning-service
+        - id: warning-service-api
+          uri: lb://warning-service
+          predicates:
+            - Path=/api/warning/**
+
+        # emergency-service
+        - id: emergency-service-api
+          uri: lb://emergency-service
+          predicates:
+            - Path=/api/emergency/**
+
+        # ============================================
+        # 静态资源 / 文件上传路由
+        # ============================================
+
+        - id: user-service-avatar
+          uri: lb://user-service
+          predicates:
+            - Path=/uploads/avatar/**

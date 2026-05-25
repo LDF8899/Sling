@@ -1,0 +1,115 @@
+鉴权方式（官网标准鉴权流程）所有 API 调用需通过 Authorization 请求头携带鉴权信息，生成规则：
+plaintext
+Authorization: Bearer {access_token}
+其中 access_token 通过以下接口获取：
+请求地址：https://aip.baidubce.com/oauth/2.0/token（字节系类似，官网具体地址以实际为准）
+请求参数：grant_type=client_credentials&client_id={API Key}&client_secret={Secret Key}
+有效期：通常为 30 天，需定期刷新。
+二、图片识别模式（Doubao-Seed-1.6-vision API）
+功能目标：上传伤口图片 → AI 症状分析 → 输出匹配蛇种的候选结果
+官网调用文档核心参数（参考视觉模型标准接口）
+请求信息
+接口地址（示例，以官网实际为准）：https://api-doubao.com/v1/vision/snake-symptom-analyze
+请求方式：POST
+Content-Type：multipart/form-data（图片上传格式）
+请求参数
+参数名	类型	是否必填	描述
+image	file	是	伤口图片文件，支持格式：JPG、PNG、WEBP；文件大小≤10MB；分辨率≥320×320
+top_k	integer	否	返回候选蛇种数量，默认值 5，可选范围 1-10
+confidence_threshold	float	否	匹配置信度阈值，默认 0.6（低于该值的结果不返回），可选范围 0.1-0.9
+user_id	string	否	用户唯一标识，用于关联历史记录（与前端「历史记录」功能对应）
+响应参数（与应急指南流程对齐）
+json
+{
+  "request_id": "xxx-xxx-xxx", // 官网请求唯一标识（用于问题排查）
+  "code": 200, // 200成功，其他为错误码（官网有错误码对照表）
+  "message": "success",
+  "data": {
+    "symptom_analysis": "伤口呈锯齿状，周围红肿、有麻木感，疑似神经毒素类蛇咬伤", // AI症状分析结果
+    "candidate_snakes": [ // 候选蛇种列表（按置信度排序）
+      {
+        "snake_name": "Bungarus multicinctus", // 蛇类学名（主键，关联数据库）
+        "snake_alias": "银环蛇", // 别名
+        "confidence": 0.92, // 匹配置信度
+        "image_url": "https://xxx.com/snakes/bungarus.jpg", // 蛇类图片链接（用于前端展示）
+        "venom_type": "神经毒素" // 毒液类型（简化返回，辅助用户确认）
+      },
+      // 更多候选蛇种...
+    ]
+  }
+}
+关键说明（官网文档重点）
+图片需清晰展示伤口细节（如咬痕、红肿范围），避免遮挡或模糊，否则会降低识别准确率。
+若返回 code=400（参数错误），需检查图片格式 / 大小；code=429（频率限制），需调整调用频率（官网有 QPS 限制说明）。
+该接口仅返回「症状分析 + 候选蛇种」，不直接生成应急指南，需用户确认蛇种后，调用直接查询模式 API 生成指南。
+三、直接查询模式（Doubao-Seed-1.6 API）
+功能目标：输入蛇类学名 → 验证有效性 → 生成完整应急指南
+官网调用文档核心参数（参考语言模型标准接口）
+请求信息
+接口地址（示例，以官网实际为准）：https://api-doubao.com/v1/language/snake-emergency-guide
+请求方式：POST
+Content-Type：application/json
+请求参数
+参数名	类型	是否必填	描述
+snake_name	string	是	蛇类学名（需准确，如「Bungarus multicinctus」，支持中英文学名，官网有兼容说明）
+user_id	string	否	用户唯一标识（用于关联历史记录和快捷入口）
+need_recommend	boolean	否	是否返回相似蛇种推荐，默认 true（与前端「相关推荐」功能对应）
+响应参数（与数据库 snake_emergency_info 表字段对齐）
+json
+{
+  "request_id": "xxx-xxx-xxx",
+  "code": 200,
+  "message": "success",
+  "data": {
+    "snake_info": { // 蛇类基础信息
+      "snake_name": "Bungarus multicinctus",
+      "snake_alias": "银环蛇、过基峡、白节黑",
+      "venom_type": "神经毒素",
+      "image_url": "https://xxx.com/snakes/bungarus.jpg"
+    },
+    "emergency_guide": { // 核心应急指南内容
+      "symptom_description": "咬伤后伤口局部无明显红肿、疼痛，1-4小时后出现头晕、恶心、视力模糊、呼吸困难，严重时呼吸肌麻痹", // 典型症状
+      "emergency_treatment": [ // 紧急处理方法（有序列表，便于用户操作）
+        "立即远离蛇体，避免二次咬伤",
+        "保持伤者安静，减少活动，防止毒液扩散",
+        "用清水或生理盐水冲洗伤口表面（勿挤压、切开伤口）",
+        "在伤口近心端用布带轻轻绑扎（每15-20分钟放松1-2分钟，避免组织坏死）",
+        "尽快拨打120，前往有抗蛇毒血清的医院"
+      ],
+      "medical_attention": [ // 医疗注意要点
+        "告知医生蛇种名称（携带蛇类图片辅助确认）",
+        "不可自行服用止痛药、抗生素或酒精类饮品",
+        "神经毒素蛇咬伤可能延迟发作，即使暂无症状也需就医观察"
+      ]
+    },
+    "related_recommends": [ // 相似蛇种推荐（need_recommend=true时返回）
+      {
+        "snake_name": "Bungarus fasciatus",
+        "snake_alias": "金环蛇",
+        "venom_type": "神经毒素",
+        "image_url": "https://xxx.com/snakes/bungarus_fasciatus.jpg"
+      }
+    ]
+  }
+}
+错误处理（官网文档重点）
+若 snake_name 无效（数据库无匹配），返回 code=404，响应示例：
+json
+{
+  "code": 404,
+  "message": "蛇类学名不存在，请核对后重新输入或使用图片识别模式",
+  "request_id": "xxx-xxx-xxx"
+}
+支持学名模糊匹配（官网特性）：若用户输入拼写错误但相似度≥80%，返回 code=201 并提示可能的正确学名（如输入「Bungarus multicinctu」，提示是否为「Bungarus multicinctus」）。
+四、官网文档补充查询建议
+访问字节跳动开发者平台官网（https://developer.bytedance.com/），进入「模型服务」→「Doubao-Seed 系列」，分别查询两个模型的「详细 API 文档」。
+重点核对：
+接口地址、请求头 / 参数的最新格式（官网可能迭代更新）。
+频率限制（QPS）、调用配额、计费标准（避免超量扣费）。
+错误码对照表（用于前端异常提示，如网络错误、权限不足等）。
+若需集成「智能联想（学名自动补全）」，可查询 Doubao-Seed-1.6 的「文本联想 API」（官网可能单独提供，或需通过 Prompt 工程实现）。
+五、与现有系统集成的关键适配点
+前端需将「图片识别结果」中的 snake_name 作为参数，调用直接查询模式 API，实现「确认蛇种→生成指南」的无缝衔接。
+数据库 snake_emergency_info 表需与 API 响应字段对齐（如 snake_name 统一用学名作为主键），避免数据不一致。
+历史记录功能可通过 user_id 关联 API 返回的 snake_name，存储到前端本地或后端数据库，实现快速重查。
+通过以上官网 API 调用文档的核心参数和流程，可完整实现应急指南的双模式功能，确保与你接入的两个模型 API 精准适配。

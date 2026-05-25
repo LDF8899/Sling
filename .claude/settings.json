@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mysql -uroot -proot123 sl -e \"DESC user_info; SELECT user_id, username, status FROM user_info LIMIT 3;\")",
+      "Bash(mysql -uroot -proot123 sl -e \"DESC snake_info; SHOW COLUMNS FROM snake_info LIKE '%danger%';\")"
+    ]
+  }
+}

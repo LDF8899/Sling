@@ -1,0 +1,89 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "启动所有服务",
+            "type": "shell",
+            "command": ".\\启动脚本.bat",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            }
+        },
+        {
+            "label": "启动 Nacos",
+            "type": "shell",
+            "command": "cd D:\\nacos\\bin; .\\startup.cmd -m standalone",
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "启动 Gateway 服务",
+            "type": "shell",
+            "command": "cd snake-gateway; mvn spring-boot:run",
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "启动 User 服务",
+            "type": "shell",
+            "command": "cd user-service; mvn spring-boot:run",
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "启动 Admin 服务",
+            "type": "shell",
+            "command": "cd admin-service; mvn spring-boot:run",
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "启动 Recognition 服务",
+            "type": "shell",
+            "command": "cd recognition-service; mvn spring-boot:run",
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "启动 Warning 服务",
+            "type": "shell",
+            "command": "cd warning-service; mvn spring-boot:run",
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "启动 Emergency 服务",
+            "type": "shell",
+            "command": "cd emergency-service; mvn spring-boot:run",
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "启动 Hospital 服务",
+            "type": "shell",
+            "command": "cd hospital-service; mvn spring-boot:run",
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "启动前端 Vue 项目",
+            "type": "shell",
+            "command": "cd vue3; npm run dev",
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "清理端口",
+            "type": "shell",
+            "command": "taskkill /f /im java.exe; taskkill /f /im node.exe",
+            "group": "build",
+            "problemMatcher": []
+        }
+    ]
+}

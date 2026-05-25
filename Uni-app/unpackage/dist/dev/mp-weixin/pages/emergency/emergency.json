@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "应急咨询",
+  "navigationStyle": "custom",
+  "usingComponents": {
+    "glass-navbar": "../../components/GlassNavbar",
+    "loading-spinner": "../../components/LoadingSpinner"
+  }
+}

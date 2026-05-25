@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile default="true" name="Default" enabled="true" />
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="hospital-service" />
+        <module name="service-movie" />
+        <module name="emergency-service" />
+        <module name="recognition-service" />
+        <module name="user-service" />
+        <module name="service-order" />
+        <module name="cloud-gateway" />
+        <module name="snake-gateway" />
+        <module name="snake-info-service" />
+        <module name="service-user" />
+        <module name="snake-common" />
+        <module name="warning-service" />
+        <module name="cloud-common" />
+        <module name="service-collect" />
+        <module name="admin-service" />
+      </profile>
+    </annotationProcessing>
+    <bytecodeTargetLevel target="8">
+      <module name="cloud_gateway" target="17" />
+      <module name="service-aaa" target="17" />
+    </bytecodeTargetLevel>
+  </component>
+  <component name="JavacSettings">
+    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="CloudDemo" options="" />
+      <module name="cloud-common" options="-parameters" />
+      <module name="cloud-gateway" options="-parameters" />
+      <module name="cloud-service" options="" />
+      <module name="cloud_gateway" options="-parameters" />
+      <module name="emergency-service" options="-Xlint:unchecked" />
+      <module name="hospital-service" options="" />
+      <module name="recognition-service" options="" />
+      <module name="service-aaa" options="-parameters" />
+      <module name="service-collect" options="-parameters" />
+      <module name="service-movie" options="-parameters" />
+      <module name="service-order" options="-parameters" />
+      <module name="service-user" options="-parameters" />
+      <module name="snake-common" options="" />
+      <module name="snake-gateway" options="" />
+      <module name="snake-info-service" options="" />
+      <module name="user-service" options="" />
+      <module name="warning-service" options="" />
+    </option>
+  </component>
+</project>
