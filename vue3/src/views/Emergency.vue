@@ -382,7 +382,7 @@
     <div class="loading-mask" v-if="analyzing">
       <el-card class="loading-card">
         <div class="loading-content">
-          <i class="el-icon-loading" style="font-size: 36px; color: #10b981;"></i>
+          <i class="el-icon-loading" style="font-size: 36px; color: var(--green-500);"></i>
           <p>正在分析中，请稍候...</p>
           <el-progress :percentage="analysisProgress" :stroke-width="8" color="#10b981"></el-progress>
         </div>
@@ -1783,7 +1783,7 @@ onMounted(() => {
   position: relative;
   border-radius: 16px;
   overflow: hidden;
-  background: #f1f5f9;
+  background: var(--ink-50);
 }
 
 .carousel-track {
@@ -1815,9 +1815,9 @@ onMounted(() => {
   bottom: 12px;
   right: 12px;
   background: rgba(0, 0, 0, 0.6);
-  color: white;
-  padding: 4px 12px;
-  border-radius: 16px;
+  color: var(--surface-white);
+  padding: 4px var(--space-3);
+  border-radius: var(--radius-lg);
   font-size: 13px;
 }
 
@@ -1840,8 +1840,8 @@ onMounted(() => {
 }
 
 .carousel-btn:hover {
-  background: white;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  background: var(--surface-white);
+  box-shadow: var(--shadow-md);
 }
 
 .carousel-btn:disabled {
@@ -1868,13 +1868,13 @@ onMounted(() => {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #cbd5e1;
+  background: var(--ink-200);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-fast);
 }
 
 .dot.active {
-  background: #059669;
+  background: var(--green-600);
   width: 24px;
   border-radius: 4px;
 }
@@ -1890,12 +1890,12 @@ onMounted(() => {
   left: 50%;
   transform: translateX(-50%);
   background: rgba(0, 0, 0, 0.5);
-  color: white;
-  padding: 4px 12px;
-  border-radius: 12px;
-  font-size: 12px;
+  color: var(--surface-white);
+  padding: 4px var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity var(--transition-base);
   pointer-events: none;
 }
 
@@ -2117,15 +2117,15 @@ onMounted(() => {
 }
 
 .result-card {
-  border-radius: 16px;
-  padding: 24px;
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
   position: relative;
   overflow: hidden;
 }
 
 .success-result {
-  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-  border: 1px solid #bbf7d0;
+  background: linear-gradient(135deg, var(--green-50) 0%, var(--success-bg) 100%);
+  border: 1px solid var(--green-200);
 }
 
 .success-result::before {
@@ -2144,66 +2144,66 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: var(--space-6);
 }
 
 .analysis-time {
-  font-size: 14px;
-  color: #065f46;
+  font-size: var(--text-sm);
+  color: var(--green-900);
   background: rgba(16, 185, 129, 0.1);
-  padding: 4px 12px;
-  border-radius: 12px;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-md);
 }
 
-/* Markdown容器样式 */
+/* — markdown container — */
 .markdown-result-wrapper {
   max-height: 400px;
   overflow-y: auto;
-  padding-right: 8px;
+  padding-right: var(--space-2);
 }
 
 .markdown-result, .analysis-result {
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
-  margin-bottom: 24px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  background: var(--surface-white);
+  border-radius: var(--radius-md);
+  padding: var(--space-6);
+  margin-bottom: var(--space-6);
+  box-shadow: var(--shadow-xs);
   line-height: 1.8;
 }
 
 .snake-result-item {
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 16px;
-  background-color: #f8fafc;
+  border: 1px solid var(--ink-100);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  margin-bottom: var(--space-4);
+  background-color: var(--ink-50);
 }
-</style>
 
+/* — snake result item — */
 .snake-result-item h3 {
-color: #059669;
-margin-top: 0;
-border-bottom: 1px solid #e2e8f0;
-padding-bottom: 8px;
+  color: var(--green-600);
+  margin-top: 0;
+  border-bottom: 1px solid var(--ink-100);
+  padding-bottom: var(--space-2);
 }
 
 .snake-details {
-background: #e2f8f0;
-padding: 12px;
-border-radius: 6px;
-margin: 12px 0;
+  background: var(--green-100);
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  margin: var(--space-3) 0;
 }
 
 .emergency-section {
-margin: 16px 0;
+  margin: var(--space-4) 0;
 }
 
 .emergency-section h4 {
-color: #065f46;
-margin-bottom: 8px;
+  color: var(--green-900);
+  margin-bottom: var(--space-2);
 }
 
-/* 细化Markdown内部元素样式 */
+/* — markdown result typography — */
 .markdown-result :deep(h1),
 .markdown-result :deep(h2),
 .markdown-result :deep(h3),
@@ -2212,378 +2212,241 @@ margin-bottom: 8px;
 .analysis-result :deep(h2),
 .analysis-result :deep(h3),
 .analysis-result :deep(h4) {
-color: #065f46;
-margin: 1.5em 0 0.8em;
-font-weight: 600;
+  color: var(--green-900);
+  margin: 1.5em 0 0.8em;
+  font-weight: var(--weight-semibold);
 }
 
 .markdown-result :deep(h1) {
-font-size: 22px;
-border-bottom: 2px solid #e5e7eb;
-padding-bottom: 0.5em;
+  font-size: var(--text-3xl);
+  border-bottom: 2px solid var(--ink-100);
+  padding-bottom: 0.5em;
 }
 
 .markdown-result :deep(h2) {
-font-size: 20px;
-border-bottom: 1px solid #e5e7eb;
-padding-bottom: 0.4em;
+  font-size: var(--text-2xl);
+  border-bottom: 1px solid var(--ink-100);
+  padding-bottom: 0.4em;
 }
 
 .markdown-result :deep(h3) {
-font-size: 18px;
+  font-size: var(--text-xl);
 }
 
 .markdown-result :deep(p),
 .analysis-result :deep(p) {
-margin: 1em 0;
-color: #334155;
-line-height: 1.8;
+  margin: 1em 0;
+  color: var(--ink-700);
+  line-height: 1.8;
 }
 
 .markdown-result :deep(strong),
 .analysis-result :deep(strong) {
-color: #1e293b;
-font-weight: 700;
+  color: var(--ink-900);
+  font-weight: var(--weight-bold);
 }
 
 .markdown-result :deep(em),
 .analysis-result :deep(em) {
-color: #4b5563;
-font-style: italic;
+  color: var(--ink-500);
+  font-style: italic;
 }
 
 .markdown-result :deep(ul),
 .markdown-result :deep(ol),
 .analysis-result :deep(ul),
 .analysis-result :deep(ol) {
-margin: 1em 0;
-padding-left: 2em;
-color: #334155;
+  margin: 1em 0;
+  padding-left: 2em;
+  color: var(--ink-700);
 }
 
 .markdown-result :deep(li),
 .analysis-result :deep(li) {
-margin: 0.5em 0;
-line-height: 1.8;
+  margin: 0.5em 0;
+  line-height: 1.8;
 }
 
+/* — find medical care — */
 .find-medical-care {
-text-align: center;
-padding-top: 24px;
-border-top: 1px solid #bbf7d0;
+  text-align: center;
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--green-200);
 }
 
 .find-medical-care .el-button {
-padding: 10px 32px;
-border-radius: 8px;
-font-size: 15px;
+  padding: 10px var(--space-8);
+  border-radius: var(--radius-md);
+  font-size: var(--text-base);
 }
 
-/* 加载遮罩 */
+/* — loading mask — */
 .loading-mask {
-position: fixed;
-top: 0;
-left: 0;
-right: 0;
-bottom: 0;
-background: rgba(255, 255, 255, 0.85);
-backdrop-filter: blur(4px);
-display: flex;
-justify-content: center;
-align-items: center;
-z-index: 2000;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
 }
 
 .loading-card {
-width: 400px;
-padding: 32px;
-border-radius: 16px;
-box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
-text-align: center;
-border: none;
+  width: 400px;
+  padding: var(--space-8);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  text-align: center;
+  border: none;
 }
 
 .loading-content {
-display: flex;
-flex-direction: column;
-align-items: center;
-gap: 16px;
-}
-
-.loading-content p {
-margin: 0;
-color: #1e293b;
-font-size: 16px;
-font-weight: 500;
-}
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-.navbar-content {
-padding: 0 16px;
-}
-
-.main-content {
-padding: 84px 16px 32px;
-}
-
-.upload-section, .results-section {
-padding: 24px 16px;
-}
-
-.upload-actions {
-flex-direction: column;
-gap: 16px;
-align-items: flex-start;
-}
-
-.preview-actions {
-flex-direction: column;
-gap: 12px;
-}
-
-.preview-actions .el-button {
-width: 100%;
-}
-
-.loading-card {
-width: 90%;
-max-width: 320px;
-}
-
-.emergency-container {
-padding: 10px;
-}
-
-.tab-content {
-padding: 15px;
-}
-
-.snake-list {
-grid-template-columns: 1fr;
-}
-}
-
-@media (max-width: 480px) {
-.logo-section h2 {
-font-size: 18px;
-}
-
-.upload-area {
-padding: 32px 16px;
-}
-
-.upload-icon {
-font-size: 48px;
-}
-
-.result-header {
-flex-direction: column;
-align-items: flex-start;
-gap: 12px;
-}
-
-.placeholder-icon {
-font-size: 48px;
-}
-}
-
-/* 按钮样式优化 */
-:deep(.el-button) {
-border-radius: 8px;
-font-weight: 500;
-transition: all 0.2s ease;
-}
-
-:deep(.el-button--primary) {
-background: #059669;
-border-color: #059669;
-}
-
-:deep(.el-button--primary:hover) {
-background: #047857;
-border-color: #047857;
-transform: translateY(-1px);
-}
-
-:deep(.el-button--success) {
-background: #10b981;
-border-color: #10b981;
-}
-
-:deep(.el-button--success:hover) {
-background: #059669;
-border-color: #059669;
-transform: translateY(-1px);
-}
-
-:deep(.el-button--danger) {
-border-color: #ef4444;
-}
-
-:deep(.el-button--danger:hover) {
-background: #dc2626;
-border-color: #dc2626;
-}
-
-/* 进度条样式 */
-:deep(.el-progress-bar__outer) {
-height: 8px;
-border-radius: 4px;
-background: #f1f5f9;
-}
-
-:deep(.el-progress-bar__inner) {
-background: #059669;
-border-radius: 4px;
-}
-
-/* 标签样式 */
-:deep(.el-tag--success) {
-background: #dcfce7;
-color: #065f46;
-border: none;
-padding: 6px 16px;
-border-radius: 8px;
-}
-
-/* 提示框样式 */
-:deep(.el-tooltip__popper) {
-padding: 8px 12px;
-border-radius: 6px;
-box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-/* 图片容器样式 */
-.image-container {
-display: flex;
-flex-direction: column;
-align-items: center;
-margin: 20px 0;
-}
-
-/* 轮播卡片样式 */
-.image-carousel-section {
-  margin: 20px 0;
-  padding: 0 40px;
-}
-
-.carousel-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-  overflow: hidden;
-}
-
-.carousel-track {
-  width: 100%;
-  overflow: hidden;
-}
-
-.carousel-cards {
-  display: flex;
-  transition: transform 0.3s ease;
-}
-
-.image-card {
-  min-width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 0 10px;
-  box-sizing: border-box;
+  gap: var(--space-4);
 }
 
-.image-card img {
-  width: 100%;
-  max-width: 400px;
-  max-height: 300px;
-  object-fit: cover;
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+.loading-content p {
+  margin: 0;
+  color: var(--ink-900);
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
 }
 
-.image-indicator {
-  margin-top: 12px;
-  font-size: 13px;
-  color: #64748b;
-  background: #f1f5f9;
-  padding: 4px 12px;
-  border-radius: 12px;
+/* — responsive — */
+@media (max-width: 768px) {
+  .navbar-content {
+    padding: 0 var(--space-4);
+  }
+
+  .main-content {
+    padding: 84px var(--space-4) var(--space-8);
+  }
+
+  .upload-section, .results-section {
+    padding: var(--space-6) var(--space-4);
+  }
+
+  .upload-actions {
+    flex-direction: column;
+    gap: var(--space-4);
+    align-items: flex-start;
+  }
+
+  .preview-actions {
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .preview-actions .el-button {
+    width: 100%;
+  }
+
+  .loading-card {
+    width: 90%;
+    max-width: 320px;
+  }
 }
 
-.carousel-btn {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid #e2e8f0;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-  z-index: 10;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+@media (max-width: 480px) {
+  .logo-section h2 {
+    font-size: var(--text-xl);
+  }
+
+  .upload-area {
+    padding: var(--space-8) var(--space-4);
+  }
+
+  .upload-icon {
+    font-size: 48px;
+  }
+
+  .result-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3);
+  }
+
+  .placeholder-icon {
+    font-size: 48px;
+  }
 }
 
-.carousel-btn:hover:not(:disabled) {
-  background: #059669;
-  color: white;
-  border-color: #059669;
+/* — element deep overrides — */
+:deep(.el-button) {
+  border-radius: var(--radius-md);
+  font-weight: var(--weight-medium);
+  transition: all var(--transition-fast);
 }
 
-.carousel-btn:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
+:deep(.el-button--primary) {
+  background: var(--green-600);
+  border-color: var(--green-600);
 }
 
-.carousel-btn.left {
-  left: 0;
+:deep(.el-button--primary:hover) {
+  background: var(--green-700);
+  border-color: var(--green-700);
+  transform: translateY(-1px);
 }
 
-.carousel-btn.right {
-  right: 0;
+:deep(.el-button--success) {
+  background: var(--green-500);
+  border-color: var(--green-500);
 }
 
-.carousel-dots {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-  margin-top: 16px;
+:deep(.el-button--success:hover) {
+  background: var(--green-600);
+  border-color: var(--green-600);
+  transform: translateY(-1px);
 }
 
-.dot {
-  width: 8px;
+:deep(.el-button--danger) {
+  border-color: var(--danger);
+}
+
+:deep(.el-button--danger:hover) {
+  background: var(--danger);
+  border-color: var(--danger);
+}
+
+:deep(.el-progress-bar__outer) {
   height: 8px;
-  border-radius: 50%;
-  background: #e2e8f0;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  border-radius: 4px;
+  background: var(--ink-50);
 }
 
-.dot.active {
-  background: #059669;
-  transform: scale(1.2);
+:deep(.el-progress-bar__inner) {
+  background: var(--green-600);
+  border-radius: 4px;
+}
+
+:deep(.el-tag--success) {
+  background: var(--success-bg);
+  color: var(--green-900);
+  border: none;
+  padding: 6px var(--space-4);
+  border-radius: var(--radius-md);
+}
+
+:deep(.el-tooltip__popper) {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+}
+
+:deep(.numbered-flow.danger li) {
+  background: var(--danger-bg);
+  border-left-color: var(--danger);
 }
 
 .dot:hover:not(.active) {
-  background: #94a3b8;
+  background: var(--ink-400);
 }
-
-.snake-image-display.error {
-opacity: 0.6;
-}
-
-.medical-section .section-title i {
-  color: #7c3aed;
-}
-
-.medical-content {
-  color: #475569;
-  line-height: 1.8;
-}
+</style>
 

@@ -482,33 +482,33 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* ── Variables ── */
+/* ── Design Tokens ── */
 .warning-management {
-  --primary: #4f46e5;
-  --primary-light: #eef2ff;
-  --surface: #fff;
-  --border: #e5e7eb;
-  --text: #1f2937;
-  --text-secondary: #6b7280;
-  --danger: #ef4444;
-  --danger-bg: #fef2f2;
-  --warning: #f59e0b;
-  --warning-bg: #fffbeb;
-  --success: #10b981;
-  --success-bg: #ecfdf5;
-  --radius: 12px;
-  --radius-sm: 8px;
-  --shadow-sm: 0 1px 2px rgba(0,0,0,.04);
-  --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --primary: var(--green-500);
+  --primary-light: var(--green-50);
+  --surface: var(--surface-white);
+  --border: var(--ink-200);
+  --text: var(--ink-900);
+  --text-secondary: var(--ink-500);
+  --danger: var(--danger);
+  --danger-bg: var(--danger-bg);
+  --warning: var(--warning);
+  --warning-bg: var(--warning-bg);
+  --success: var(--success);
+  --success-bg: var(--success-bg);
+  --radius: var(--radius-lg);
+  --radius-sm: var(--radius-sm);
+  --shadow-sm: var(--shadow-sm);
+  --shadow: var(--shadow-md);
 }
 
 /* ── Tab Header ── */
-.tab-header { margin-bottom: 20px; }
+.tab-header { margin-bottom: var(--space-5); }
 .tab-row {
   display: flex;
-  gap: 4px;
-  background: #f3f4f6;
-  padding: 4px;
+  gap: var(--space-1);
+  background: var(--ink-100);
+  padding: var(--space-1);
   border-radius: var(--radius);
 }
 .tab-btn {
@@ -516,21 +516,21 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 10px 20px;
+  gap: var(--space-2);
+  padding: 10px var(--space-5);
   border: none;
   background: transparent;
   color: var(--text-secondary);
-  font-size: 14px;
-  font-weight: 500;
-  border-radius: calc(var(--radius) - 4px);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: all .2s;
+  transition: all var(--transition-fast);
 }
 .tab-btn:hover { color: var(--text); }
 .tab-btn.active {
   background: var(--surface);
-  color: var(--primary);
+  color: var(--green-500);
   box-shadow: var(--shadow-sm);
 }
 .tab-icon { width: 18px; height: 18px; flex-shrink: 0; }
@@ -547,9 +547,9 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px 12px;
+  padding: var(--space-4) var(--space-5) var(--space-3);
 }
-.section-title { font-size: 15px; font-weight: 600; color: var(--text); margin: 0; }
+.section-title { font-size: 15px; font-weight: var(--weight-semibold); color: var(--text); margin: 0; }
 
 /* ── Buttons ── */
 .btn {
@@ -559,19 +559,19 @@ onMounted(() => {
   padding: 9px 18px;
   border: none;
   border-radius: var(--radius-sm);
-  font-size: 14px;
-  font-weight: 500;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
   cursor: pointer;
-  transition: all .15s;
+  transition: all var(--transition-fast);
   white-space: nowrap;
 }
-.btn-primary { background: var(--primary); color: #fff; }
-.btn-primary:hover { background: #4338ca; }
-.btn-cancel { background: #f3f4f6; color: var(--text-secondary); }
-.btn-cancel:hover { background: #e5e7eb; }
-.btn-ghost { background: transparent; color: var(--text-secondary); padding: 6px 12px; font-size: 13px; }
-.btn-ghost:hover { background: #f3f4f6; color: var(--text); }
-.btn-icon { width: 16px; height: 16px; }
+.btn-primary { background: var(--green-500); color: var(--surface-white); }
+.btn-primary:hover { background: var(--green-600); }
+.btn-cancel { background: var(--ink-100); color: var(--text-secondary); }
+.btn-cancel:hover { background: var(--ink-200); }
+.btn-ghost { background: transparent; color: var(--text-secondary); padding: 6px var(--space-3); font-size: 13px; }
+.btn-ghost:hover { background: var(--ink-100); color: var(--text); }
+.btn-icon { width: var(--space-4); height: var(--space-4); }
 .btn-icon-sm { width: 14px; height: 14px; }
 .spinning { animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -579,15 +579,15 @@ onMounted(() => {
 /* ── Table ── */
 .premium-table { width: 100%; }
 .premium-table :deep(.el-table__header th) {
-  background: #f9fafb;
+  background: var(--ink-50);
   color: var(--text-secondary);
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
   font-size: 13px;
   text-transform: uppercase;
   letter-spacing: .05em;
   border-bottom: 2px solid var(--border);
 }
-.fw-600 { font-weight: 600; color: var(--text); }
+.fw-600 { font-weight: var(--weight-semibold); color: var(--text); }
 .truncate-text {
   display: block;
   max-width: 260px;
@@ -599,51 +599,51 @@ onMounted(() => {
 /* ── Level Badges ── */
 .level-badge {
   display: inline-block;
-  padding: 3px 12px;
+  padding: 3px var(--space-3);
   border-radius: 20px;
-  font-size: 12px;
-  font-weight: 600;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
 }
 .level-badge-sm {
   display: inline-block;
-  padding: 2px 8px;
-  border-radius: 12px;
+  padding: 2px var(--space-2);
+  border-radius: var(--space-3);
   font-size: 11px;
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
 }
 .level-1 { background: #dbeafe; color: #2563eb; }
-.level-2 { background: #fef3c7; color: #d97706; }
+.level-2 { background: #fef3c7; color: var(--warning); }
 .level-3 { background: #ffedd5; color: #ea580c; }
-.level-4 { background: #fee2e2; color: #dc2626; }
+.level-4 { background: #fee2e2; color: var(--danger); }
 
 .status-tag {
   display: inline-block;
   padding: 2px 10px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 500;
+  border-radius: var(--space-3);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
 }
 .status-tag.valid { background: var(--success-bg); color: var(--success); }
-.status-tag.invalid { background: #f3f4f6; color: var(--text-secondary); }
+.status-tag.invalid { background: var(--ink-100); color: var(--text-secondary); }
 
-.threshold-value { font-weight: 700; font-size: 15px; color: var(--text); }
+.threshold-value { font-weight: var(--weight-bold); font-size: 15px; color: var(--text); }
 
 /* ── Action Buttons ── */
-.action-btns { display: flex; gap: 4px; }
+.action-btns { display: flex; gap: var(--space-1); }
 .action-btn {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 32px; height: 32px;
   border: 1px solid transparent;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: transparent;
   cursor: pointer;
-  transition: all .15s;
+  transition: all var(--transition-fast);
 }
 .action-btn svg { width: 15px; height: 15px; }
-.edit-btn { color: var(--primary); }
-.edit-btn:hover { background: var(--primary-light); border-color: var(--primary); }
+.edit-btn { color: var(--green-500); }
+.edit-btn:hover { background: var(--green-50); border-color: var(--green-500); }
 .delete-btn { color: var(--danger); }
 .delete-btn:hover { background: var(--danger-bg); border-color: var(--danger); }
 
@@ -651,18 +651,18 @@ onMounted(() => {
 .pagination-wrap {
   display: flex;
   justify-content: flex-end;
-  padding: 16px 20px;
+  padding: var(--space-4) var(--space-5);
   border-top: 1px solid var(--border);
 }
 
 /* ── Dialog ── */
 .premium-dialog :deep(.el-dialog__header) {
   border-bottom: 1px solid var(--border);
-  padding: 20px 24px;
+  padding: var(--space-5) var(--space-6);
   margin: 0;
 }
-.premium-dialog :deep(.el-dialog__title) { font-size: 16px; font-weight: 600; }
-.premium-dialog :deep(.el-dialog__body) { padding: 24px; }
-.dialog-footer { display: flex; justify-content: flex-end; gap: 8px; padding-top: 8px; }
-.premium-form :deep(.el-form-item__label) { font-weight: 500; color: var(--text-secondary); font-size: 13px; }
+.premium-dialog :deep(.el-dialog__title) { font-size: var(--space-4); font-weight: var(--weight-semibold); }
+.premium-dialog :deep(.el-dialog__body) { padding: var(--space-6); }
+.dialog-footer { display: flex; justify-content: flex-end; gap: var(--space-2); padding-top: var(--space-2); }
+.premium-form :deep(.el-form-item__label) { font-weight: var(--weight-medium); color: var(--text-secondary); font-size: 13px; }
 </style>
