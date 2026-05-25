@@ -631,7 +631,7 @@ onUnmounted(() => {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+  background: linear-gradient(135deg, var(--surface-cool) 0%, #e4edf5 100%);
 }
 
 /* 头部样式 */
@@ -639,54 +639,54 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 24px;
+  padding: 0 var(--space-6);
   height: 60px;
-  background: white;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  background: var(--surface-white);
+  box-shadow: var(--shadow-sm);
   z-index: 100;
 }
 
 .logo h1 {
   margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: #334155;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  color: var(--ink-700);
 }
 
 .logo p {
   margin: 0;
-  font-size: 12px;
-  color: #64748b;
+  font-size: var(--text-xs);
+  color: var(--ink-500);
 }
 
 .status-bar {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .status-item {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 12px;
-  border-radius: 16px;
-  font-size: 12px;
-  background: #f0f9ff;
-  color: #409eff;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-lg);
+  font-size: var(--text-xs);
+  background: var(--info-bg);
+  color: var(--info);
 }
 
 .status-item.online {
-  background: #f0f9ff;
-  color: #67c23a;
+  background: var(--info-bg);
+  color: var(--success);
 }
 
 /* 内容区域 */
 .content-container {
   flex: 1;
   display: flex;
-  padding: 12px;
-  gap: 12px;
+  padding: var(--space-3);
+  gap: var(--space-3);
   overflow: hidden;
 }
 
@@ -695,37 +695,37 @@ onUnmounted(() => {
   width: 380px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .panel-card {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  background: var(--surface-white);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
   overflow: hidden;
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .panel-header {
-  padding: 16px 20px;
+  padding: var(--space-4) var(--space-5);
   border-bottom: 1px solid #f1f5f9;
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  gap: var(--space-2);
+  background: linear-gradient(135deg, var(--ink-50) 0%, var(--ink-200) 100%);
 }
 
 .panel-header h3 {
   margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: #334155;
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  color: var(--ink-700);
 }
 
 /* 位置卡片 */
 .location-card {
-  padding: 20px;
+  padding: var(--space-5);
 }
 
 .form-actions {
@@ -736,32 +736,32 @@ onUnmounted(() => {
 
 .search-btn, .location-btn {
   flex: 1;
-  padding: 12px 20px;
-  font-weight: 500;
-  transition: all 0.3s ease;
-  border-radius: 8px;
+  padding: var(--space-3) var(--space-5);
+  font-weight: var(--weight-medium);
+  transition: all var(--transition-base);
+  border-radius: var(--radius-sm);
 }
 
 .search-btn {
-  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  background: linear-gradient(135deg, var(--info) 0%, var(--blue-700) 100%);
   border: none;
-  color: white;
+  color: var(--surface-white);
 }
 
 .search-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  box-shadow: var(--shadow-md);
 }
 
 .location-btn {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, var(--green-500) 0%, var(--green-600) 100%);
   border: none;
-  color: white;
+  color: var(--surface-white);
 }
 
 .location-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  box-shadow: var(--shadow-brand);
 }
 
 /* 结果列表卡片 */
@@ -778,12 +778,12 @@ onUnmounted(() => {
 }
 
 .result-item {
-  padding: 16px 20px;
-  border-bottom: 1px solid #f8fafc;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--ink-50);
   cursor: pointer;
-  transition: all 0.3s ease;
-  border-radius: 8px;
-  margin: 0 8px 8px 8px;
+  transition: all var(--transition-base);
+  border-radius: var(--radius-sm);
+  margin: 0 var(--space-2) var(--space-2) var(--space-2);
 }
 
 .result-item:hover {
@@ -796,20 +796,20 @@ onUnmounted(() => {
 }
 
 .hospital-info h4 {
-  margin: 0 0 8px 0;
+  margin: 0 0 var(--space-2) 0;
   font-size: 15px;
-  font-weight: 600;
-  color: #334155;
+  font-weight: var(--weight-semibold);
+  color: var(--ink-700);
 }
 
 .hospital-address {
-  margin: 0 0 4px 0;
+  margin: 0 0 var(--space-1) 0;
   font-size: 13px;
-  color: #64748b;
+  color: var(--ink-500);
 }
 
 .hospital-contact {
-  margin: 0 0 8px 0;
+  margin: 0 0 var(--space-2) 0;
   font-size: 13px;
   color: #6b7280;
 }
@@ -817,18 +817,18 @@ onUnmounted(() => {
 .hospital-meta {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
   flex-wrap: wrap;
 }
 
 .distance-tag, .type-tag {
-  font-size: 12px;
-  padding: 4px 12px;
-  border-radius: 20px;
-  background: #e2e8f0;
+  font-size: var(--text-xs);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-lg);
+  background: var(--ink-200);
   color: #475569;
-  font-weight: 500;
+  font-weight: var(--weight-medium);
 }
 
 /* 右侧主内容区域 */
@@ -836,40 +836,40 @@ onUnmounted(() => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .content-card {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  background: var(--surface-white);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
   overflow: hidden;
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .card-header {
-  padding: 16px 20px;
+  padding: var(--space-4) var(--space-5);
   border-bottom: 1px solid #f1f5f9;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  background: linear-gradient(135deg, var(--ink-50) 0%, var(--ink-200) 100%);
 }
 
 .card-header h3 {
   margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: #334155;
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  color: var(--ink-700);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .map-controls {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 /* 地图卡片 */
@@ -898,8 +898,8 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  background-color: rgba(255, 255, 255, 0.8);
-  gap: 8px;
+  background-color: var(--surface-white);
+  gap: var(--space-2);
 }
 
 .map-error {
@@ -912,13 +912,13 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background-color: #fef2f2;
-  color: #dc2626;
-  gap: 12px;
+  background-color: var(--danger-bg);
+  color: var(--danger);
+  gap: var(--space-3);
 }
 
 .map-error i {
-  font-size: 32px;
+  font-size: var(--space-8);
 }
 
 /* 详情卡片 */
@@ -928,30 +928,30 @@ onUnmounted(() => {
 }
 
 .detail-content {
-  padding: 20px;
+  padding: var(--space-5);
 }
 
 .hospital-detail h4 {
-  margin: 0 0 16px 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: #334155;
+  margin: 0 0 var(--space-4) 0;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  color: var(--ink-700);
 }
 
 .detail-section {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .detail-section p {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
+  gap: var(--space-2);
   margin: 0;
   color: #475569;
   line-height: 1.5;
-  padding: 8px 0;
+  padding: var(--space-2) 0;
   border-bottom: 1px solid #f1f5f9;
 }
 
@@ -960,23 +960,23 @@ onUnmounted(() => {
 }
 
 .detail-actions {
-  margin-top: 20px;
+  margin-top: var(--space-5);
   display: flex;
   justify-content: flex-start;
 }
 
 .detail-actions .el-button {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, var(--green-500) 0%, var(--green-600) 100%);
   border: none;
-  border-radius: 8px;
-  padding: 12px 24px;
-  font-weight: 500;
-  transition: all 0.3s ease;
+  border-radius: var(--radius-sm);
+  padding: var(--space-3) var(--space-6);
+  font-weight: var(--weight-medium);
+  transition: all var(--transition-base);
 }
 
 .detail-actions .el-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  box-shadow: var(--shadow-brand);
 }
 
 /* 全局加载状态 */
@@ -991,13 +991,13 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   background-color: rgba(0, 0, 0, 0.5);
-  color: white;
+  color: var(--surface-white);
   z-index: 9999;
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .global-loading i {
-  font-size: 32px;
+  font-size: var(--space-8);
   animation: spin 1s linear infinite;
 }
 

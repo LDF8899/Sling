@@ -10,7 +10,7 @@
           <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
             <path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2Z"/>
             <path d="M12 8v8"/>
-            <path d="M8 12h8"/>
+            <path d="M8 12h12"/>
           </svg>
           医院管理
         </button>
@@ -499,33 +499,33 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* ── Variables ── */
+/* ── Design Tokens ── */
 .hospital-management {
-  --primary: #4f46e5;
-  --primary-light: #eef2ff;
-  --surface: #fff;
-  --border: #e5e7eb;
-  --text: #1f2937;
-  --text-secondary: #6b7280;
-  --danger: #ef4444;
-  --danger-bg: #fef2f2;
-  --success: #10b981;
-  --success-bg: #ecfdf5;
-  --radius: 12px;
-  --radius-sm: 8px;
-  --shadow-sm: 0 1px 2px rgba(0,0,0,.04);
-  --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --primary: var(--green-500);
+  --primary-light: var(--green-50);
+  --surface: var(--surface-white);
+  --border: var(--ink-200);
+  --text: var(--ink-900);
+  --text-secondary: var(--ink-500);
+  --danger: var(--danger);
+  --danger-bg: var(--danger-bg);
+  --success: var(--success);
+  --success-bg: var(--success-bg);
+  --radius: var(--radius-lg);
+  --radius-sm: var(--radius-sm);
+  --shadow-sm: var(--shadow-sm);
+  --shadow: var(--shadow-md);
 }
 
 /* ── Tab Header ── */
 .tab-header {
-  margin-bottom: 20px;
+  margin-bottom: var(--space-5);
 }
 .tab-row {
   display: flex;
-  gap: 4px;
-  background: #f3f4f6;
-  padding: 4px;
+  gap: var(--space-1);
+  background: var(--ink-100);
+  padding: var(--space-1);
   border-radius: var(--radius);
 }
 .tab-btn {
@@ -533,21 +533,21 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 10px 20px;
+  gap: var(--space-2);
+  padding: 10px var(--space-5);
   border: none;
   background: transparent;
   color: var(--text-secondary);
-  font-size: 14px;
-  font-weight: 500;
-  border-radius: calc(var(--radius) - 4px);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: all .2s;
+  transition: all var(--transition-fast);
 }
 .tab-btn:hover { color: var(--text); }
 .tab-btn.active {
   background: var(--surface);
-  color: var(--primary);
+  color: var(--green-500);
   box-shadow: var(--shadow-sm);
 }
 .tab-icon { width: 18px; height: 18px; flex-shrink: 0; }
@@ -557,22 +557,22 @@ onMounted(() => {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 20px;
+  padding: var(--space-5);
   box-shadow: var(--shadow);
 }
-.search-card { margin-bottom: 16px; }
+.search-card { margin-bottom: var(--space-4); }
 .table-card { padding: 0; overflow: hidden; }
 
 /* ── Search ── */
 .search-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   flex-wrap: wrap;
 }
 .search-inputs {
   display: flex;
-  gap: 12px;
+  gap: var(--space-3);
   flex: 1;
   min-width: 0;
 }
@@ -587,24 +587,24 @@ onMounted(() => {
   padding: 9px 18px;
   border: none;
   border-radius: var(--radius-sm);
-  font-size: 14px;
-  font-weight: 500;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
   cursor: pointer;
-  transition: all .15s;
+  transition: all var(--transition-fast);
   white-space: nowrap;
 }
-.btn-primary { background: var(--primary); color: #fff; }
-.btn-primary:hover { background: #4338ca; }
-.btn-cancel { background: #f3f4f6; color: var(--text-secondary); }
-.btn-cancel:hover { background: #e5e7eb; }
+.btn-primary { background: var(--green-500); color: var(--surface-white); }
+.btn-primary:hover { background: var(--green-600); }
+.btn-cancel { background: var(--ink-100); color: var(--text-secondary); }
+.btn-cancel:hover { background: var(--ink-200); }
 .btn-ghost {
   background: transparent;
   color: var(--text-secondary);
-  padding: 6px 12px;
+  padding: 6px var(--space-3);
   font-size: 13px;
 }
-.btn-ghost:hover { background: #f3f4f6; color: var(--text); }
-.btn-icon { width: 16px; height: 16px; }
+.btn-ghost:hover { background: var(--ink-100); color: var(--text); }
+.btn-icon { width: var(--space-4); height: var(--space-4); }
 .btn-icon-sm { width: 14px; height: 14px; }
 .spinning { animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -612,15 +612,15 @@ onMounted(() => {
 /* ── Table ── */
 .premium-table { width: 100%; }
 .premium-table :deep(.el-table__header th) {
-  background: #f9fafb;
+  background: var(--ink-50);
   color: var(--text-secondary);
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
   font-size: 13px;
   text-transform: uppercase;
   letter-spacing: .05em;
   border-bottom: 2px solid var(--border);
 }
-.hospital-name { font-weight: 600; color: var(--text); }
+.hospital-name { font-weight: var(--weight-semibold); color: var(--text); }
 .truncate-text {
   display: block;
   max-width: 240px;
@@ -634,10 +634,10 @@ onMounted(() => {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 12px;
+  padding: var(--space-1) var(--space-3);
   border-radius: 20px;
-  font-size: 12px;
-  font-weight: 600;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
 }
 .badge-dot::before {
   content: '';
@@ -650,11 +650,11 @@ onMounted(() => {
 .badge-no { background: var(--danger-bg); color: var(--danger); }
 .badge-no::before { background: var(--danger); }
 
-.serum-amount { font-weight: 600; }
+.serum-amount { font-weight: var(--weight-semibold); }
 .serum-amount.low-stock { color: var(--danger); }
 
 /* ── Action Buttons ── */
-.action-btns { display: flex; gap: 4px; }
+.action-btns { display: flex; gap: var(--space-1); }
 .action-btn {
   display: flex;
   align-items: center;
@@ -662,14 +662,14 @@ onMounted(() => {
   width: 32px;
   height: 32px;
   border: 1px solid transparent;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: transparent;
   cursor: pointer;
-  transition: all .15s;
+  transition: all var(--transition-fast);
 }
 .action-btn svg { width: 15px; height: 15px; }
-.edit-btn { color: var(--primary); }
-.edit-btn:hover { background: var(--primary-light); border-color: var(--primary); }
+.edit-btn { color: var(--green-500); }
+.edit-btn:hover { background: var(--green-50); border-color: var(--green-500); }
 .delete-btn { color: var(--danger); }
 .delete-btn:hover { background: var(--danger-bg); border-color: var(--danger); }
 
@@ -677,7 +677,7 @@ onMounted(() => {
 .pagination-wrap {
   display: flex;
   justify-content: flex-end;
-  padding: 16px 20px;
+  padding: var(--space-4) var(--space-5);
   border-top: 1px solid var(--border);
 }
 
@@ -686,11 +686,11 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px 12px;
+  padding: var(--space-4) var(--space-5) var(--space-3);
 }
 .section-title {
   font-size: 15px;
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
   color: var(--text);
   margin: 0;
 }
@@ -698,21 +698,21 @@ onMounted(() => {
 /* ── Dialog ── */
 .premium-dialog :deep(.el-dialog__header) {
   border-bottom: 1px solid var(--border);
-  padding: 20px 24px;
+  padding: var(--space-5) var(--space-6);
   margin: 0;
 }
 .premium-dialog :deep(.el-dialog__title) {
-  font-size: 16px;
-  font-weight: 600;
+  font-size: var(--space-4);
+  font-weight: var(--weight-semibold);
 }
-.premium-dialog :deep(.el-dialog__body) { padding: 24px; }
-.dialog-footer { display: flex; justify-content: flex-end; gap: 8px; padding-top: 8px; }
+.premium-dialog :deep(.el-dialog__body) { padding: var(--space-6); }
+.dialog-footer { display: flex; justify-content: flex-end; gap: var(--space-2); padding-top: var(--space-2); }
 .premium-form :deep(.el-form-item__label) {
-  font-weight: 500;
+  font-weight: var(--weight-medium);
   color: var(--text-secondary);
   font-size: 13px;
 }
 
 /* ── SVG icon in inputs ── */
-.svg-icon { width: 16px; height: 16px; color: #9ca3af; }
+.svg-icon { width: var(--space-4); height: var(--space-4); color: var(--ink-400); }
 </style>
