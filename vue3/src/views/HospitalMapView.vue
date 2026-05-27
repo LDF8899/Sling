@@ -1,24 +1,27 @@
 <template>
   <div class="hospital-map-view">
-    <div class="tabs">
-      <button
-        :class="{ active: activeTab === 'convert' }"
-        @click="activeTab = 'convert'"
-      >
-        📍 地址转换
-      </button>
-      <button
-        :class="{ active: activeTab === 'hospital' }"
-        @click="activeTab = 'hospital'"
-      >
-        🏥 医院检索
-      </button>
-      <button
-        :class="{ active: activeTab === 'route' }"
-        @click="activeTab = 'route'"
-      >
-        🗺️ 路线规划
-      </button>
+    <div class="top-bar">
+      <el-button :icon="ArrowLeft" circle @click="$router.push('/dashboard')" class="back-btn" />
+      <div class="tabs">
+        <button
+          :class="{ active: activeTab === 'convert' }"
+          @click="activeTab = 'convert'"
+        >
+          📍 地址转换
+        </button>
+        <button
+          :class="{ active: activeTab === 'hospital' }"
+          @click="activeTab = 'hospital'"
+        >
+          🏥 医院检索
+        </button>
+        <button
+          :class="{ active: activeTab === 'route' }"
+          @click="activeTab = 'route'"
+        >
+          🗺️ 路线规划
+        </button>
+      </div>
     </div>
 
     <div class="map-container">
@@ -59,6 +62,7 @@
 
 <script setup>
 import { ref } from 'vue'
+import { ArrowLeft } from '@element-plus/icons-vue'
 import MapContainer from '../components/MapContainer.vue'
 import AddressConverter from '../components/AddressConverter.vue'
 import HospitalSearch from '../components/HospitalSearch.vue'
@@ -97,21 +101,33 @@ const updateMapPath = (path) => {
 
 <style scoped>
 .hospital-map-view {
-  width: 100vw;
-  height: 100vh;
+  width: calc(100% + var(--space-6) * 2);
+  height: calc(100vh - 72px);
+  margin: calc(-1 * var(--space-6)) calc(-1 * var(--space-6)) 0;
   display: flex;
   flex-direction: column;
   background: var(--blue-50);
 }
 
-.tabs {
+.top-bar {
   display: flex;
+  align-items: center;
+  gap: var(--space-3);
   background: var(--surface-white);
-  padding: 0 var(--space-4);
+  padding: var(--space-2) var(--space-4);
   box-shadow: var(--shadow-sm);
   z-index: 10;
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--green-100);
+}
+
+.back-btn {
+  flex-shrink: 0;
+}
+
+.tabs {
+  display: flex;
+  flex: 1;
 }
 
 .tabs button {

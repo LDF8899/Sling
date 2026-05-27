@@ -3,13 +3,13 @@
     <div class="nav-inner">
       <div class="nav-left">
         <router-link to="/dashboard" class="nav-brand">
-          <span class="brand-icon">&#x1F40D;</span>
+          <img src="/sling-logo.svg" alt="SLING" class="brand-icon" />
           <span class="brand-text">SLING</span>
           <span class="brand-sub">蛇灵</span>
         </router-link>
       </div>
 
-      <div class="nav-center" v-if="$slots.center">
+      <div class="nav-center">
         <slot name="center" />
       </div>
 
@@ -101,9 +101,28 @@ onUnmounted(() => window.removeEventListener('scroll', onScroll))
   text-decoration: none;
   color: var(--ink-900);
 }
-.brand-icon { font-size: 24px; }
+.brand-icon { width: 32px; height: 32px; }
 .brand-text { font-size: var(--text-lg); font-weight: var(--weight-bold); letter-spacing: -0.5px; }
 .brand-sub { font-size: var(--text-xs); color: var(--ink-500); font-weight: var(--weight-normal); }
+
+.nav-center {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.nav-link {
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--ink-600);
+  text-decoration: none;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+.nav-link:hover { background: var(--green-50); color: var(--green-600); }
+.nav-link.router-link-active { background: var(--green-50); color: var(--green-600); font-weight: var(--weight-semibold); }
 
 .nav-right {
   display: flex;

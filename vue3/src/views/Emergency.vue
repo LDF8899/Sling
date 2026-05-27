@@ -1,16 +1,10 @@
 <template>
   <div class="emergency-container">
-    <!-- 顶部导航栏 -->
-    <div class="top-navbar">
-      <div class="navbar-content">
-        <div class="logo-section">
-          <el-button icon="ArrowLeft" @click="goBack" circle></el-button>
-          <h2>应急处理</h2>
-        </div>
-      </div>
-    </div>
-
     <div class="main-content">
+      <div class="page-header">
+        <el-button icon="ArrowLeft" @click="$router.push('/dashboard')" circle class="back-btn"></el-button>
+        <h2>应急处理</h2>
+      </div>
       <el-tabs v-model="activeTab" class="emergency-tabs" @tab-change="handleTabChange">
         <!-- 图片识别模式 Tab -->
         <el-tab-pane label="图片识别" name="image">
@@ -261,6 +255,9 @@
                 <!-- 标题区域 -->
                 <div class="guide-header">
                   <h2 class="main-title">🦎 {{ emergencyGuide.snakeName }}</h2>
+                  <el-button type="default" size="small" @click="refreshQuery" class="refresh-btn">
+                    刷新重查
+                  </el-button>
                   <div class="header-tags" v-if="emergencyGuide.venomType || emergencyGuide.latinName">
                     <el-tag v-if="emergencyGuide.venomType" :type="getVenomTypeTag(emergencyGuide.venomType)" effect="dark">
                       {{ emergencyGuide.venomType }}
@@ -502,18 +499,17 @@ const getImageUrls = () => {
     return [];
   }
 
-  // 从imageUrl中提取基础名称，构建多张图片的URL
-  const snakeName = emergencyGuide.value.snakeName;
   const mainImageUrl = emergencyGuide.value.imageUrl;
+  const imageUrls = [mainImageUrl];
 
-  // 从主图片URL中提取基础名称（去掉编号和扩展名）
-  const baseName = mainImageUrl.replace(/(_\d+)?\.\w+$/, '');
-
-  // 构建多张图片的URL数组
-  const imageUrls = [];
-  for (let i = 1; i <= 3; i++) { // 假设有3张图片
-    const imageUrl = `${baseName}_${i}.jpg`;
-    imageUrls.push(imageUrl);
+  // 从主图片URL中提取基础名称（去掉编号和扩展名），尝试构建多张图片的URL
+  const match = mainImageUrl.match(/^(.+?)_(\d+)\.(\w+)$/);
+  if (match) {
+    const baseName = match[1];
+    const ext = match[3];
+    for (let i = 2; i <= 3; i++) {
+      imageUrls.push(`${baseName}_${i}.${ext}`);
+    }
   }
 
   return imageUrls.filter(url => url && url.trim() !== '');
@@ -564,24 +560,15 @@ const handleImageLoad = () => {
 }
 
 // 清空结果
-const clearResults = () => {
-  answerResult.value = ''
+const refreshQuery = () => {
+  if (!snakeName.value.trim()) return
   emergencyGuide.value = null
-  snakeName.value = ''
-  suggestions.value = []
   errorMessage.value = ''
-  userQuestion.value = ''
   imageLoadFailed.value = false
   imageLoadErrors.value = []
   currentImageIndex.value = 0
-
-  // 清空图片相关数据
-  uploadedImage.value = null
-  uploadedImageFile.value = null
-  rawFileSize.value = 0
-  compressedFileSize.value = 0
-  analysisResult.value = ''
-  analysisTime.value = 0
+  showImageViewer.value = false
+  queryByName()
 }
 
 // 加载历史记录
@@ -640,8 +627,16 @@ const saveNameToHistory = (snakeName) => {
 
 // 处理 Tab 切换
 const handleTabChange = () => {
-  // 清空之前的结果
-  clearResults()
+  answerResult.value = ''
+  emergencyGuide.value = null
+  snakeName.value = ''
+  suggestions.value = []
+  errorMessage.value = ''
+  userQuestion.value = ''
+  imageLoadFailed.value = false
+  imageLoadErrors.value = []
+  currentImageIndex.value = 0
+  querying.value = false
 }
 
 // 提交问题
@@ -1179,7 +1174,7 @@ onMounted(() => {
 
 <style scoped>
 .emergency-container {
-  min-height: 100vh;
+  min-height: 100%;
   background: linear-gradient(135deg, var(--ink-50) 0%, var(--ink-100) 100%);
   padding: 0;
   box-sizing: border-box;
@@ -1187,45 +1182,26 @@ onMounted(() => {
   font-family: var(--font-sans);
 }
 
-.top-navbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 64px;
-  background: var(--surface-white);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--green-100);
-  z-index: 1000;
-  box-shadow: var(--shadow-sm);
-}
-
-.navbar-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 var(--space-6);
-  height: 100%;
-  max-width: 1400px;
-  margin: 0 auto;
-}
-
-.logo-section {
+.page-header {
   display: flex;
   align-items: center;
   gap: var(--space-4);
+  margin-bottom: var(--space-6);
 }
 
-.logo-section h2 {
+.page-header h2 {
   margin: 0;
-  color: var(--green-600);
   font-size: var(--text-xl);
   font-weight: var(--weight-semibold);
-  letter-spacing: 0.5px;
+  color: var(--ink-900);
+}
+
+.back-btn {
+  flex-shrink: 0;
 }
 
 .main-content {
-  padding: 84px var(--space-6) var(--space-10);
+  padding: var(--space-6) var(--space-6) var(--space-10);
   max-width: 1400px;
   margin: 0 auto;
 }
@@ -1613,6 +1589,10 @@ onMounted(() => {
   align-items: center;
 }
 
+.refresh-btn {
+  flex-shrink: 0;
+}
+
 .latin-tag {
   font-style: italic;
 }
@@ -1801,13 +1781,15 @@ onMounted(() => {
   height: 350px;
   display: flex;
   justify-content: center;
+  align-items: center;
   position: relative;
+  background: var(--ink-50);
 }
 
 .image-card img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
 }
 
 .image-indicator {
@@ -2325,7 +2307,7 @@ onMounted(() => {
   }
 
   .main-content {
-    padding: 84px var(--space-4) var(--space-8);
+    padding: var(--space-4) var(--space-4) var(--space-8);
   }
 
   .upload-section, .results-section {

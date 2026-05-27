@@ -1,33 +1,16 @@
 <template>
   <div class="recognition-container" :class="{ 'dark-mode': darkMode }">
-    <!-- 玻璃态顶部导航栏 -->
-    <div class="glass-navbar">
-      <div class="navbar-content">
-        <div class="nav-left">
-          <el-button type="text" icon="ArrowLeft" @click="goBack" class="back-btn">
-            返回
-          </el-button>
-        </div>
-        <div class="nav-center">
-          <h1 class="app-title">
+    <div class="main-content">
+      <div class="page-header">
+        <el-button icon="ArrowLeft" circle @click="$router.push('/dashboard')" class="back-btn" />
+        <div class="page-title">
+          <h1>
             <i class="el-icon-camera"></i>
             蛇类识别
           </h1>
-          <p class="app-subtitle">上传图片，智能识别蛇类信息</p>
-        </div>
-        <div class="nav-right">
-          <el-switch
-              v-model="darkMode"
-              active-text="暗色"
-              inactive-text="亮色"
-              @change="toggleTheme"
-              size="large"
-          />
+          <p>上传图片，智能识别蛇类信息</p>
         </div>
       </div>
-    </div>
-
-    <div class="main-content">
       <el-row :gutter="32">
         <!-- 图片上传区 -->
         <el-col :xs="24" :lg="12">
@@ -530,50 +513,25 @@ export default {
   transition: background var(--transition-base);
 }
 
-.glass-navbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 80px;
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-  z-index: 1000;
-  box-shadow: var(--shadow-lg);
-}
-
-.navbar-content {
+.page-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 0 var(--space-10);
-  height: 100%;
-  max-width: 1600px;
-  margin: 0 auto;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
 }
 
-.nav-left, .nav-right {
-  flex: 1;
-}
-
-.nav-center {
-  text-align: center;
-}
-
-.app-title {
+.page-title h1 {
   margin: 0;
   font-size: 28px;
   font-weight: var(--weight-bold);
   color: var(--ink-900);
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: var(--space-3);
 }
 
-.app-subtitle {
-  margin: var(--space-2) 0 0 0;
+.page-title p {
+  margin: var(--space-1) 0 0 0;
   color: var(--ink-500);
   font-size: var(--text-sm);
   font-weight: var(--weight-normal);
@@ -585,7 +543,7 @@ export default {
 }
 
 .main-content {
-  padding: 100px var(--space-10) var(--space-10);
+  padding: var(--space-6) var(--space-10) var(--space-10);
   max-width: 1600px;
   margin: 0 auto;
 }

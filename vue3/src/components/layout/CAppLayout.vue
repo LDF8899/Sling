@@ -11,7 +11,7 @@
     </CAppNavbar>
 
     <main class="main-content">
-      <slot />
+      <RouterView />
     </main>
 
     <CAppFooter :dark="dark" />
@@ -25,22 +25,20 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import CAppNavbar from './CAppNavbar.vue'
 import CAppFooter from './CAppFooter.vue'
 import CAppSideTools from './CAppSideTools.vue'
 
-const props = defineProps({
-  user: { type: Object, default: () => null },
-})
-
 const emit = defineEmits(['sos', 'logout', 'toggle-dark'])
 
 const router = useRouter()
 const userStore = useUserStore()
 const dark = ref(false)
+
+const user = computed(() => userStore.userInfo)
 
 const toggleDark = () => {
   dark.value = !dark.value
@@ -75,6 +73,8 @@ onMounted(() => {
 
 <style scoped>
 .c-app-layout {
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
   background: var(--surface-warm);
   transition: background var(--transition-base);
@@ -84,9 +84,12 @@ onMounted(() => {
 }
 
 .main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   max-width: var(--container-max);
+  width: 100%;
   margin: 0 auto;
   padding: 72px var(--space-6) var(--space-8);
-  min-height: calc(100vh - 100px);
 }
 </style>

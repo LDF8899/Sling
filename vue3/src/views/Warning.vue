@@ -4,7 +4,7 @@
     <header class="main-header">
       <div class="header-container">
         <div class="logo">
-          <i class="el-icon-location-danger"></i>
+          <el-button :icon="ArrowLeft" circle @click="$router.push('/dashboard')" class="back-btn" />
           <h1>蛇类风险预警系统 v2.0</h1>
         </div>
         <div class="header-actions">
@@ -384,8 +384,11 @@
 
 <script setup>
 import { ref, reactive, onMounted, onUnmounted, onErrorCaptured } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Loading } from '@element-plus/icons-vue'
+import { Loading, ArrowLeft } from '@element-plus/icons-vue'
+
+const router = useRouter()
 
 // ========== 高德地图配置（官方1.4.15版本） ==========
 // 前往 https://lbs.amap.com/ 申请 Web端(JS API) 密钥
@@ -1195,6 +1198,10 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: var(--space-3);
+}
+
+.back-btn {
+  flex-shrink: 0;
 }
 
 .logo i {

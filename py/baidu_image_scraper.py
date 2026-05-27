@@ -72,7 +72,12 @@ def scrape_baidu_images(keyword: str, save_dir: str = r"C:\Users\Asuka\Desktop\1
         'pcindex': ''
     }
 
-    print(f"正在搜索关键词: {keyword}")
+    # 拼接限定词，提高蛇类图片搜索精度
+    search_keyword = f"{keyword} 蛇类"
+    params['queryWord'] = search_keyword
+    params['word'] = search_keyword
+
+    print(f"正在搜索关键词: {search_keyword}")
 
     try:
         # 发送GET请求
@@ -136,7 +141,7 @@ def scrape_baidu_images(keyword: str, save_dir: str = r"C:\Users\Asuka\Desktop\1
                 if 'jpeg' in content_type or 'jpg' in content_type:
                     ext = '.jpg'
                 elif 'png' in content_type:
-                    ext = 'banner3.png'
+                    ext = '.png'
                 elif 'gif' in content_type:
                     ext = '.gif'
 

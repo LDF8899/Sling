@@ -11,7 +11,7 @@
       <div class="reg-brand">
         <div class="brand-inner">
           <div class="brand-logo">
-            <span class="logo-icon">🐍</span>
+            <img src="/sling-logo.svg" alt="SLING" class="logo-icon" />
             <div>
               <h1>SLING <span class="logo-cn">蛇灵</span></h1>
             </div>
@@ -301,7 +301,7 @@ onMounted(() => {
 @keyframes fadeInLeft { from { opacity:0; transform:translateX(-30px); } to { opacity:1; transform:translateX(0); } }
 
 .brand-logo { display:flex; align-items:center; gap:12px; margin-bottom:24px; }
-.logo-icon { font-size:44px; }
+.logo-icon { width: 44px; height: 44px; }
 .brand-logo h1 { font-size:36px; font-weight:700; margin:0; letter-spacing:-0.5px; }
 .logo-cn { font-weight:300; opacity:0.9; margin-left:4px; }
 

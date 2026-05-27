@@ -1,5 +1,5 @@
 <template>
-  <CAppLayout :user="user">
+  <div class="dashboard-page">
     <!-- ===== 轮播图 ===== -->
     <div class="banner-carousel" v-if="showBanner">
       <div class="banner-wrapper">
@@ -169,7 +169,7 @@
         <p>暂无数据，请选择其他标签</p>
       </div>
     </section>
-  </CAppLayout>
+  </div>
 </template>
 
 <script setup>
@@ -177,16 +177,10 @@ import { ref, onMounted, onBeforeUnmount, computed, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Camera, MapLocation, FirstAidKit, OfficeBuilding, Help, DataAnalysis, ArrowRight, View, WarningFilled, Close } from '@element-plus/icons-vue'
-import CAppLayout from '@/components/layout/CAppLayout.vue'
 import cytoscape from 'cytoscape'
 import axios from 'axios'
 
 const router = useRouter()
-
-// 用户信息（从 store 注入 CAppLayout）
-const user = computed(() => ({
-  username: '用户名'
-}))
 
 // — 轮播图 —
 const showBanner = ref(true)
@@ -325,7 +319,7 @@ const renderMiniGraph = (graphData) => {
 
 const loadMiniGraph = async () => {
   try {
-    const { data } = await axios.get('/snake/graph/data?filter=all')
+    const { data } = await axios.get('/snake/graph/overview')
     if (data.code === 200 && miniGraphRef.value) renderMiniGraph(data.data)
   } catch (e) { console.warn('迷你图谱加载失败:', e) }
 }

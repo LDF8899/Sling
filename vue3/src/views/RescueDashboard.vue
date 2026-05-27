@@ -1,5 +1,11 @@
 <template>
   <div class="rescue-dashboard" :class="{ 'dark-mode': darkMode }">
+    <!-- 顶部操作栏 -->
+    <div class="top-bar">
+      <el-button :icon="ArrowLeft" circle @click="$router.push('/dashboard')" class="back-btn" />
+      <h2>救助调度中心</h2>
+    </div>
+
     <!-- 顶部统计 -->
     <div class="stats-bar">
       <div class="stat-card total" @click="currentFilter = ''">
@@ -164,8 +170,11 @@
 
 <script setup>
 import { ref, reactive, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElNotification } from 'element-plus'
-import { Loading } from '@element-plus/icons-vue'
+import { Loading, ArrowLeft } from '@element-plus/icons-vue'
+
+const router = useRouter()
 import { emergencyApi } from '../services/api'
 import { useUserStore } from '../store/user'
 
@@ -453,12 +462,32 @@ onUnmounted(() => {
 
 <style scoped>
 .rescue-dashboard {
-  height: 100vh;
+  width: calc(100% + var(--space-6) * 2);
+  height: calc(100vh - 72px);
+  margin: calc(-1 * var(--space-6)) calc(-1 * var(--space-6)) 0;
   display: flex;
   flex-direction: column;
   background: var(--surface-cool);
   padding: var(--space-4);
   box-sizing: border-box;
+}
+
+.top-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.top-bar h2 {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  color: var(--ink-900);
+}
+
+.back-btn {
+  flex-shrink: 0;
 }
 
 /* 统计栏 */

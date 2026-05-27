@@ -30,7 +30,7 @@ public class AdminUser {
     @TableField("real_name")
     private String realName;
 
-    @TableField(exist = false)  // 数据库中没有avatar字段
+    @TableField("avatar")
     private String avatar;
 
     @TableField("department")

@@ -75,7 +75,7 @@ public class User extends BaseEntity {
     /**
      * 用户状态：0-禁用，1-启用
      */
-    @TableField(value = "status")
+    @TableField(value = "status", exist = false)
     private Integer status;
 
     /**
