@@ -86,6 +86,12 @@ spring:
           predicates:
             - Path=/api/warning/**
 
+        # rescue routes (区域管理、预警、血清)
+        - id: rescue-service-api
+          uri: lb://warning-service
+          predicates:
+            - Path=/api/rescue/**
+
         # emergency-service
         - id: emergency-service-api
           uri: lb://emergency-service
@@ -100,3 +106,8 @@ spring:
           uri: lb://user-service
           predicates:
             - Path=/uploads/avatar/**
+
+        - id: recognition-service-images
+          uri: lb://recognition-service
+          predicates:
+            - Path=/uploads/recognition/**

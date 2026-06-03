@@ -11,6 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@amap/amap-jsapi-loader": "^1.0.1",
     "axios": "^1.13.2",
     "cytoscape": "^3.33.3",
     "cytoscape-cose-bilkent": "^4.1.0",
