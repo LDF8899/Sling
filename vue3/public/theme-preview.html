@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard 配色方案预览</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a2e;
+      color: #e0e0e0;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    .page-header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+    .page-header h1 {
+      font-size: 32px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #4caf50, #0288d1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+    .page-header p {
+      color: #888;
+      font-size: 16px;
+    }
+
+    .themes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 24px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .theme-card {
+      border-radius: 16px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+    .theme-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+    }
+    .theme-card.selected {
+      outline: 3px solid #4caf50;
+      outline-offset: 3px;
+    }
+    .theme-card.selected::after {
+      content: '✓ 已选择';
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: #4caf50;
+      color: #fff;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      z-index: 10;
+    }
+
+    .theme-label {
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .theme-label h3 {
+      font-size: 18px;
+      font-weight: 700;
+    }
+    .theme-label span {
+      font-size: 13px;
+      opacity: 0.7;
+    }
+
+    /* ===== 方案 A：深林幽谷 ===== */
+    .theme-a .theme-label { background: #0f1f17; color: #e8f5e9; }
+    .theme-a .preview {
+      background: #0f1f17;
+      padding: 20px;
+    }
+    .theme-a .card {
+      background: #1a2e23;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+      border: 1px solid #2d4a36;
+    }
+    .theme-a .card-title {
+      color: #e8f5e9;
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .theme-a .card-text {
+      color: #a5d6a7;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .theme-a .card-meta {
+      color: #66bb6a;
+      font-size: 12px;
+      margin-top: 8px;
+    }
+    .theme-a .tag {
+      display: inline-block;
+      background: #4caf50;
+      color: #fff;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      margin-bottom: 8px;
+    }
+    .theme-a .tag.urgent {
+      background: #ef5350;
+      animation: pulse 2s infinite;
+    }
+    .theme-a .btn {
+      background: linear-gradient(135deg, #4caf50, #2e7d32);
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+    .theme-a .stat-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .theme-a .stat {
+      flex: 1;
+      background: #1a2e23;
+      border-radius: 8px;
+      padding: 12px;
+      text-align: center;
+      border: 1px solid #2d4a36;
+    }
+    .theme-a .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #4caf50;
+    }
+    .theme-a .stat-label {
+      font-size: 11px;
+      color: #81c784;
+      margin-top: 4px;
+    }
+
+    /* ===== 方案 B：晨雾山水 ===== */
+    .theme-b .theme-label { background: #f5f0e8; color: #2d3b2d; }
+    .theme-b .preview {
+      background: #f5f0e8;
+      padding: 20px;
+    }
+    .theme-b .card {
+      background: #faf7f2;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+      border: 1px solid #e8e0d4;
+      box-shadow: 0 2px 8px rgba(45,59,45,0.06);
+    }
+    .theme-b .card-title {
+      color: #2d3b2d;
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .theme-b .card-text {
+      color: #5a6b5a;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .theme-b .card-meta {
+      color: #7a8b7a;
+      font-size: 12px;
+      margin-top: 8px;
+    }
+    .theme-b .tag {
+      display: inline-block;
+      background: #059669;
+      color: #fff;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      margin-bottom: 8px;
+    }
+    .theme-b .tag.urgent {
+      background: #dc2626;
+      animation: pulse 2s infinite;
+    }
+    .theme-b .btn {
+      background: linear-gradient(135deg, #059669, #0891b2);
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+    .theme-b .stat-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .theme-b .stat {
+      flex: 1;
+      background: #faf7f2;
+      border-radius: 8px;
+      padding: 12px;
+      text-align: center;
+      border: 1px solid #e8e0d4;
+    }
+    .theme-b .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #059669;
+    }
+    .theme-b .stat-label {
+      font-size: 11px;
+      color: #7a8b7a;
+      margin-top: 4px;
+    }
+
+    /* ===== 方案 C：湖光山色 ===== */
+    .theme-c .theme-label { background: linear-gradient(135deg, #e8f5e9, #e3f2fd); color: #1a2332; }
+    .theme-c .preview {
+      background: linear-gradient(135deg, #e8f5e9, #e3f2fd);
+      padding: 20px;
+    }
+    .theme-c .card {
+      background: rgba(255,255,255,0.85);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+      border: 1px solid rgba(5,150,105,0.15);
+      box-shadow: 0 2px 8px rgba(5,150,105,0.08);
+    }
+    .theme-c .card-title {
+      color: #1a2332;
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .theme-c .card-text {
+      color: #455a64;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .theme-c .card-meta {
+      color: #78909c;
+      font-size: 12px;
+      margin-top: 8px;
+    }
+    .theme-c .tag {
+      display: inline-block;
+      background: #059669;
+      color: #fff;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      margin-bottom: 8px;
+    }
+    .theme-c .tag.urgent {
+      background: #dc2626;
+      animation: pulse 2s infinite;
+    }
+    .theme-c .btn {
+      background: linear-gradient(135deg, #059669, #0288d1);
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+    .theme-c .stat-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .theme-c .stat {
+      flex: 1;
+      background: rgba(255,255,255,0.85);
+      border-radius: 8px;
+      padding: 12px;
+      text-align: center;
+      border: 1px solid rgba(5,150,105,0.15);
+    }
+    .theme-c .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #059669;
+    }
+    .theme-c .stat-label {
+      font-size: 11px;
+      color: #78909c;
+      margin-top: 4px;
+    }
+
+    /* ===== 方案 D：暮色苍山 ===== */
+    .theme-d .theme-label { background: #0a1a12; color: #c8e6c9; }
+    .theme-d .preview {
+      background: #0a1a12;
+      padding: 20px;
+    }
+    .theme-d .card {
+      background: #12241a;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+      border: 1px solid #1e3a28;
+    }
+    .theme-d .card-title {
+      color: #c8e6c9;
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .theme-d .card-text {
+      color: #81c784;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .theme-d .card-meta {
+      color: #4db6ac;
+      font-size: 12px;
+      margin-top: 8px;
+    }
+    .theme-d .tag {
+      display: inline-block;
+      background: #26a69a;
+      color: #fff;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      margin-bottom: 8px;
+    }
+    .theme-d .tag.urgent {
+      background: #ef5350;
+      animation: pulse 2s infinite;
+    }
+    .theme-d .btn {
+      background: linear-gradient(135deg, #26a69a, #4dd0e1);
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+    .theme-d .stat-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .theme-d .stat {
+      flex: 1;
+      background: #12241a;
+      border-radius: 8px;
+      padding: 12px;
+      text-align: center;
+      border: 1px solid #1e3a28;
+    }
+    .theme-d .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #26a69a;
+    }
+    .theme-d .stat-label {
+      font-size: 11px;
+      color: #4db6ac;
+      margin-top: 4px;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+
+    .section-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 48px;
+      color: #666;
+      font-size: 14px;
+    }
+    .footer button {
+      background: #4caf50;
+      color: #fff;
+      border: none;
+      padding: 12px 32px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 16px;
+      transition: all 0.2s;
+    }
+    .footer button:hover {
+      background: #43a047;
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>🎨 Dashboard 配色方案选择</h1>
+  <p>点击选择你喜欢的主题，核心基调：青山绿水蓝天白云</p>
+</div>
+
+<div class="themes-grid">
+
+  <!-- 方案 A -->
+  <div class="theme-card" data-theme="a" onclick="selectTheme(this)">
+    <div class="theme-a">
+      <div class="theme-label">
+        <h3>🌲 方案 A：深林幽谷</h3>
+        <span>沉浸 · 专业 · 科技感</span>
+      </div>
+      <div class="preview">
+        <div class="card">
+          <div class="tag urgent">⚠ 紧急预警</div>
+          <div class="card-title">中央气象台发布暴雨蓝色预警</div>
+          <div class="card-text">华南地区将迎来新一轮强降雨，户外活动请密切关注天气变化，避免进入山谷、河床等低洼地带。</div>
+          <div class="card-meta">中央气象台 · 2小时前</div>
+        </div>
+        <div class="card">
+          <div class="card-title">深圳梧桐山登山步道临时封闭</div>
+          <div class="card-text">受连续暴雨影响，梧桐山凌云道部分路段封闭施工，预计6月20日恢复开放。</div>
+          <div class="card-meta">深圳市城管局 · 昨天</div>
+        </div>
+        <div class="stat-row">
+          <div class="stat">
+            <div class="stat-value">300+</div>
+            <div class="stat-label">蛇类识别</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">1500+</div>
+            <div class="stat-label">合作医院</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">98%</div>
+            <div class="stat-label">识别准确率</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 方案 B -->
+  <div class="theme-card" data-theme="b" onclick="selectTheme(this)">
+    <div class="theme-b">
+      <div class="theme-label">
+        <h3>🏔️ 方案 B：晨雾山水</h3>
+        <span>温暖 · 自然 · 不刺眼</span>
+      </div>
+      <div class="preview">
+        <div class="card">
+          <div class="tag urgent">⚠ 紧急预警</div>
+          <div class="card-title">中央气象台发布暴雨蓝色预警</div>
+          <div class="card-text">华南地区将迎来新一轮强降雨，户外活动请密切关注天气变化，避免进入山谷、河床等低洼地带。</div>
+          <div class="card-meta">中央气象台 · 2小时前</div>
+        </div>
+        <div class="card">
+          <div class="card-title">深圳梧桐山登山步道临时封闭</div>
+          <div class="card-text">受连续暴雨影响，梧桐山凌云道部分路段封闭施工，预计6月20日恢复开放。</div>
+          <div class="card-meta">深圳市城管局 · 昨天</div>
+        </div>
+        <div class="stat-row">
+          <div class="stat">
+            <div class="stat-value">300+</div>
+            <div class="stat-label">蛇类识别</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">1500+</div>
+            <div class="stat-label">合作医院</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">98%</div>
+            <div class="stat-label">识别准确率</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 方案 C -->
+  <div class="theme-card" data-theme="c" onclick="selectTheme(this)">
+    <div class="theme-c">
+      <div class="theme-label">
+        <h3>🌊 方案 C：湖光山色</h3>
+        <span>清新 · 通透 · 蓝天白云</span>
+      </div>
+      <div class="preview">
+        <div class="card">
+          <div class="tag urgent">⚠ 紧急预警</div>
+          <div class="card-title">中央气象台发布暴雨蓝色预警</div>
+          <div class="card-text">华南地区将迎来新一轮强降雨，户外活动请密切关注天气变化，避免进入山谷、河床等低洼地带。</div>
+          <div class="card-meta">中央气象台 · 2小时前</div>
+        </div>
+        <div class="card">
+          <div class="card-title">深圳梧桐山登山步道临时封闭</div>
+          <div class="card-text">受连续暴雨影响，梧桐山凌云道部分路段封闭施工，预计6月20日恢复开放。</div>
+          <div class="card-meta">深圳市城管局 · 昨天</div>
+        </div>
+        <div class="stat-row">
+          <div class="stat">
+            <div class="stat-value">300+</div>
+            <div class="stat-label">蛇类识别</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">1500+</div>
+            <div class="stat-label">合作医院</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">98%</div>
+            <div class="stat-label">识别准确率</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 方案 D -->
+  <div class="theme-card" data-theme="d" onclick="selectTheme(this)">
+    <div class="theme-d">
+      <div class="theme-label">
+        <h3>🌙 方案 D：暮色苍山</h3>
+        <span>神秘 · 高级 · 暗夜模式</span>
+      </div>
+      <div class="preview">
+        <div class="card">
+          <div class="tag urgent">⚠ 紧急预警</div>
+          <div class="card-title">中央气象台发布暴雨蓝色预警</div>
+          <div class="card-text">华南地区将迎来新一轮强降雨，户外活动请密切关注天气变化，避免进入山谷、河床等低洼地带。</div>
+          <div class="card-meta">中央气象台 · 2小时前</div>
+        </div>
+        <div class="card">
+          <div class="card-title">深圳梧桐山登山步道临时封闭</div>
+          <div class="card-text">受连续暴雨影响，梧桐山凌云道部分路段封闭施工，预计6月20日恢复开放。</div>
+          <div class="card-meta">深圳市城管局 · 昨天</div>
+        </div>
+        <div class="stat-row">
+          <div class="stat">
+            <div class="stat-value">300+</div>
+            <div class="stat-label">蛇类识别</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">1500+</div>
+            <div class="stat-label">合作医院</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">98%</div>
+            <div class="stat-label">识别准确率</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  <p>选择后点击下方按钮确认</p>
+  <button onclick="confirmSelection()">确认选择</button>
+</div>
+
+<script>
+let selectedTheme = null;
+
+function selectTheme(el) {
+  document.querySelectorAll('.theme-card').forEach(card => card.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedTheme = el.dataset.theme;
+}
+
+function confirmSelection() {
+  if (!selectedTheme) {
+    alert('请先选择一个方案！');
+    return;
+  }
+  const names = { a: '深林幽谷', b: '晨雾山水', c: '湖光山色', d: '暮色苍山' };
+  alert(`你选择了：方案 ${selectedTheme.toUpperCase()}（${names[selectedTheme]}）\n\n请告诉我你的选择，我会开始实现！`);
+}
+</script>
+
+</body>
+</html>

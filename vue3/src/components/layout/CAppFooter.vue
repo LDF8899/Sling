@@ -1,5 +1,5 @@
 <template>
-  <footer class="c-footer" :class="{ dark }">
+  <footer class="c-footer">
     <div class="footer-inner">
       <div class="footer-links">
         <router-link to="/dashboard">首页</router-link>
@@ -16,42 +16,45 @@
 </template>
 
 <script setup>
-defineProps({ dark: { type: Boolean, default: false } })
 </script>
 
 <style scoped>
 .c-footer {
-  border-top: 1px solid var(--green-100);
-  background: var(--surface-warm);
-  padding: var(--space-6) var(--space-6);
-}
-.c-footer.dark {
-  background: var(--dark-bg);
-  border-color: var(--dark-border);
+  border-top: 1px solid var(--border-card);
+  background: var(--bg-card);
+  padding: var(--space-6) var(--space-4);
+  min-width: 0;
 }
 
 .footer-inner {
   max-width: var(--container-max);
   margin: 0 auto;
   text-align: center;
+  min-width: 0;
 }
 
 .footer-links {
   display: flex;
   justify-content: center;
-  gap: var(--space-6);
+  gap: var(--space-4);
   margin-bottom: var(--space-4);
   flex-wrap: wrap;
 }
 .footer-links a {
-  color: var(--ink-500);
-  font-size: var(--text-sm);
+  color: var(--text-muted);
+  font-size: 13px;
   transition: color var(--transition-fast);
+  white-space: nowrap;
 }
-.footer-links a:hover { color: var(--green-600); }
+.footer-links a:hover { color: var(--accent); }
 
 .footer-copy {
-  font-size: var(--text-xs);
-  color: var(--ink-400);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+@media (max-width: 640px) {
+  .footer-links { gap: var(--space-3); }
+  .footer-links a { font-size: 13px; }
 }
 </style>

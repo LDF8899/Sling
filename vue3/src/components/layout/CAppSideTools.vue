@@ -1,20 +1,23 @@
 <template>
   <div class="side-tools">
-    <button class="tool-btn" title="暗黑模式" @click="$emit('toggle-dark')">
-      <el-icon :size="18"><Sunny v-if="dark" /><Moon v-else /></el-icon>
-    </button>
-    <button class="tool-btn" title="意见反馈" @click="$emit('feedback')">
-      <el-icon :size="18"><ChatDotSquare /></el-icon>
+    <button class="tool-btn" :title="isNight ? '白天模式' : '夜间模式'" @click="$emit('toggle-theme')">
+      <SvgIcon :name="isNight ? 'sun' : 'moon'" :size="18" />
     </button>
     <button class="tool-btn sos-float" title="SOS 急救" @click="$emit('sos')">
-      <el-icon :size="18"><Warning /></el-icon>
+      <SvgIcon name="firstaid" :size="18" />
     </button>
   </div>
 </template>
 
 <script setup>
-defineProps({ dark: { type: Boolean, default: false } })
-defineEmits(['toggle-dark', 'feedback', 'sos'])
+import { computed } from 'vue'
+import { useThemeStore } from '@/store/theme'
+import SvgIcon from '@/components/SvgIcon.vue'
+
+defineEmits(['toggle-theme', 'feedback', 'sos'])
+
+const themeStore = useThemeStore()
+const isNight = computed(() => themeStore.mode === 'night')
 </script>
 
 <style scoped>
@@ -29,22 +32,23 @@ defineEmits(['toggle-dark', 'feedback', 'sos'])
 }
 
 .tool-btn {
-  width: 40px; height: 40px;
+  width: 40px;
+  height: 40px;
   border-radius: var(--radius-full);
-  border: 1px solid var(--green-100);
-  background: var(--surface-white);
-  color: var(--ink-500);
+  border: 1px solid var(--border-card);
+  background: var(--bg-card);
+  color: var(--text-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all var(--transition-fast);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-card);
 }
 .tool-btn:hover {
-  border-color: var(--green-400);
-  color: var(--green-600);
-  box-shadow: var(--shadow-md);
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: var(--shadow-hover);
   transform: translateY(-1px);
 }
 
@@ -62,5 +66,16 @@ defineEmits(['toggle-dark', 'feedback', 'sos'])
 @keyframes pulse-sos {
   0%, 100% { box-shadow: 0 0 0 0 rgba(220,38,38,0.4); }
   50% { box-shadow: 0 0 0 12px rgba(220,38,38,0); }
+}
+
+@media (max-width: 640px) {
+  .side-tools {
+    right: var(--space-3);
+    bottom: 80px;
+  }
+  .tool-btn {
+    width: 36px;
+    height: 36px;
+  }
 }
 </style>

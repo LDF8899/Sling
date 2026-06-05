@@ -64,3 +64,69 @@
   --dark-ink:      #D1FAE5;
   --dark-ink-mute: #6EE7B7;
 }
+
+/* ===== 白天模式（方案C：湖光山色）===== */
+[data-theme="day"] {
+  --bg-page:       linear-gradient(135deg, #e8f5e9 0%, #e3f2fd 50%, #f3e5f5 100%);
+  --bg-card:       rgba(255, 255, 255, 0.85);
+  --bg-card-hover: rgba(255, 255, 255, 0.95);
+  --bg-nav:        rgba(255, 255, 255, 0.8);
+  --bg-tag:        rgba(5, 150, 105, 0.08);
+  --bg-input:      rgba(255, 255, 255, 0.9);
+
+  --border-card:   rgba(5, 150, 105, 0.12);
+  --border-light:  rgba(5, 150, 105, 0.08);
+  --border-focus:  rgba(5, 150, 105, 0.4);
+
+  --text-primary:  #1a2332;
+  --text-secondary:#546e7a;
+  --text-muted:    #90a4ae;
+  --text-accent:   #059669;
+
+  --shadow-card:   0 2px 12px rgba(5, 150, 105, 0.06);
+  --shadow-hover:  0 8px 24px rgba(5, 150, 105, 0.12);
+
+  --accent:        #059669;
+  --accent-light:  rgba(5, 150, 105, 0.1);
+  --accent-blue:   #0288d1;
+
+  --danger:        #dc2626;
+  --danger-bg:     rgba(220, 38, 38, 0.08);
+  --danger-border: rgba(220, 38, 38, 0.3);
+
+  --warning:       #f59e0b;
+  --warning-bg:    rgba(245, 158, 11, 0.08);
+}
+
+/* ===== 夜间模式（方案D：暮色苍山）===== */
+[data-theme="night"] {
+  --bg-page:       #0a1a12;
+  --bg-card:       #12241a;
+  --bg-card-hover: #1a3024;
+  --bg-nav:        rgba(10, 26, 18, 0.9);
+  --bg-tag:        rgba(38, 166, 154, 0.1);
+  --bg-input:      #1a3024;
+
+  --border-card:   #1e3a28;
+  --border-light:  #1e3a28;
+  --border-focus:  rgba(38, 166, 154, 0.4);
+
+  --text-primary:  #c8e6c9;
+  --text-secondary:#81c784;
+  --text-muted:    #4db6ac;
+  --text-accent:   #26a69a;
+
+  --shadow-card:   0 2px 12px rgba(0, 0, 0, 0.3);
+  --shadow-hover:  0 8px 24px rgba(0, 0, 0, 0.4);
+
+  --accent:        #26a69a;
+  --accent-light:  rgba(38, 166, 154, 0.15);
+  --accent-blue:   #4dd0e1;
+
+  --danger:        #ef5350;
+  --danger-bg:     rgba(239, 83, 80, 0.1);
+  --danger-border: rgba(239, 83, 80, 0.3);
+
+  --warning:       #ffa726;
+  --warning-bg:    rgba(255, 167, 38, 0.1);
+}

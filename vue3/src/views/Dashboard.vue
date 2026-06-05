@@ -3,141 +3,84 @@
     <!-- ===== 预警横幅 ===== -->
     <WarningAlert />
 
-    <!-- ===== 轮播图 ===== -->
-    <div class="banner-carousel" v-if="showBanner">
-      <div class="banner-wrapper">
-        <el-carousel
-          height="300px"
-          :interval="4000"
-          indicator-position="none"
-          arrow="hover"
-          trigger="click"
-          class="custom-carousel"
-          @change="currentBannerIndex = $event"
-        >
-          <el-carousel-item v-for="(item, index) in bannerList" :key="index">
-            <div
-              class="banner-item"
-              :style="{
-                backgroundImage: `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url(${item.image})`,
-                backgroundColor: item.bgColor
-              }"
-              @click="handleBannerClick(item.link)"
-            >
-              <div class="banner-content">
-                <div class="banner-tag" :style="{ backgroundColor: item.tagColor }">{{ item.tag }}</div>
-                <h2 class="banner-title">{{ item.title }}</h2>
-                <p class="banner-desc">{{ item.description }}</p>
-                <el-button type="primary" size="large" class="banner-button" @click.stop="handleBannerClick(item.link)">
-                  {{ item.buttonText }}
-                </el-button>
-              </div>
-            </div>
-          </el-carousel-item>
-        </el-carousel>
-
-        <div class="carousel-indicators">
-          <div
-            v-for="(item, index) in bannerList"
-            :key="index"
-            class="indicator-item"
-            :class="{ active: currentBannerIndex === index }"
-            @click="switchBanner(index)"
-          >
-            <div class="indicator-progress" v-if="currentBannerIndex === index"></div>
+    <!-- ===== 功能卡片 ===== -->
+    <section class="features-grid">
+      <div
+        v-for="(f, i) in features"
+        :key="i"
+        class="feature-card"
+        @click="navigateTo(f.route)"
+      >
+        <div class="feature-card-header">
+          <div class="feature-icon" :style="{ background: f.gradient }">
+            <SvgIcon :name="f.icon" :size="22" color="#fff" />
           </div>
+          <span class="feature-tag" :class="f.tagClass">{{ f.tag }}</span>
         </div>
-
-        <div class="banner-close" @click="closeBanner">
-          <el-icon><Close /></el-icon>
-        </div>
-      </div>
-    </div>
-
-    <!-- ===== 动态介绍 + 特性卡片 ===== -->
-    <section class="intro-section">
-      <div class="intro-header">
-        <h3>蛇灵(SLING) — 您的智能蛇类安全助手</h3>
-      </div>
-
-      <!-- 流动文字 -->
-      <div class="flowing-text-container">
-        <div class="flowing-text-wrapper">
-          <div class="flowing-text" :style="{ animationDuration: `${flowingTexts.length * 4}s` }">
-            <span v-for="(text, index) in flowingTexts" :key="index" class="flowing-item">
-              <span class="flowing-dot"></span>{{ text }}
-            </span>
-            <span v-for="(text, index) in flowingTexts" :key="`dup-${index}`" class="flowing-item">
-              <span class="flowing-dot"></span>{{ text }}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <!-- 特性卡片 -->
-      <div class="features-grid">
-        <div class="feature-card" v-for="(f, i) in features" :key="i" @click="navigateTo(f.route)">
-          <div class="feature-icon" :style="{ background: f.color }">
-            <el-icon :size="22"><component :is="f.iconComp" /></el-icon>
-          </div>
-          <div class="feature-content">
-            <h4>{{ f.title }}</h4>
-            <p>{{ f.description }}</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- 统计数字 -->
-      <div class="stats-row">
-        <div class="stat-item" v-for="(value, key) in stats" :key="key">
-          <div class="stat-value">{{ value }}<span class="stat-unit">{{ statUnits[key] }}</span></div>
-          <div class="stat-label">{{ statLabels[key] }}</div>
+        <h4 class="feature-title">{{ f.title }}</h4>
+        <p class="feature-desc">{{ f.description }}</p>
+        <div class="feature-footer">
+          <span class="feature-meta">{{ f.meta }}</span>
+          <SvgIcon name="arrow-right" :size="16" class="feature-arrow" />
         </div>
       </div>
     </section>
 
-    <!-- ===== 辅助信息 ===== -->
-    <section class="auxiliary-section">
-      <h3 class="section-title">数据与记录</h3>
-      <div class="aux-grid">
-        <!-- 知识图谱 -->
-        <div class="aux-card">
-          <div class="aux-card-header">
-            <el-icon color="var(--blue-700)" :size="20"><DataAnalysis /></el-icon>
-            <div>
-              <h4>蛇类科普知识图谱</h4>
-              <p>蛇种 · 科属 · 毒素 · 血清关系</p>
-            </div>
-          </div>
-          <div class="mini-graph-wrap">
-            <div ref="miniGraphRef" class="mini-graph-canvas"></div>
-            <div class="mini-graph-stats" v-if="miniGraphStats">
-              <span>{{ miniGraphStats.snakeCount }} 种蛇</span>
-              <span>{{ miniGraphStats.totalNodes }} 节点</span>
-              <span>{{ miniGraphStats.totalEdges }} 关系</span>
-            </div>
-          </div>
-          <el-button type="primary" plain class="graph-btn" @click="$router.push('/graph')">
-            查看完整交互图谱
-          </el-button>
-        </div>
+    <!-- ===== 统计数字 ===== -->
+    <section class="stats-row">
+      <div v-for="(item, key) in statsData" :key="key" class="stat-card">
+        <div class="stat-value">{{ item.value }}<span class="stat-unit">{{ item.unit }}</span></div>
+        <div class="stat-label">{{ item.label }}</div>
+      </div>
+    </section>
 
-        <!-- 最近识别记录 -->
-        <div class="aux-card">
-          <h4 class="aux-card-title">最近识别记录</h4>
-          <div class="record-list">
-            <div class="record-item" v-for="record in recentRecords" :key="record.id" @click="goToSnakeDetail(record.snakeName)">
-              <div class="record-thumb">
-                <img :src="getSnakeImage(record)" :alt="record.snakeName" @error="handleImageError" />
-              </div>
-              <div class="record-info">
-                <h4>{{ record.snakeName }}</h4>
-                <p class="toxicity" :class="record.toxicityClass">{{ record.toxicity }}</p>
-                <p class="record-time">{{ record.time }}</p>
-              </div>
-              <el-icon class="record-arrow"><ArrowRight /></el-icon>
-            </div>
+    <!-- ===== 双栏：图谱 + 记录 ===== -->
+    <section class="dual-column">
+      <!-- 知识图谱 -->
+      <div class="column-card">
+        <div class="column-header">
+          <SvgIcon name="graph" :size="18" />
+          <span>蛇类知识图谱</span>
+        </div>
+        <div class="graph-container">
+          <div ref="miniGraphRef" class="graph-canvas"></div>
+          <div class="graph-stats" v-if="miniGraphStats">
+            <span>{{ miniGraphStats.snakeCount }} 种蛇</span>
+            <span>{{ miniGraphStats.totalNodes }} 节点</span>
+            <span>{{ miniGraphStats.totalEdges }} 关系</span>
           </div>
+        </div>
+        <el-button class="btn-secondary full-width" @click="$router.push('/graph')">
+          查看完整交互图谱
+        </el-button>
+      </div>
+
+      <!-- 识别记录 -->
+      <div class="column-card">
+        <div class="column-header">
+          <SvgIcon name="records" :size="18" />
+          <span>识别记录</span>
+        </div>
+        <div class="record-list" v-if="recentRecords.length">
+          <div
+            v-for="record in recentRecords.slice(0, 5)"
+            :key="record.id"
+            class="record-item"
+            @click="goToSnakeDetail(record.snakeName)"
+          >
+            <div class="record-thumb">
+              <img :src="getSnakeImage(record)" :alt="record.snakeName" @error="handleImageError" />
+            </div>
+            <div class="record-info">
+              <div class="record-name">{{ record.snakeName }}</div>
+              <div class="record-time">{{ record.time }}</div>
+            </div>
+            <SvgIcon name="arrow-right" :size="14" class="record-arrow" />
+          </div>
+        </div>
+        <div class="record-empty" v-else>
+          <SvgIcon name="records" :size="32" />
+          <span>暂无识别记录</span>
         </div>
       </div>
     </section>
@@ -151,9 +94,9 @@
 import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Camera, MapLocation, FirstAidKit, OfficeBuilding, DataAnalysis, ArrowRight, Close } from '@element-plus/icons-vue'
 import cytoscape from 'cytoscape'
 import axios from 'axios'
+import SvgIcon from '@/components/SvgIcon.vue'
 import OutdoorNews from '@/components/OutdoorNews.vue'
 import WarningAlert from '@/components/WarningAlert.vue'
 import { recognitionApi } from '../services/api.js'
@@ -162,64 +105,65 @@ import { useUserStore } from '../store/user.js'
 const router = useRouter()
 const userStore = useUserStore()
 
-// — 轮播图 —
-const showBanner = ref(true)
-const currentBannerIndex = ref(0)
+// ==================== 功能卡片 ====================
+const features = [
+  {
+    title: '智能识别',
+    description: '基于深度学习的蛇类识别技术，快速准确识别蛇类品种',
+    icon: 'camera',
+    gradient: 'linear-gradient(135deg, #059669, #0288d1)',
+    tag: '核心功能',
+    tagClass: 'tag-primary',
+    meta: '300+ 种蛇类',
+    route: 'recognition'
+  },
+  {
+    title: '实时预警',
+    description: '基于地理位置的蛇类活动预警，提前规避风险区域',
+    icon: 'location',
+    gradient: 'linear-gradient(135deg, #0288d1, #7c3aed)',
+    tag: '实时',
+    tagClass: 'tag-info',
+    meta: '已覆盖全国',
+    route: 'warning'
+  },
+  {
+    title: '应急指导',
+    description: '被蛇咬伤后的标准化急救流程指导，关键时刻能救命',
+    icon: 'firstaid',
+    gradient: 'linear-gradient(135deg, #dc2626, #e04980)',
+    tag: '紧急',
+    tagClass: 'tag-danger',
+    meta: '黄金30分钟',
+    route: 'emergency'
+  },
+  {
+    title: '精准寻医',
+    description: '全国蛇伤救治医院数据库，快速找到最近的专业医院',
+    icon: 'hospital',
+    gradient: 'linear-gradient(135deg, #7c3aed, #a855f7)',
+    tag: '精准',
+    tagClass: 'tag-purple',
+    meta: '1500+ 医院',
+    route: 'medical'
+  }
+]
 
-const bannerList = ref([
-  { id: 1, title: '蛇类识别新升级', description: 'AI智能识别，准确率高达98%，支持300+种蛇类识别', image: '/images/banner/banner1.png', bgColor: '#059669', tag: '新功能', tagColor: '#ef4444', buttonText: '立即体验', link: '/recognition' },
-  { id: 2, title: '区域预警系统', description: '实时监测周边蛇类活动，智能预警高风险区域', image: '/images/banner/banner2.png', bgColor: '#3b82f6', tag: '安全', tagColor: '#10b981', buttonText: '查看预警', link: '/warning' },
-  { id: 3, title: '应急指南手册', description: '被蛇咬伤怎么办？这里有一份详细的急救指南', image: '/images/banner/banner3.png', bgColor: '#f59e0b', tag: '急救', tagColor: '#f97316', buttonText: '学习急救', link: '/emergency' },
-  { id: 4, title: '紧急寻医', description: '快速找到最近的蛇伤救治医院，及时获得专业治疗', image: '/images/banner/banner4.png', bgColor: '#6366f1', tag: '医疗', tagColor: '#f97316', buttonText: '紧急寻医', link: '/hospital' }
-])
-
-const handleBannerClick = (link) => { if (link) router.push(link) }
-const switchBanner = (i) => { currentBannerIndex.value = i }
-const closeBanner = () => {
-  showBanner.value = false
-  localStorage.setItem('hideBanner', 'true')
+// ==================== 统计数据 ====================
+const statsData = {
+  snakeSpecies: { value: '300+', label: '蛇类识别', unit: '' },
+  hospitals: { value: '1,500+', label: '合作医院', unit: '' },
+  users: { value: '500,000+', label: '用户信赖', unit: '' },
+  accuracy: { value: '98', label: '识别准确率', unit: '%' }
 }
 
-// — 动态文字 —
-const flowingTexts = ref([
-  'AI智能识别，准确率高达98%', '覆盖300+种蛇类，全国数据库', '实时区域预警，远离危险',
-  '一键急救指南，关键时刻救命', '精准寻医，快速找到救治医院', '离线模式，无网络也能用',
-  '专业科普，了解蛇类习性', '24小时在线，守护您的安全'
-])
-
-// — 特性卡片 —
-const features = ref([
-  { title: '智能识别', description: '基于深度学习的蛇类识别技术，快速准确识别蛇类品种', color: 'linear-gradient(135deg, #059669, #047857)', route: 'recognition', iconComp: Camera },
-  { title: '实时预警', description: '基于地理位置的蛇类活动预警，提前规避风险区域', color: 'linear-gradient(135deg, #0891B2, #0E7490)', route: 'warning', iconComp: MapLocation },
-  { title: '应急指导', description: '被蛇咬伤后的标准化急救流程指导，关键时刻能救命', color: 'linear-gradient(135deg, #DC2626, #B91C1C)', route: 'emergency', iconComp: FirstAidKit },
-  { title: '精准寻医', description: '全国蛇伤救治医院数据库，快速找到最近的专业医院', color: 'linear-gradient(135deg, #7C3AED, #6D28D9)', route: 'medical', iconComp: OfficeBuilding }
-])
-
-// — 统计 —
-const stats = ref({ snakeSpecies: 300, hospitals: 1500, users: 500000, accuracy: 98 })
-const statLabels = { snakeSpecies: '蛇类识别', hospitals: '合作医院', users: '用户信赖', accuracy: '识别准确率' }
-const statUnits = { snakeSpecies: '+', hospitals: '+', users: '+', accuracy: '%' }
-
-// — 最近识别记录 —
+// ==================== 识别记录 ====================
 const recentRecords = ref([])
 
-const navigateTo = (page) => {
-  const m = { recognition: '/recognition', warning: '/warning', emergency: '/emergency', medical: '/hospital', profile: '/profile', settings: '/settings' }
-  if (m[page]) router.push(m[page])
-  else ElMessage.info('该功能正在开发中，敬请期待！')
-}
-
-const goToSnakeDetail = (snakeName) => {
-  if (!snakeName) return ElMessage.warning('蛇类名称无效')
-  router.push({ path: '/emergency', query: { snakeName, tab: 'name' } })
-}
-
-// — 图片映射 —
 const IMAGE_FALLBACK_SVG = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23e2e8f0%22 width=%22200%22 height=%22200%22/%3E%3Ctext fill=%22%2394a3b8%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 font-size=%2214%22%3ENo Image%3C/text%3E%3C/svg%3E'
 
 const getSnakeImage = (record) => {
   if (!record.snakeName) return IMAGE_FALLBACK_SVG
-  // 用蛇名通过 emergency 代理查图（图片在 tu 目录，由 Python 脚本下载）
   return `/api/emergency/image/local?path=${encodeURIComponent(record.snakeName + '_1.jpg')}`
 }
 
@@ -227,14 +171,19 @@ const handleImageError = (e) => {
   if (e.target.src !== IMAGE_FALLBACK_SVG) e.target.src = IMAGE_FALLBACK_SVG
 }
 
-// — 知识图谱 —
+const goToSnakeDetail = (snakeName) => {
+  if (!snakeName) return ElMessage.warning('蛇类名称无效')
+  router.push({ path: '/emergency', query: { snakeName, tab: 'name' } })
+}
+
+// ==================== 知识图谱 ====================
 const miniGraphRef = ref(null)
 const miniGraphStats = ref(null)
 let miniCy = null
 
 const renderMiniGraph = (graphData) => {
   if (miniCy) { miniCy.stop(); miniCy.destroy(); miniCy = null }
-  const nodes = graphData.nodes.filter(n => ['snake','family','toxin','danger'].includes(n.data.type))
+  const nodes = graphData.nodes.filter(n => ['snake', 'family', 'toxin', 'danger'].includes(n.data.type))
   const nodeIds = new Set(nodes.map(n => n.data.id))
   const edges = graphData.edges.filter(e => nodeIds.has(e.data.source) && nodeIds.has(e.data.target))
 
@@ -244,7 +193,7 @@ const renderMiniGraph = (graphData) => {
     minZoom: 0.3, maxZoom: 2, userZoomingEnabled: false,
     style: [
       { selector: 'node', style: { 'label': 'data(label)', 'text-valign': 'center', 'text-halign': 'center', 'font-size': '8px', 'color': '#fff', 'text-outline-width': 1.5, 'text-outline-color': '#555' } },
-      { selector: 'node[type="snake"]', style: { 'background-color': '#409EFF', 'width': 14, 'height': 14, 'font-size': '0px' } },
+      { selector: 'node[type="snake"]', style: { 'background-color': 'var(--accent)', 'width': 14, 'height': 14, 'font-size': '0px' } },
       { selector: 'node[type="family"]', style: { 'background-color': '#67C23A', 'shape': 'round-rectangle', 'width': 50, 'height': 20, 'font-size': '9px', 'font-weight': 'bold' } },
       { selector: 'node[type="toxin"]', style: { 'background-color': '#F56C6C', 'shape': 'diamond', 'width': 30, 'height': 30, 'font-size': '8px', 'font-weight': 'bold' } },
       { selector: 'node[type="danger"]', style: { 'background-color': '#E6A23C', 'shape': 'star', 'width': 24, 'height': 24, 'font-size': '7px' } },
@@ -263,6 +212,7 @@ const loadMiniGraph = async () => {
   } catch (e) { console.warn('迷你图谱加载失败:', e) }
 }
 
+// ==================== 识别记录加载 ====================
 const loadRecognitionRecords = async () => {
   try {
     const userId = userStore.userInfo?.id || localStorage.getItem('userId')
@@ -273,21 +223,30 @@ const loadRecognitionRecords = async () => {
       const records = response.data.data.map(record => ({
         id: record.recordId,
         snakeName: record.recognitionResult || '未知蛇类',
-        toxicity: '待确认',
-        toxicityClass: 'low-toxicity',
         time: record.recognitionTime || '',
         imagePath: record.imagePath || ''
       }))
-      recentRecords.value = records.slice(0, 10)
+      recentRecords.value = records
     }
   } catch (e) {
-    console.error('加载识别记录失败，使用默认数据:', e)
+    console.error('加载识别记录失败:', e)
   }
 }
 
+// ==================== 导航 ====================
+const navigateTo = (page) => {
+  const routeMap = {
+    recognition: '/recognition',
+    warning: '/warning',
+    emergency: '/emergency',
+    medical: '/hospital'
+  }
+  if (routeMap[page]) router.push(routeMap[page])
+  else ElMessage.info('该功能正在开发中')
+}
+
+// ==================== 生命周期 ====================
 onMounted(() => {
-  const hideBanner = localStorage.getItem('hideBanner')
-  if (hideBanner === 'true') showBanner.value = false
   loadRecognitionRecords()
   nextTick(() => loadMiniGraph())
 })
@@ -298,310 +257,329 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-/* ===== 轮播图 ===== */
-.banner-carousel {
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  box-shadow: var(--shadow-lg);
-  margin-bottom: var(--space-8);
+.dashboard-page {
+  width: 100%;
+  padding: var(--space-4);
+  min-width: 0;
+  overflow-x: hidden;
 }
 
-.banner-wrapper {
-  position: relative;
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-}
-
-.custom-carousel { border-radius: var(--radius-lg); overflow: hidden; }
-.custom-carousel :deep(.el-carousel__container) { height: 300px !important; border-radius: var(--radius-lg); }
-.custom-carousel :deep(.el-carousel__arrow) {
-  background-color: rgba(255,255,255,0.2);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255,255,255,0.3);
-  width: 48px; height: 48px; font-size: 20px;
-  transition: all var(--transition-base);
-}
-.custom-carousel :deep(.el-carousel__arrow:hover) {
-  background-color: rgba(255,255,255,0.3);
-  transform: scale(1.1);
-}
-
-.banner-item {
-  height: 100%; width: 100%;
-  background-size: cover; background-position: center; background-repeat: no-repeat;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer;
-  transition: transform var(--transition-base);
-}
-.banner-item:hover { transform: scale(1.02); }
-
-.banner-content {
-  text-align: center; color: white; padding: var(--space-8);
-  max-width: 600px; z-index: 2;
-}
-
-.banner-tag {
-  display: inline-block; padding: 6px 16px; border-radius: var(--radius-full);
-  font-size: var(--text-xs); font-weight: var(--weight-semibold);
-  margin-bottom: var(--space-5); letter-spacing: 1px; text-transform: uppercase;
-}
-
-.banner-title {
-  font-size: var(--text-4xl); font-weight: var(--weight-bold);
-  margin-bottom: var(--space-4); line-height: var(--leading-tight);
-  text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-}
-
-.banner-desc {
-  font-size: var(--text-lg); margin-bottom: var(--space-6);
-  opacity: 0.9; line-height: var(--leading-relaxed);
-  text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
-}
-
-.banner-button {
-  padding: var(--space-3) var(--space-8); font-size: var(--text-base); font-weight: var(--weight-semibold);
+.btn-secondary {
+  background: var(--accent-light);
+  color: var(--accent);
+  border: none;
   border-radius: var(--radius-full);
-  background: var(--brand-gradient); border: none;
-  box-shadow: var(--shadow-brand);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 13px;
+  padding: 8px 16px;
+  white-space: nowrap;
 }
-.banner-button:hover {
+.btn-secondary:hover {
   transform: translateY(-2px);
-  box-shadow: var(--shadow-brand-hover);
 }
 
-/* 指示器 */
-.carousel-indicators {
-  position: absolute; bottom: 30px; left: 0; right: 0;
-  display: flex; justify-content: center; gap: var(--space-3); z-index: 10;
+.full-width {
+  width: 100%;
+  justify-content: center;
+  font-size: 13px;
+  padding: 8px 16px;
 }
 
-.indicator-item {
-  width: 8px; height: 8px; border-radius: 50%;
-  background: rgba(255,255,255,0.5); cursor: pointer;
-  position: relative; overflow: hidden;
-  transition: all var(--transition-base);
-}
-.indicator-item.active { background: rgba(255,255,255,0.8); transform: scale(1.2); }
-
-.indicator-progress {
-  position: absolute; top: 0; left: 0; height: 100%; width: 100%;
-  background: var(--green-500);
-  animation: progress 4s linear forwards;
-}
-
-@keyframes progress {
-  from { transform: translateX(-100%); }
-  to { transform: translateX(0); }
-}
-
-.banner-close {
-  position: absolute; top: var(--space-4); right: var(--space-4);
-  width: 36px; height: 36px; border-radius: 50%;
-  background: rgba(0,0,0,0.2); color: white;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; z-index: 10;
-  transition: all var(--transition-base);
-}
-.banner-close:hover { background: rgba(0,0,0,0.4); transform: scale(1.1); }
-
-/* ===== 介绍区 ===== */
-.intro-section {
-  background: var(--surface-white);
-  border: 1px solid var(--green-100);
-  border-radius: var(--radius-lg);
-  padding: var(--space-8);
-  margin-bottom: var(--space-8);
-}
-
-.intro-header {
-  text-align: center;
-  margin-bottom: var(--space-6);
-}
-.intro-header h3 {
-  font-size: var(--text-xl); font-weight: var(--weight-semibold);
-  color: var(--ink-900);
-}
-
-/* 流动文字 */
-.flowing-text-container {
-  overflow: hidden;
-  background: var(--green-50);
-  border-radius: var(--radius-md);
-  padding: var(--space-3) 0;
-  margin-bottom: var(--space-6);
-}
-
-.flowing-text-wrapper { width: 100%; overflow: hidden; }
-
-.flowing-text {
-  display: flex; white-space: nowrap;
-  animation: flowText linear infinite;
-}
-
-@keyframes flowText {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
-}
-
-.flowing-item {
-  display: inline-flex; align-items: center; gap: var(--space-2);
-  padding: 0 var(--space-5); font-size: var(--text-sm); color: var(--ink-700);
-}
-
-.flowing-dot {
-  width: 5px; height: 5px; border-radius: 50%;
-  background: var(--green-400); flex-shrink: 0;
-}
-
-/* 特性卡片 */
+/* ===== 功能卡片 ===== */
 .features-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: var(--space-5);
-  margin-bottom: var(--space-8);
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+  min-width: 0;
 }
 
 .feature-card {
-  display: flex; align-items: flex-start; gap: var(--space-4);
-  padding: var(--space-5);
-  background: var(--surface-white);
-  border: 1px solid var(--green-100);
-  border-radius: var(--radius-md);
-  transition: all var(--transition-base);
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
   cursor: pointer;
+  transition: all var(--transition-base);
+  min-width: 0;
 }
 .feature-card:hover {
   transform: translateY(-4px);
-  box-shadow: var(--shadow-card);
-  border-color: var(--green-200);
+  box-shadow: var(--shadow-hover);
+  background: var(--bg-card-hover);
+}
+
+.feature-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+  gap: var(--space-2);
 }
 
 .feature-icon {
-  width: 48px; height: 48px; border-radius: var(--radius-md);
-  display: flex; align-items: center; justify-content: center;
-  color: white; flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
 }
 
-.feature-content h4 {
-  margin: 0 0 var(--space-1); font-size: var(--text-base);
-  font-weight: var(--weight-semibold); color: var(--ink-900);
+.feature-tag {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
-.feature-content p {
-  margin: 0; font-size: var(--text-sm); color: var(--ink-500); line-height: var(--leading-relaxed);
+.tag-primary { background: var(--accent-light); color: var(--accent); }
+.tag-info { background: rgba(2, 136, 209, 0.1); color: #0288d1; }
+.tag-danger { background: var(--danger-bg); color: var(--danger); }
+.tag-purple { background: rgba(124, 58, 237, 0.1); color: #7c3aed; }
+
+[data-theme="night"] .tag-info { background: rgba(77, 208, 225, 0.15); color: #4dd0e1; }
+[data-theme="night"] .tag-purple { background: rgba(168, 85, 247, 0.15); color: #a855f7; }
+
+.feature-title {
+  font-size: 15px;
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-1);
 }
 
-/* 统计数字 */
+.feature-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: var(--leading-relaxed);
+  margin-bottom: var(--space-3);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.feature-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.feature-meta {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.feature-arrow {
+  color: var(--text-muted);
+  transition: all var(--transition-base);
+  flex-shrink: 0;
+}
+.feature-card:hover .feature-arrow {
+  transform: translateX(3px);
+  color: var(--accent);
+}
+
+/* ===== 统计数字 ===== */
 .stats-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: var(--space-5);
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+  min-width: 0;
 }
 
-.stat-item { text-align: center; }
+.stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  text-align: center;
+  transition: all var(--transition-base);
+  min-width: 0;
+}
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card);
+}
 
 .stat-value {
-  font-size: var(--text-2xl); font-weight: var(--weight-bold);
-  color: var(--green-600); margin-bottom: var(--space-1);
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  color: var(--accent);
+  margin-bottom: var(--space-1);
 }
 
-.stat-unit { font-size: var(--text-base); margin-left: 2px; }
+.stat-unit {
+  font-size: 14px;
+  margin-left: 1px;
+}
 
 .stat-label {
-  font-size: var(--text-sm); color: var(--ink-500);
+  font-size: 13px;
+  color: var(--text-muted);
 }
 
-/* ===== 辅助信息 ===== */
-.auxiliary-section {
-  margin-bottom: var(--space-8);
+/* ===== 双栏布局 ===== */
+.dual-column {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+  min-width: 0;
 }
 
-.section-title {
-  font-size: var(--text-lg); font-weight: var(--weight-semibold);
-  color: var(--ink-900); margin: 0 0 var(--space-5);
-  padding-bottom: var(--space-2); border-bottom: 2px solid var(--green-100);
-}
-
-.aux-grid {
-  display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-5);
-}
-
-.aux-card {
-  background: var(--surface-white);
-  border: 1px solid var(--green-100);
+.column-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
   border-radius: var(--radius-lg);
-  padding: var(--space-5);
-  display: flex; flex-direction: column;
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
-.aux-card-header {
-  display: flex; align-items: center; gap: var(--space-3);
-  margin-bottom: var(--space-4);
-}
-.aux-card-header h4 {
-  margin: 0; font-size: var(--text-base); font-weight: var(--weight-semibold); color: var(--ink-900);
-}
-.aux-card-header p {
-  margin: 0; font-size: var(--text-xs); color: var(--ink-500);
-}
-
-.aux-card-title {
-  font-size: var(--text-base); font-weight: var(--weight-semibold);
-  color: var(--ink-900); margin: 0 0 var(--space-4);
-  padding-bottom: var(--space-2); border-bottom: 1px solid var(--green-100);
+.column-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 15px;
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--border-light);
 }
 
-.mini-graph-wrap {
-  position: relative; border-radius: var(--radius-md); overflow: hidden;
-  margin-bottom: var(--space-3); flex: 1;
+/* 图谱 */
+.graph-container {
+  position: relative;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-bottom: var(--space-3);
+  flex: 1;
+  min-height: 200px;
 }
-.mini-graph-canvas { width: 100%; height: 240px; }
-.mini-graph-stats {
-  position: absolute; bottom: 8px; left: 8px;
-  display: flex; gap: var(--space-3);
-  font-size: var(--text-xs); color: var(--ink-500);
-  background: var(--surface-white); padding: var(--space-1) var(--space-3);
+
+.graph-canvas {
+  width: 100%;
+  height: 200px;
+}
+
+.graph-stats {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  display: flex;
+  gap: var(--space-2);
+  font-size: 11px;
+  color: var(--text-muted);
+  background: var(--bg-card);
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-sm);
+  border: 1px solid var(--border-card);
 }
-.graph-btn { width: 100%; }
 
-/* 最近记录 */
+/* 记录列表 */
 .record-list {
-  display: flex; flex-direction: column; gap: var(--space-3);
-  overflow-y: auto; max-height: 380px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  flex: 1;
+  overflow-y: auto;
+  max-height: 280px;
 }
 
 .record-item {
-  display: flex; align-items: center; gap: var(--space-4);
-  padding: var(--space-3);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: all var(--transition-base);
 }
 .record-item:hover {
+  background: var(--accent-light);
   transform: translateX(4px);
-  box-shadow: var(--shadow-sm);
-  background: var(--green-50);
 }
 
 .record-thumb {
-  width: 60px; height: 60px; border-radius: var(--radius-md); overflow: hidden; flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--bg-tag);
 }
-.record-thumb img { width: 100%; height: 100%; object-fit: cover; }
-
-.record-info { flex: 1; }
-.record-info h4 {
-  margin: 0 0 var(--space-1); font-size: var(--text-sm);
-  font-weight: var(--weight-semibold); color: var(--ink-900);
+.record-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
-.toxicity {
-  font-size: var(--text-xs); padding: 2px 6px; border-radius: var(--radius-sm);
-  display: inline-block; margin-bottom: var(--space-1);
+.record-info { flex: 1; min-width: 0; }
+.record-name {
+  font-size: 13px;
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
 }
-.high-toxicity { background: var(--danger-bg); color: var(--danger); }
-.low-toxicity { background: var(--success-bg); color: var(--success); }
+.record-time {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
 
-.record-time { font-size: var(--text-xs); color: var(--ink-500); margin: 0; }
-.record-arrow { color: var(--ink-400); }
+.record-arrow {
+  color: var(--text-muted);
+  flex-shrink: 0;
+  transition: all var(--transition-base);
+}
+.record-item:hover .record-arrow {
+  color: var(--accent);
+  transform: translateX(2px);
+}
 
+.record-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: var(--space-4) 0;
+}
+
+/* ===== 响应式 ===== */
+@media (max-width: 1200px) {
+  .features-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 900px) {
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .dual-column { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+  .dashboard-page { padding: var(--space-3); }
+  .features-grid { grid-template-columns: 1fr; }
+  .stats-row { grid-template-columns: 1fr 1fr; }
+  .feature-card { padding: var(--space-3); }
+  .feature-icon { width: 36px; height: 36px; }
+  .stat-card { padding: var(--space-3); }
+  .stat-value { font-size: var(--text-xl); }
+  .column-card { padding: var(--space-3); }
+  .graph-canvas { height: 160px; }
+  .record-list { max-height: 200px; }
+}
 </style>

@@ -99,8 +99,8 @@ onMounted(async () => {
   align-items: center;
   gap: 12px;
   padding: 12px 20px;
-  border-radius: 8px;
-  margin-bottom: 16px;
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-4);
   animation: slideDown 0.3s ease;
 }
 
@@ -110,25 +110,25 @@ onMounted(async () => {
 }
 
 .level-high {
-  background: linear-gradient(135deg, #fff0f0, #ffe0e0);
-  border: 1px solid #f56c6c;
+  background: var(--danger-bg);
+  border: 1px solid var(--danger-border);
 }
 .level-medium {
-  background: linear-gradient(135deg, #fdf6ec, #faecd8);
-  border: 1px solid #e6a23c;
+  background: var(--warning-bg);
+  border: 1px solid var(--warning-border);
 }
 .level-low {
-  background: linear-gradient(135deg, #f0f9eb, #e1f3d8);
-  border: 1px solid #67c23a;
+  background: var(--accent-light);
+  border: 1px solid var(--accent);
 }
 
 .alert-icon {
   flex-shrink: 0;
   color: inherit;
 }
-.level-high .alert-icon { color: #f56c6c; }
-.level-medium .alert-icon { color: #e6a23c; }
-.level-low .alert-icon { color: #67c23a; }
+.level-high .alert-icon { color: var(--danger); }
+.level-medium .alert-icon { color: var(--warning); }
+.level-low .alert-icon { color: var(--accent); }
 
 .alert-body {
   flex: 1;
@@ -137,7 +137,7 @@ onMounted(async () => {
 .alert-title {
   font-size: 15px;
   font-weight: 600;
-  color: #303133;
+  color: var(--text-primary);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -149,13 +149,13 @@ onMounted(async () => {
   color: #fff;
   flex-shrink: 0;
 }
-.level-high .level-tag { background: #f56c6c; }
-.level-medium .level-tag { background: #e6a23c; }
-.level-low .level-tag { background: #67c23a; }
+.level-high .level-tag { background: var(--danger); }
+.level-medium .level-tag { background: var(--warning); }
+.level-low .level-tag { background: var(--accent); }
 
 .alert-desc {
   font-size: 13px;
-  color: #606266;
+  color: var(--text-secondary);
   margin-top: 4px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -167,5 +167,17 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+@media (max-width: 640px) {
+  .warning-alert-banner {
+    flex-wrap: wrap;
+    padding: 10px 12px;
+  }
+  .alert-actions {
+    width: 100%;
+    justify-content: flex-end;
+    margin-top: 8px;
+  }
 }
 </style>

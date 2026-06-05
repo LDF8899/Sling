@@ -11,11 +11,15 @@
 html {
   font-family: var(--font-sans);
   font-size: 16px;
-  color: var(--ink-900);
-  background: var(--surface-warm);
+  color: var(--text-primary);
+  background: var(--bg-page);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   scroll-behavior: smooth;
+}
+
+@media (max-width: 640px) {
+  html { font-size: 14px; }
 }
 
 body {
@@ -41,11 +45,18 @@ a:hover {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--green-200);
+  background: var(--accent-light);
   border-radius: var(--radius-full);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--green-400);
+  background: var(--accent);
+}
+
+@media (max-width: 640px) {
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
 }
 
 /* — 工具类 — */
@@ -55,11 +66,5 @@ a:hover {
   justify-content: center;
 }
 
-/* — 暗黑模式 — */
-.dark body,
-body.dark,
-.dark html,
-html.dark {
-  color: var(--dark-ink);
-  background: var(--dark-bg);
-}
+/* — 主题模式 — */
+/* 主题变量在 colors.css 的 [data-theme="day"] 和 [data-theme="night"] 中定义 */
