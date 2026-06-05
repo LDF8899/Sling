@@ -1,568 +1,566 @@
 <template>
-  <div class="profile-container" :class="{ 'dark-mode': darkMode }">
-    <!-- 面包屑导航 -->
-    <div class="profile-breadcrumb">
-      <el-breadcrumb separator="/">
-        <el-breadcrumb-item :to="{ path: '/dashboard' }">首页</el-breadcrumb-item>
-        <el-breadcrumb-item>个人中心</el-breadcrumb-item>
-      </el-breadcrumb>
-    </div>
-
-    <!-- 用户概要卡片 -->
-    <div class="user-summary-card">
-      <div class="summary-backdrop"></div>
-      <div class="summary-content">
-        <!-- 左侧头像区 -->
-        <div class="avatar-section">
-          <div class="avatar-wrapper">
-            <el-avatar :size="96" :src="userAvatar" class="main-avatar" />
-            <div class="avatar-status" :class="{ 'online': isOnline }"></div>
-            <div class="avatar-upload-overlay" @click="triggerAvatarUpload">
-              <i class="el-icon-camera"></i>
-            </div>
+  <div class="profile-page">
+    <!-- 用户概览区 -->
+    <SHero variant="green" class="profile-hero">
+      <div class="hero-user-info">
+        <div class="avatar-wrapper" @click="triggerAvatarUpload">
+          <el-avatar :size="96" :src="userAvatar" class="main-avatar" />
+          <div class="avatar-upload-overlay">
+            <el-icon><Camera /></el-icon>
           </div>
-          <div class="user-basic-info">
-            <h3>{{ userInfo.username }}</h3>
-            <p class="user-id">ID: {{ userInfo.id || '--' }}</p>
-            <el-tag type="success" size="small" class="user-role">普通用户</el-tag>
-          </div>
+          <div class="avatar-status" :class="{ online: isOnline }"></div>
         </div>
-
-        <!-- 右侧统计信息 -->
-        <div class="stats-section">
-          <div class="stat-item">
-            <div class="stat-icon" style="background: linear-gradient(135deg, #10b981, #059669)">
-              <i class="el-icon-camera"></i>
-            </div>
-            <div class="stat-content">
-              <div class="stat-value">128</div>
-              <div class="stat-label">识别记录</div>
-            </div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-icon" style="background: linear-gradient(135deg, #3b82f6, #2563eb)">
-              <i class="el-icon-collection"></i>
-            </div>
-            <div class="stat-content">
-              <div class="stat-value">42</div>
-              <div class="stat-label">收藏蛇类</div>
-            </div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed)">
-              <i class="el-icon-time"></i>
-            </div>
-            <div class="stat-content">
-              <div class="stat-value">7</div>
-              <div class="stat-label">使用天数</div>
-            </div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-icon" style="background: linear-gradient(135deg, #ef4444, #dc2626)">
-              <i class="el-icon-warning-outline"></i>
-            </div>
-            <div class="stat-content">
-              <div class="stat-value">0</div>
-              <div class="stat-label">求助记录</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 快捷操作 -->
-        <div class="quick-actions">
-          <el-button type="primary" plain @click="activeTab = '2'">
-            <i class="el-icon-edit"></i> 编辑资料
-          </el-button>
-          <el-button type="success" plain @click="activeTab = '3'">
-            <i class="el-icon-lock"></i> 修改密码
-          </el-button>
-          <el-button type="info" plain @click="handleLogout">
-            <i class="el-icon-switch-button"></i> 退出登录
-          </el-button>
+        <div class="user-details">
+          <h2 class="username">{{ userInfo.username }}</h2>
+          <p class="user-id">ID: {{ userInfo.id || '--' }}</p>
+          <el-tag type="success" effect="dark" size="small">普通用户</el-tag>
         </div>
       </div>
-    </div>
 
-    <!-- 主体内容区 -->
-    <div class="profile-main">
-      <!-- 侧边导航 -->
-      <div class="profile-sidebar">
-        <el-menu
-            :default-active="activeTab"
-            class="profile-menu"
-            @select="handleMenuSelect"
+      <div class="hero-stats">
+        <SStatCard
+          label="识别次数"
+          :value="recognitionCount"
+          icon-bg="rgba(255,255,255,0.2)"
+          icon-color="white"
+          class="stat-card-dark"
         >
-          <el-menu-item index="1">
-            <div class="menu-item-content">
-              <div class="menu-icon" style="background: linear-gradient(135deg, #10b981, #059669)">
-                <i class="el-icon-user"></i>
-              </div>
-              <span>个人信息</span>
-            </div>
-          </el-menu-item>
-          <el-menu-item index="2">
-            <div class="menu-item-content">
-              <div class="menu-icon" style="background: linear-gradient(135deg, #3b82f6, #2563eb)">
-                <i class="el-icon-edit"></i>
-              </div>
-              <span>编辑资料</span>
-            </div>
-          </el-menu-item>
-          <el-menu-item index="3">
-            <div class="menu-item-content">
-              <div class="menu-icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed)">
-                <i class="el-icon-lock"></i>
-              </div>
-              <span>修改密码</span>
-            </div>
-          </el-menu-item>
-          <el-menu-item index="4">
-            <div class="menu-item-content">
-              <div class="menu-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706)">
-                <i class="el-icon-setting"></i>
-              </div>
-              <span>账号设置</span>
-            </div>
-          </el-menu-item>
-          <el-menu-item index="5">
-            <div class="menu-item-content">
-              <div class="menu-icon" style="background: linear-gradient(135deg, #ef4444, #dc2626)">
-                <i class="el-icon-bell"></i>
-              </div>
-              <span>消息通知</span>
-              <el-badge :value="3" class="menu-badge" />
-            </div>
-          </el-menu-item>
-        </el-menu>
+          <template #icon>
+            <el-icon><Camera /></el-icon>
+          </template>
+        </SStatCard>
+        <SStatCard
+          label="收藏蛇种"
+          :value="favoriteCount"
+          icon-bg="rgba(255,255,255,0.2)"
+          icon-color="white"
+          class="stat-card-dark"
+        >
+          <template #icon>
+            <el-icon><Star /></el-icon>
+          </template>
+        </SStatCard>
+        <SStatCard
+          label="使用天数"
+          :value="usageDays"
+          icon-bg="rgba(255,255,255,0.2)"
+          icon-color="white"
+          class="stat-card-dark"
+        >
+          <template #icon>
+            <el-icon><Calendar /></el-icon>
+          </template>
+        </SStatCard>
+        <SStatCard
+          label="求助记录"
+          :value="sosCount"
+          icon-bg="rgba(255,255,255,0.2)"
+          icon-color="white"
+          class="stat-card-dark"
+        >
+          <template #icon>
+            <el-icon><Warning /></el-icon>
+          </template>
+        </SStatCard>
       </div>
 
-      <!-- 内容区域 -->
-      <div class="profile-content">
-        <!-- 个人信息 -->
-        <div class="glass-card" v-if="activeTab === '1'">
-          <div class="card-header">
-            <div class="header-icon" style="background: linear-gradient(135deg, #10b981, #059669)">
-              <i class="el-icon-user"></i>
-            </div>
-            <div class="header-content">
-              <h3>个人信息</h3>
-              <p>查看和管理您的个人账户信息</p>
-            </div>
-          </div>
+      <template #actions>
+        <SButton variant="secondary" @click="activeTab = 'settings'">
+          <template #icon><Edit /></template>
+          编辑资料
+        </SButton>
+        <SButton variant="secondary" @click="activeTab = 'security'">
+          <template #icon><Lock /></template>
+          修改密码
+        </SButton>
+        <SButton variant="ghost" @click="handleLogout" class="logout-btn">
+          <template #icon><SwitchButton /></template>
+          退出登录
+        </SButton>
+      </template>
+    </SHero>
 
-          <div class="info-grid">
-            <div class="info-item">
-              <div class="info-label">
-                <i class="el-icon-user info-icon"></i>
-                <span>用户名</span>
-              </div>
-              <div class="info-value">{{ userInfo.username }}</div>
-            </div>
-            <div class="info-item">
-              <div class="info-label">
-                <i class="el-icon-message info-icon"></i>
-                <span>邮箱</span>
-              </div>
-              <div class="info-value">{{ userInfo.email || '未设置' }}</div>
-              <el-button type="text" @click="bindEmail" v-if="!userInfo.email">
-                <i class="el-icon-link"></i> 绑定
-              </el-button>
-            </div>
-            <div class="info-item">
-              <div class="info-label">
-                <i class="el-icon-phone info-icon"></i>
-                <span>手机号</span>
-              </div>
-              <div class="info-value">{{ userInfo.phone || '未设置' }}</div>
-              <el-button type="text" @click="bindPhone" v-if="!userInfo.phone">
-                <i class="el-icon-link"></i> 绑定
-              </el-button>
-            </div>
-            <div class="info-item">
-              <div class="info-label">
-                <i class="el-icon-time info-icon"></i>
-                <span>注册时间</span>
-              </div>
-              <div class="info-value">{{ formatDate(userInfo.createTime) }}</div>
-            </div>
-            <div class="info-item">
-              <div class="info-label">
-                <i class="el-icon-position info-icon"></i>
-                <span>最后登录</span>
-              </div>
-              <div class="info-value">{{ formatDate(userInfo.lastLoginTime) }}</div>
-            </div>
-            <div class="info-item">
-              <div class="info-label">
-                <i class="el-icon-ship info-icon"></i>
-                <span>账户状态</span>
-              </div>
-              <div class="info-value">
-                <el-tag type="success" effect="plain">正常</el-tag>
-              </div>
-            </div>
-          </div>
+    <!-- 主内容区 -->
+    <div class="profile-content">
+      <el-tabs v-model="activeTab" class="profile-tabs">
+        <!-- 概览标签页 -->
+        <el-tab-pane label="概览" name="overview">
+          <div class="tab-content">
+            <SPageHeader title="个人概览" subtitle="查看您的使用情况和最近活动" />
 
-          <div class="security-status">
-            <h4>安全等级</h4>
-            <div class="security-progress">
-              <el-progress
-                  :percentage="securityLevel"
-                  :show-text="false"
-                  :stroke-width="8"
-                  color="#10b981"
-              />
-              <div class="security-labels">
-                <span>低</span>
-                <span>中</span>
-                <span>高</span>
+            <!-- 最近识别记录 -->
+            <SCard title="最近识别" subtitle="最近 5 次识别记录" class="section-card">
+              <template #header>
+                <div class="card-header-actions">
+                  <SButton variant="ghost" size="sm" @click="activeTab = 'history'">
+                    查看全部
+                  </SButton>
+                </div>
+              </template>
+              <div class="recent-list" v-if="recentRecords.length > 0">
+                <div
+                  v-for="record in recentRecords"
+                  :key="record.id"
+                  class="recent-item"
+                >
+                  <div class="recent-icon" :style="{ background: getDangerColor(record.dangerLevel) }">
+                    <el-icon><Camera /></el-icon>
+                  </div>
+                  <div class="recent-info">
+                    <div class="recent-name">{{ record.snakeName }}</div>
+                    <div class="recent-time">{{ formatDate(record.createTime) }}</div>
+                  </div>
+                  <el-tag :type="getDangerTagType(record.dangerLevel)" size="small">
+                    {{ getDangerLabel(record.dangerLevel) }}
+                  </el-tag>
+                </div>
               </div>
-            </div>
-            <div class="security-tips">
-              <i class="el-icon-info"></i>
-              <span>建议绑定邮箱和手机号提升账户安全</span>
-            </div>
-          </div>
-        </div>
+              <div v-else class="empty-state">
+                <el-icon :size="48" class="empty-icon"><Camera /></el-icon>
+                <p>暂无识别记录</p>
+                <SButton variant="primary" size="sm" @click="$router.push('/recognition')">
+                  开始识别
+                </SButton>
+              </div>
+            </SCard>
 
-        <!-- 编辑资料 -->
-        <div class="glass-card" v-else-if="activeTab === '2'">
-          <div class="card-header">
-            <div class="header-icon" style="background: linear-gradient(135deg, #3b82f6, #2563eb)">
-              <i class="el-icon-edit"></i>
-            </div>
-            <div class="header-content">
-              <h3>编辑资料</h3>
-              <p>更新您的个人资料信息</p>
-            </div>
-          </div>
+            <!-- 收藏蛇种 -->
+            <SCard title="收藏蛇种" subtitle="您收藏的蛇类" class="section-card">
+              <div class="favorites-grid" v-if="favoriteSnakes.length > 0">
+                <div
+                  v-for="snake in favoriteSnakes"
+                  :key="snake.id"
+                  class="favorite-item"
+                >
+                  <div class="favorite-image">
+                    <img :src="snake.image" :alt="snake.name" />
+                  </div>
+                  <div class="favorite-info">
+                    <div class="favorite-name">{{ snake.name }}</div>
+                    <div class="favorite-latin">{{ snake.latinName }}</div>
+                  </div>
+                </div>
+              </div>
+              <div v-else class="empty-state">
+                <el-icon :size="48" class="empty-icon"><Star /></el-icon>
+                <p>暂无收藏</p>
+                <SButton variant="primary" size="sm" @click="$router.push('/graph')">
+                  浏览蛇种
+                </SButton>
+              </div>
+            </SCard>
 
-          <el-form :model="editForm" :rules="editRules" ref="editFormRef" label-width="100px" class="edit-form">
-            <div class="form-section">
-              <h4>基本信息</h4>
-              <div class="form-grid">
-                <el-form-item label="用户名" prop="username">
-                  <el-input
+            <!-- 安全知识进度 -->
+            <SCard title="安全知识" subtitle="学习进度" class="section-card">
+              <div class="knowledge-progress">
+                <div class="progress-item">
+                  <div class="progress-header">
+                    <span class="progress-label">蛇类识别</span>
+                    <span class="progress-value">{{ knowledgeProgress.identification }}%</span>
+                  </div>
+                  <el-progress
+                    :percentage="knowledgeProgress.identification"
+                    :show-text="false"
+                    :stroke-width="8"
+                    color="var(--green-500)"
+                  />
+                </div>
+                <div class="progress-item">
+                  <div class="progress-header">
+                    <span class="progress-label">急救知识</span>
+                    <span class="progress-value">{{ knowledgeProgress.firstAid }}%</span>
+                  </div>
+                  <el-progress
+                    :percentage="knowledgeProgress.firstAid"
+                    :show-text="false"
+                    :stroke-width="8"
+                    color="var(--blue-500)"
+                  />
+                </div>
+                <div class="progress-item">
+                  <div class="progress-header">
+                    <span class="progress-label">预防措施</span>
+                    <span class="progress-value">{{ knowledgeProgress.prevention }}%</span>
+                  </div>
+                  <el-progress
+                    :percentage="knowledgeProgress.prevention"
+                    :show-text="false"
+                    :stroke-width="8"
+                    color="var(--green-600)"
+                  />
+                </div>
+              </div>
+            </SCard>
+          </div>
+        </el-tab-pane>
+
+        <!-- 识别记录标签页 -->
+        <el-tab-pane label="识别记录" name="history">
+          <div class="tab-content">
+            <SPageHeader title="识别历史" subtitle="查看所有识别记录">
+              <template #actions>
+                <SButton variant="ghost" size="sm" @click="exportRecords">
+                  <template #icon><Download /></template>
+                  导出
+                </SButton>
+              </template>
+            </SPageHeader>
+
+            <!-- 筛选栏 -->
+            <SCard class="filter-card">
+              <div class="filter-row">
+                <el-input
+                  v-model="searchQuery"
+                  placeholder="搜索蛇种名称..."
+                  :prefix-icon="Search"
+                  clearable
+                  class="filter-input"
+                />
+                <el-select v-model="dangerFilter" placeholder="危险等级" clearable class="filter-select">
+                  <el-option label="剧毒" value="high" />
+                  <el-option label="有毒" value="medium" />
+                  <el-option label="无毒" value="low" />
+                </el-select>
+                <el-date-picker
+                  v-model="dateRange"
+                  type="daterange"
+                  range-separator="至"
+                  start-placeholder="开始日期"
+                  end-placeholder="结束日期"
+                  class="filter-date"
+                />
+              </div>
+            </SCard>
+
+            <!-- 记录列表 -->
+            <SCard class="records-card">
+              <el-table
+                :data="filteredRecords"
+                stripe
+                class="records-table"
+                v-loading="isLoading"
+              >
+                <el-table-column label="蛇种" min-width="150">
+                  <template #default="{ row }">
+                    <div class="snake-info">
+                      <div class="snake-icon" :style="{ background: getDangerColor(row.dangerLevel) }">
+                        <el-icon><Camera /></el-icon>
+                      </div>
+                      <div>
+                        <div class="snake-name">{{ row.snakeName }}</div>
+                        <div class="snake-latin">{{ row.latinName }}</div>
+                      </div>
+                    </div>
+                  </template>
+                </el-table-column>
+                <el-table-column label="危险等级" width="120" align="center">
+                  <template #default="{ row }">
+                    <el-tag :type="getDangerTagType(row.dangerLevel)" effect="dark">
+                      {{ getDangerLabel(row.dangerLevel) }}
+                    </el-tag>
+                  </template>
+                </el-table-column>
+                <el-table-column label="识别时间" width="180">
+                  <template #default="{ row }">
+                    {{ formatDate(row.createTime) }}
+                  </template>
+                </el-table-column>
+                <el-table-column label="置信度" width="120" align="center">
+                  <template #default="{ row }">
+                    <el-progress
+                      :percentage="Math.round(row.confidence * 100)"
+                      :stroke-width="6"
+                      :show-text="false"
+                      :color="getConfidenceColor(row.confidence)"
+                    />
+                    <span class="confidence-text">{{ Math.round(row.confidence * 100) }}%</span>
+                  </template>
+                </el-table-column>
+                <el-table-column label="操作" width="120" align="center">
+                  <template #default="{ row }">
+                    <SButton variant="ghost" size="sm" @click="viewRecordDetail(row)">
+                      详情
+                    </SButton>
+                  </template>
+                </el-table-column>
+              </el-table>
+
+              <div class="pagination-wrapper" v-if="totalRecords > pageSize">
+                <el-pagination
+                  v-model:current-page="currentPage"
+                  :page-size="pageSize"
+                  :total="totalRecords"
+                  layout="prev, pager, next"
+                  @current-change="loadRecords"
+                />
+              </div>
+            </SCard>
+          </div>
+        </el-tab-pane>
+
+        <!-- 设置标签页 -->
+        <el-tab-pane label="设置" name="settings">
+          <div class="tab-content">
+            <SPageHeader title="账号设置" subtitle="管理您的个人信息和偏好" />
+
+            <SCard title="基本信息" class="section-card">
+              <el-form
+                :model="editForm"
+                :rules="editRules"
+                ref="editFormRef"
+                label-position="top"
+                class="settings-form"
+              >
+                <div class="form-grid">
+                  <el-form-item label="用户名" prop="username">
+                    <el-input
                       v-model="editForm.username"
                       placeholder="请输入用户名"
                       :prefix-icon="User"
                       size="large"
-                      clearable
-                  />
-                </el-form-item>
-                <el-form-item label="邮箱" prop="email">
-                  <el-input
+                    />
+                  </el-form-item>
+                  <el-form-item label="邮箱" prop="email">
+                    <el-input
                       v-model="editForm.email"
                       placeholder="请输入邮箱"
                       :prefix-icon="Message"
                       size="large"
-                      clearable
-                  />
-                </el-form-item>
-                <el-form-item label="手机号" prop="phone">
-                  <el-input
+                    />
+                  </el-form-item>
+                  <el-form-item label="手机号" prop="phone">
+                    <el-input
                       v-model="editForm.phone"
                       placeholder="请输入手机号"
                       :prefix-icon="Phone"
                       size="large"
-                      clearable
                       maxlength="11"
-                  />
-                </el-form-item>
-              </div>
-            </div>
+                    />
+                  </el-form-item>
+                </div>
+                <div class="form-actions">
+                  <SButton variant="primary" :loading="isSubmitting" @click="submitEdit">
+                    保存修改
+                  </SButton>
+                  <SButton variant="ghost" @click="resetForm">
+                    重置
+                  </SButton>
+                </div>
+              </el-form>
+            </SCard>
 
-            <div class="form-section">
-              <h4>头像设置</h4>
-              <div class="avatar-upload-section">
+            <SCard title="头像设置" class="section-card">
+              <div class="avatar-section">
                 <div class="avatar-preview">
                   <el-avatar :size="120" :src="userAvatar" />
                   <div class="avatar-actions">
-                    <el-button type="primary" @click="triggerAvatarUpload" size="small">
-                      <i class="el-icon-camera"></i> 更换头像
-                    </el-button>
-                    <el-button type="danger" @click="resetAvatar" size="small" plain>
-                      <i class="el-icon-refresh"></i> 恢复默认
-                    </el-button>
+                    <SButton variant="primary" size="sm" @click="triggerAvatarUpload">
+                      <template #icon><Camera /></template>
+                      更换头像
+                    </SButton>
+                    <SButton variant="danger" size="sm" @click="resetAvatar">
+                      恢复默认
+                    </SButton>
                   </div>
                 </div>
                 <div class="upload-tips">
-                  <p><i class="el-icon-info"></i> 支持 JPG、PNG、GIF 格式</p>
-                  <p><i class="el-icon-info"></i> 建议尺寸 200×200 像素</p>
-                  <p><i class="el-icon-info"></i> 文件大小不超过 20MB</p>
+                  <p><el-icon><InfoFilled /></el-icon> 支持 JPG、PNG、GIF 格式</p>
+                  <p><el-icon><InfoFilled /></el-icon> 建议尺寸 200×200 像素</p>
+                  <p><el-icon><InfoFilled /></el-icon> 文件大小不超过 20MB</p>
                 </div>
               </div>
-            </div>
+            </SCard>
 
-            <div class="form-actions">
-              <el-button type="primary" @click="submitEdit" :loading="isSubmitting" size="large">
-                <i class="el-icon-check"></i> 保存修改
-              </el-button>
-              <el-button @click="resetForm" size="large">
-                <i class="el-icon-refresh-right"></i> 重置
-              </el-button>
-            </div>
-          </el-form>
-
-          <!-- 隐藏的上传组件 -->
-          <input
-              type="file"
-              ref="avatarInput"
-              style="display: none"
-              accept="image/*"
-              @change="handleAvatarChange"
-          />
-        </div>
-
-        <!-- 修改密码 -->
-        <div class="glass-card" v-else-if="activeTab === '3'">
-          <div class="card-header">
-            <div class="header-icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed)">
-              <i class="el-icon-lock"></i>
-            </div>
-            <div class="header-content">
-              <h3>修改密码</h3>
-              <p>定期修改密码有助于保护账户安全</p>
-            </div>
-          </div>
-
-          <el-form :model="passwordForm" :rules="passwordRules" ref="passwordFormRef" class="password-form">
-            <div class="password-inputs">
-              <el-form-item prop="oldPassword">
-                <template #label>
-                  <div class="password-label">
-                    <i class="el-icon-key"></i>
-                    <span>当前密码</span>
+            <SCard title="通知偏好" class="section-card">
+              <div class="notification-settings">
+                <div class="notification-item">
+                  <div class="notification-info">
+                    <h4>识别结果通知</h4>
+                    <p>识别完成后推送通知</p>
                   </div>
-                </template>
-                <el-input
+                  <el-switch v-model="notificationSettings.recognition" />
+                </div>
+                <div class="notification-item">
+                  <div class="notification-info">
+                    <h4>预警通知</h4>
+                    <p>接收附近蛇类活动预警</p>
+                  </div>
+                  <el-switch v-model="notificationSettings.warning" />
+                </div>
+                <div class="notification-item">
+                  <div class="notification-info">
+                    <h4>系统通知</h4>
+                    <p>接收系统更新和公告</p>
+                  </div>
+                  <el-switch v-model="notificationSettings.system" />
+                </div>
+              </div>
+            </SCard>
+          </div>
+        </el-tab-pane>
+
+        <!-- 安全标签页 -->
+        <el-tab-pane label="安全" name="security">
+          <div class="tab-content">
+            <SPageHeader title="安全设置" subtitle="保护您的账户安全" />
+
+            <SCard title="修改密码" class="section-card">
+              <el-form
+                :model="passwordForm"
+                :rules="passwordRules"
+                ref="passwordFormRef"
+                label-position="top"
+                class="password-form"
+              >
+                <el-form-item label="当前密码" prop="oldPassword">
+                  <el-input
                     v-model="passwordForm.oldPassword"
                     type="password"
                     placeholder="请输入当前密码"
                     show-password
                     size="large"
-                />
-              </el-form-item>
-
-              <el-form-item prop="newPassword">
-                <template #label>
-                  <div class="password-label">
-                    <i class="el-icon-key"></i>
-                    <span>新密码</span>
-                  </div>
-                </template>
-                <el-input
+                    :prefix-icon="Lock"
+                  />
+                </el-form-item>
+                <el-form-item label="新密码" prop="newPassword">
+                  <el-input
                     v-model="passwordForm.newPassword"
                     type="password"
                     placeholder="请输入新密码（至少6位）"
                     show-password
                     size="large"
-                />
-                <div class="password-strength">
-                  <div class="strength-bar" :class="getPasswordStrength(passwordForm.newPassword)"></div>
-                </div>
-              </el-form-item>
-
-              <el-form-item prop="confirmNewPassword">
-                <template #label>
-                  <div class="password-label">
-                    <i class="el-icon-key"></i>
-                    <span>确认新密码</span>
+                    :prefix-icon="Key"
+                  />
+                  <div class="password-strength" v-if="passwordForm.newPassword">
+                    <div class="strength-bar" :class="getPasswordStrength(passwordForm.newPassword)"></div>
                   </div>
-                </template>
-                <el-input
+                </el-form-item>
+                <el-form-item label="确认新密码" prop="confirmNewPassword">
+                  <el-input
                     v-model="passwordForm.confirmNewPassword"
                     type="password"
                     placeholder="请再次输入新密码"
                     show-password
                     size="large"
-                />
-              </el-form-item>
-            </div>
+                    :prefix-icon="Key"
+                  />
+                </el-form-item>
+                <div class="form-actions">
+                  <SButton
+                    variant="primary"
+                    :loading="isSubmitting"
+                    :disabled="!isPasswordValid"
+                    @click="submitPasswordChange"
+                  >
+                    确认修改
+                  </SButton>
+                </div>
+              </el-form>
+            </SCard>
 
-            <div class="password-tips">
-              <div class="tip-item">
-                <i class="el-icon-success" style="color: #10b981"></i>
-                <span>密码至少包含6个字符</span>
+            <SCard title="紧急联系人" class="section-card">
+              <div class="emergency-contacts">
+                <div
+                  v-for="(contact, index) in emergencyContacts"
+                  :key="index"
+                  class="contact-item"
+                >
+                  <div class="contact-info">
+                    <div class="contact-avatar">
+                      <el-avatar :size="40" :src="contact.avatar" />
+                    </div>
+                    <div class="contact-details">
+                      <div class="contact-name">{{ contact.name }}</div>
+                      <div class="contact-phone">{{ contact.phone }}</div>
+                    </div>
+                  </div>
+                  <div class="contact-actions">
+                    <SButton variant="ghost" size="sm" @click="editContact(index)">
+                      编辑
+                    </SButton>
+                    <SButton variant="danger" size="sm" @click="deleteContact(index)">
+                      删除
+                    </SButton>
+                  </div>
+                </div>
+                <SButton variant="secondary" @click="addContact" class="add-contact-btn">
+                  <template #icon><Plus /></template>
+                  添加联系人
+                </SButton>
               </div>
-              <div class="tip-item">
-                <i class="el-icon-success" style="color: #10b981"></i>
-                <span>建议使用字母、数字和符号组合</span>
-              </div>
-              <div class="tip-item">
-                <i class="el-icon-success" style="color: #10b981"></i>
-                <span>定期更换密码更安全</span>
-              </div>
-            </div>
+            </SCard>
 
-            <div class="form-actions">
-              <el-button
-                  type="primary"
-                  @click="submitPasswordChange"
-                  :loading="isSubmitting"
-                  size="large"
-                  :disabled="!isPasswordValid"
-              >
-                <i class="el-icon-check"></i> 确认修改
-              </el-button>
-            </div>
-          </el-form>
-        </div>
-
-        <!-- 账号设置 -->
-        <div class="glass-card" v-else-if="activeTab === '4'">
-          <div class="card-header">
-            <div class="header-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706)">
-              <i class="el-icon-setting"></i>
-            </div>
-            <div class="header-content">
-              <h3>账号设置</h3>
-              <p>管理您的账号和安全设置</p>
-            </div>
+            <SCard title="隐私设置" class="section-card">
+              <div class="privacy-settings">
+                <div class="privacy-item">
+                  <div class="privacy-info">
+                    <h4>公开识别记录</h4>
+                    <p>允许其他用户查看您的识别记录</p>
+                  </div>
+                  <el-switch v-model="privacySettings.publicRecords" />
+                </div>
+                <div class="privacy-item">
+                  <div class="privacy-info">
+                    <h4>显示在线状态</h4>
+                    <p>允许其他用户看到您的在线状态</p>
+                  </div>
+                  <el-switch v-model="privacySettings.showOnline" />
+                </div>
+                <div class="privacy-item">
+                  <div class="privacy-info">
+                    <h4>数据收集</h4>
+                    <p>允许收集匿名使用数据以改进服务</p>
+                  </div>
+                  <el-switch v-model="privacySettings.dataCollection" />
+                </div>
+              </div>
+            </SCard>
           </div>
-
-          <div class="settings-grid">
-            <div class="setting-item">
-              <div class="setting-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981">
-                <i class="el-icon-ship"></i>
-              </div>
-              <div class="setting-content">
-                <h4>账户安全等级</h4>
-                <p>根据您的安全设置评估</p>
-              </div>
-              <div class="setting-action">
-                <el-tag type="success" effect="dark">高</el-tag>
-              </div>
-            </div>
-
-            <div class="setting-item">
-              <div class="setting-icon" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6">
-                <i class="el-icon-message"></i>
-              </div>
-              <div class="setting-content">
-                <h4>绑定邮箱</h4>
-                <p>{{ userInfo.email || '未绑定' }}</p>
-              </div>
-              <div class="setting-action">
-                <el-button type="primary" @click="bindEmail" :disabled="!!userInfo.email" size="small">
-                  {{ userInfo.email ? '已绑定' : '立即绑定' }}
-                </el-button>
-              </div>
-            </div>
-
-            <div class="setting-item">
-              <div class="setting-icon" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6">
-                <i class="el-icon-phone"></i>
-              </div>
-              <div class="setting-content">
-                <h4>绑定手机</h4>
-                <p>{{ userInfo.phone || '未绑定' }}</p>
-              </div>
-              <div class="setting-action">
-                <el-button type="primary" @click="bindPhone" :disabled="!!userInfo.phone" size="small">
-                  {{ userInfo.phone ? '已绑定' : '立即绑定' }}
-                </el-button>
-              </div>
-            </div>
-
-            <div class="setting-item">
-              <div class="setting-icon" style="background: rgba(239, 68, 68, 0.1); color: #ef4444">
-                <i class="el-icon-bell"></i>
-              </div>
-              <div class="setting-content">
-                <h4>消息通知</h4>
-                <p>推送设置和偏好</p>
-              </div>
-              <div class="setting-action">
-                <el-switch v-model="notificationEnabled" />
-              </div>
-            </div>
-
-            <div class="setting-item">
-              <div class="setting-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b">
-                <i class="el-icon-moon"></i>
-              </div>
-              <div class="setting-content">
-                <h4>主题模式</h4>
-                <p>切换亮色/暗色主题</p>
-              </div>
-              <div class="setting-action">
-                <el-switch
-                    v-model="darkMode"
-                    active-text="暗色"
-                    inactive-text="亮色"
-                    @change="toggleDarkMode"
-                />
-              </div>
-            </div>
-
-            <div class="setting-item">
-              <div class="setting-icon" style="background: rgba(6, 182, 212, 0.1); color: #06b6d4">
-                <i class="el-icon-download"></i>
-              </div>
-              <div class="setting-content">
-                <h4>数据导出</h4>
-                <p>导出您的个人数据</p>
-              </div>
-              <div class="setting-action">
-                <el-button type="info" @click="exportData" size="small">
-                  <i class="el-icon-download"></i> 导出
-                </el-button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+        </el-tab-pane>
+      </el-tabs>
     </div>
 
-    <!-- 底部操作栏 -->
-    <div class="profile-footer">
-      <div class="footer-content">
-        <div class="footer-text">
-          <i class="el-icon-info"></i>
-          <span>蛇灵(SLING) - 您的智能蛇类安全助手</span>
-        </div>
-        <div class="footer-actions">
-          <el-button type="text" @click="showHelp">
-            <i class="el-icon-question"></i> 帮助中心
-          </el-button>
-          <el-divider direction="vertical" />
-          <el-button type="text" @click="showFeedback">
-            <i class="el-icon-chat-dot-round"></i> 意见反馈
-          </el-button>
-          <el-divider direction="vertical" />
-          <el-button type="text" @click="privacyPolicy">
-            <i class="el-icon-document"></i> 隐私政策
-          </el-button>
-        </div>
-      </div>
-    </div>
+    <!-- 隐藏的上传组件 -->
+    <input
+      type="file"
+      ref="avatarInput"
+      style="display: none"
+      accept="image/*"
+      @change="handleAvatarChange"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { User, Message, Phone } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import api from '../services/api'
+import {
+  Camera, Star, Calendar, Warning, Edit, Lock, SwitchButton,
+  Download, Search, User, Message, Phone, Key, Plus, InfoFilled
+} from '@element-plus/icons-vue'
+import api, { recognitionApi } from '../services/api'
 import { useUserStore } from '../store/user.js'
+import SHero from '../components/ui/SHero.vue'
+import SStatCard from '../components/ui/SStatCard.vue'
+import SCard from '../components/ui/SCard.vue'
+import SButton from '../components/ui/SButton.vue'
+import SPageHeader from '../components/ui/SPageHeader.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
 
 // 基础状态
-const activeTab = ref('1')
-const isOnline = ref(navigator.onLine)
-const darkMode = ref(false)
-const securityLevel = ref(70)
-const notificationEnabled = ref(true)
+const activeTab = ref('overview')
+const isLoading = ref(false)
 const isSubmitting = ref(false)
+const isOnline = ref(navigator.onLine)
 
-// DOM引用
-const avatarInput = ref(null)
-const editFormRef = ref(null)
-const passwordFormRef = ref(null)
+// 统计数据
+const recognitionCount = ref(0)
+const favoriteCount = ref(0)
+const usageDays = ref(0)
+const sosCount = ref(0)
 
 // 用户信息
 const userInfo = ref({
@@ -628,26 +626,88 @@ const passwordRules = {
   ]
 }
 
+// 识别记录相关
+const recentRecords = ref([])
+const allRecords = ref([])
+const searchQuery = ref('')
+const dangerFilter = ref('')
+const dateRange = ref(null)
+const currentPage = ref(1)
+const pageSize = ref(10)
+const totalRecords = ref(0)
+
+// 收藏蛇种
+const favoriteSnakes = ref([])
+
+// 安全知识进度
+const knowledgeProgress = ref({
+  identification: 0,
+  firstAid: 0,
+  prevention: 0
+})
+
+// 紧急联系人
+const emergencyContacts = ref([])
+
+// 通知设置
+const notificationSettings = ref({
+  recognition: true,
+  warning: true,
+  system: true
+})
+
+// 隐私设置
+const privacySettings = ref({
+  publicRecords: false,
+  showOnline: true,
+  dataCollection: true
+})
+
+// DOM 引用
+const avatarInput = ref(null)
+const editFormRef = ref(null)
+const passwordFormRef = ref(null)
+
 // 计算属性
 const userAvatar = computed(() => {
-  // 优先使用最新的头像URL，然后是临时预览，最后是默认头像
   return userInfo.value.avatar || userInfo.value.avatarUrl || defaultAvatar
 })
 
 const isPasswordValid = computed(() => {
   return passwordForm.value.newPassword.length >= 6 &&
-      passwordForm.value.newPassword === passwordForm.value.confirmNewPassword
+    passwordForm.value.newPassword === passwordForm.value.confirmNewPassword
+})
+
+const filteredRecords = computed(() => {
+  let records = [...allRecords.value]
+
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase()
+    records = records.filter(r =>
+      r.snakeName.toLowerCase().includes(query) ||
+      (r.latinName && r.latinName.toLowerCase().includes(query))
+    )
+  }
+
+  if (dangerFilter.value) {
+    records = records.filter(r => r.dangerLevel === dangerFilter.value)
+  }
+
+  if (dateRange.value && dateRange.value[0] && dateRange.value[1]) {
+    const start = new Date(dateRange.value[0]).getTime()
+    const end = new Date(dateRange.value[1]).getTime()
+    records = records.filter(r => {
+      const time = new Date(r.createTime).getTime()
+      return time >= start && time <= end
+    })
+  }
+
+  totalRecords.value = records.length
+  const start = (currentPage.value - 1) * pageSize.value
+  return records.slice(start, start + pageSize.value)
 })
 
 // 方法
-const getPasswordStrength = (password) => {
-  if (!password) return 'weak'
-  const strength = password.length
-  if (strength < 6) return 'weak'
-  if (strength < 10) return 'medium'
-  return 'strong'
-}
-
 const loadUserInfo = async () => {
   try {
     const userId = userStore.userInfo?.id || parseInt(localStorage.getItem('userId'))
@@ -674,8 +734,112 @@ const loadUserInfo = async () => {
   }
 }
 
-const handleMenuSelect = (key) => {
-  activeTab.value = key
+const loadStats = async () => {
+  try {
+    const userId = userStore.userInfo?.id || localStorage.getItem('userId')
+    if (!userId) return
+
+    // 加载识别记录数
+    const countResponse = await recognitionApi.getRecordCount(userId)
+    if (countResponse.data.code === 200) {
+      recognitionCount.value = countResponse.data.data || 0
+    }
+
+    // 计算使用天数（从注册时间到现在）
+    if (userInfo.value.createTime) {
+      const createTime = new Date(userInfo.value.createTime)
+      const now = new Date()
+      usageDays.value = Math.floor((now - createTime) / (1000 * 60 * 60 * 24))
+    }
+
+    // TODO: 从后端获取收藏数和求助记录数
+    favoriteCount.value = 0
+    sosCount.value = 0
+  } catch (error) {
+    console.error('获取统计数据失败:', error)
+  }
+}
+
+const loadRecentRecords = async () => {
+  try {
+    const userId = userStore.userInfo?.id || localStorage.getItem('userId')
+    if (!userId) return
+
+    const response = await recognitionApi.getRecentRecords(userId, 5)
+    if (response.data.code === 200) {
+      recentRecords.value = response.data.data || []
+    }
+  } catch (error) {
+    console.error('获取最近记录失败:', error)
+  }
+}
+
+const loadRecords = async () => {
+  isLoading.value = true
+  try {
+    const userId = userStore.userInfo?.id || localStorage.getItem('userId')
+    if (!userId) return
+
+    const response = await recognitionApi.getRecordsByUser(userId)
+    if (response.data.code === 200) {
+      allRecords.value = response.data.data || []
+      totalRecords.value = allRecords.value.length
+    }
+  } catch (error) {
+    console.error('获取识别记录失败:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const loadFavoriteSnakes = async () => {
+  try {
+    const userId = userStore.userInfo?.id || localStorage.getItem('userId')
+    if (!userId) return
+
+    // TODO: 调用后端 API 获取收藏蛇种
+    // const response = await api.user.getFavoriteSnakes(userId)
+    // if (response.data.code === 200) {
+    //   favoriteSnakes.value = response.data.data || []
+    // }
+
+    // 临时使用模拟数据
+    favoriteSnakes.value = [
+      { id: 1, name: '眼镜蛇', latinName: 'Naja naja', image: '' },
+      { id: 2, name: '竹叶青', latinName: 'Trimeresurus stejnegeri', image: '' },
+      { id: 3, name: '银环蛇', latinName: 'Bungarus multicinctus', image: '' }
+    ]
+    favoriteCount.value = favoriteSnakes.value.length
+  } catch (error) {
+    console.error('获取收藏蛇种失败:', error)
+  }
+}
+
+const loadKnowledgeProgress = async () => {
+  try {
+    // TODO: 从后端获取学习进度
+    // 临时使用模拟数据
+    knowledgeProgress.value = {
+      identification: 65,
+      firstAid: 40,
+      prevention: 55
+    }
+  } catch (error) {
+    console.error('获取学习进度失败:', error)
+  }
+}
+
+const loadEmergencyContacts = async () => {
+  try {
+    // TODO: 从后端获取紧急联系人
+    // 临时使用模拟数据
+    emergencyContacts.value = [
+      { name: '张三', phone: '13800138001', avatar: '' },
+      { name: '李四', phone: '13800138002', avatar: '' }
+    ]
+  } catch (error) {
+    console.error('获取紧急联系人失败:', error)
+  }
 }
 
 const triggerAvatarUpload = () => {
@@ -686,24 +850,20 @@ const handleAvatarChange = async (event) => {
   const file = event.target.files[0]
   if (!file) return
 
-  // 验证文件类型
   if (!file.type.startsWith('image/')) {
     ElMessage.error('请选择图片文件')
     return
   }
 
-  // 验证文件大小
   if (file.size > 20 * 1024 * 1024) {
     ElMessage.error('图片大小不能超过20MB')
     return
   }
 
-  // 读取图片并更新预览
   const reader = new FileReader()
   reader.onload = async (e) => {
-    // 立即更新本地预览
     userInfo.value.avatar = e.target.result
-    
+
     try {
       const response = await api.user.uploadAvatar({
         file: file,
@@ -711,23 +871,16 @@ const handleAvatarChange = async (event) => {
       })
       if (response.data.code === 200) {
         ElMessage.success('头像上传成功！')
-        
-        // 确保使用服务器返回的完整URL
-        const avatarUrl = response.data.data.fullAvatarUrl || response.data.data.avatarUrl;
-        // Avatar URL updated from server response
-        
-        // 更新用户信息中的头像URL
-        userInfo.value.avatarUrl = avatarUrl;
-        userInfo.value.avatar = avatarUrl; // 同时更新预览
+        const avatarUrl = response.data.data.fullAvatarUrl || response.data.data.avatarUrl
+        userInfo.value.avatarUrl = avatarUrl
+        userInfo.value.avatar = avatarUrl
 
-        // 更新store中的用户信息
         if (userStore.userInfo) {
-          userStore.userInfo.avatarUrl = avatarUrl;
-          userStore.userInfo.avatar = avatarUrl;
+          userStore.userInfo.avatarUrl = avatarUrl
+          userStore.userInfo.avatar = avatarUrl
         }
-        
-        // 清除文件输入，以便下次可以上传同一文件
-        event.target.value = '';
+
+        event.target.value = ''
       } else {
         ElMessage.error(response.data.message || '头像上传失败')
       }
@@ -820,22 +973,78 @@ const submitPasswordChange = async () => {
   }
 }
 
-const bindEmail = () => {
-  ElMessage.info('邮箱绑定功能开发中')
+const getPasswordStrength = (password) => {
+  if (!password) return 'weak'
+  const strength = password.length
+  if (strength < 6) return 'weak'
+  if (strength < 10) return 'medium'
+  return 'strong'
 }
 
-const bindPhone = () => {
-  ElMessage.info('手机绑定功能开发中')
+const getDangerColor = (level) => {
+  const colors = {
+    high: 'var(--danger)',
+    medium: 'var(--warning)',
+    low: 'var(--success)'
+  }
+  return colors[level] || 'var(--info)'
 }
 
-const toggleDarkMode = (value) => {
-  darkMode.value = value
-  document.body.classList.toggle('dark-mode', value)
-  ElMessage.success(value ? '已切换至暗色模式' : '已切换至亮色模式')
+const getDangerTagType = (level) => {
+  const types = {
+    high: 'danger',
+    medium: 'warning',
+    low: 'success'
+  }
+  return types[level] || 'info'
 }
 
-const exportData = () => {
-  ElMessage.info('数据导出功能开发中')
+const getDangerLabel = (level) => {
+  const labels = {
+    high: '剧毒',
+    medium: '有毒',
+    low: '无毒'
+  }
+  return labels[level] || '未知'
+}
+
+const getConfidenceColor = (confidence) => {
+  if (confidence >= 0.9) return 'var(--success)'
+  if (confidence >= 0.7) return 'var(--warning)'
+  return 'var(--danger)'
+}
+
+const formatDate = (dateString) => {
+  if (!dateString) return '暂无'
+  const date = new Date(dateString)
+  return date.toLocaleString('zh-CN')
+}
+
+const exportRecords = () => {
+  ElMessage.info('导出功能开发中')
+}
+
+const viewRecordDetail = (record) => {
+  ElMessage.info(`查看记录详情: ${record.snakeName}`)
+}
+
+const addContact = () => {
+  ElMessage.info('添加联系人功能开发中')
+}
+
+const editContact = (index) => {
+  ElMessage.info(`编辑联系人: ${emergencyContacts.value[index].name}`)
+}
+
+const deleteContact = (index) => {
+  ElMessageBox.confirm('确定要删除该联系人吗？', '删除确认', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(() => {
+    emergencyContacts.value.splice(index, 1)
+    ElMessage.success('删除成功')
+  }).catch(() => {})
 }
 
 const handleLogout = () => {
@@ -847,111 +1056,51 @@ const handleLogout = () => {
     userStore.logout()
     ElMessage.success('已退出登录')
     router.push('/login')
-  })
+  }).catch(() => {})
 }
 
-const showHelp = () => {
-  ElMessage.info('显示帮助中心')
-}
+// 生命周期
+onMounted(async () => {
+  await loadUserInfo()
+  await Promise.all([
+    loadStats(),
+    loadRecentRecords(),
+    loadRecords(),
+    loadFavoriteSnakes(),
+    loadKnowledgeProgress(),
+    loadEmergencyContacts()
+  ])
 
-const showFeedback = () => {
-  ElMessage.info('显示反馈界面')
-}
-
-const privacyPolicy = () => {
-  ElMessage.info('显示隐私政策')
-}
-
-const formatDate = (dateString) => {
-  if (!dateString) return '暂无'
-  const date = new Date(dateString)
-  return date.toLocaleString('zh-CN')
-}
-
-onMounted(() => {
-  loadUserInfo()
   window.addEventListener('online', () => isOnline.value = true)
   window.addEventListener('offline', () => isOnline.value = false)
-
-  // 检查暗色模式
-  darkMode.value = document.body.classList.contains('dark-mode')
 })
 </script>
 
 <style scoped>
-.profile-container {
+.profile-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, var(--surface-cool) 0%, var(--ink-200) 100%);
-  padding: var(--space-5);
-  transition: background var(--transition-base);
+  background: var(--surface-cool);
 }
 
-.profile-breadcrumb {
-  margin-bottom: var(--space-5);
+.profile-hero {
+  border-radius: 0 0 var(--radius-2xl) var(--radius-2xl);
 }
 
-.user-summary-card {
-  position: relative;
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(10px);
-  border-radius: var(--radius-lg);
-  padding: 30px;
-  margin-bottom: 30px;
-  box-shadow: var(--shadow-card);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  overflow: hidden;
-}
-
-.summary-backdrop {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 300px;
-  height: 100%;
-  background: linear-gradient(135deg, rgba(5, 150, 105, 0.1), rgba(8, 145, 178, 0.1));
-  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
-}
-
-.summary-content {
-  position: relative;
-  z-index: 1;
+.hero-user-info {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 30px;
-}
-
-.avatar-section {
-  display: flex;
-  align-items: center;
-  gap: var(--space-5);
+  gap: var(--space-6);
+  margin-bottom: var(--space-8);
 }
 
 .avatar-wrapper {
   position: relative;
-  width: 96px;
-  height: 96px;
+  cursor: pointer;
 }
 
 .main-avatar {
-  border: 4px solid var(--surface-white);
-  box-shadow: var(--shadow-md);
-}
-
-.avatar-status {
-  position: absolute;
-  bottom: var(--space-1);
-  right: var(--space-1);
-  width: var(--space-4);
-  height: var(--space-4);
-  border-radius: 50%;
-  background-color: var(--danger);
-  border: 2px solid var(--surface-white);
-}
-
-.avatar-status.online {
-  background-color: var(--green-500);
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .avatar-upload-overlay {
@@ -965,283 +1114,358 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--surface-white);
+  color: white;
   opacity: 0;
   transition: opacity var(--transition-base);
-  cursor: pointer;
 }
 
 .avatar-wrapper:hover .avatar-upload-overlay {
   opacity: 1;
 }
 
-.user-basic-info h3 {
-  margin: 0 0 var(--space-2) 0;
-  font-size: var(--text-2xl);
-  font-weight: var(--weight-semibold);
-  color: var(--ink-900);
+.avatar-status {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background-color: var(--danger);
+  border: 3px solid white;
+}
+
+.avatar-status.online {
+  background-color: var(--success);
+}
+
+.user-details {
+  color: white;
+}
+
+.username {
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-bold);
+  margin: 0 0 var(--space-1) 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .user-id {
-  margin: 0 0 10px 0;
-  color: var(--ink-500);
   font-size: var(--text-sm);
+  opacity: 0.8;
+  margin: 0 0 var(--space-2) 0;
 }
 
-.user-role {
+.hero-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.stat-card-dark {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  backdrop-filter: blur(10px);
+}
+
+.stat-card-dark :deep(.stat-value) {
+  color: white !important;
+}
+
+.stat-card-dark :deep(.stat-label) {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.logout-btn {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.logout-btn:hover {
+  color: white !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.profile-content {
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding: var(--space-6);
+}
+
+.profile-tabs {
+  background: var(--surface-white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.profile-tabs :deep(.el-tabs__header) {
+  margin: 0;
+  padding: 0 var(--space-6);
+  background: var(--surface-white);
+  border-bottom: 1px solid var(--green-100);
+}
+
+.profile-tabs :deep(.el-tabs__item) {
+  height: 56px;
+  line-height: 56px;
+  font-size: var(--text-base);
   font-weight: var(--weight-medium);
+  color: var(--ink-500);
 }
 
-.stats-section {
+.profile-tabs :deep(.el-tabs__item.is-active) {
+  color: var(--green-600);
+  font-weight: var(--weight-semibold);
+}
+
+.profile-tabs :deep(.el-tabs__active-bar) {
+  background: var(--brand-gradient);
+  height: 3px;
+}
+
+.tab-content {
+  padding: var(--space-6);
+}
+
+.section-card {
+  margin-bottom: var(--space-6);
+}
+
+.card-header-actions {
+  margin-left: auto;
+}
+
+/* 最近识别列表 */
+.recent-list {
   display: flex;
-  gap: 30px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: var(--space-3);
 }
 
-.stat-item {
+.recent-item {
   display: flex;
   align-items: center;
-  gap: 15px;
-  padding: 15px var(--space-5);
-  background: rgba(255, 255, 255, 0.9);
+  gap: var(--space-4);
+  padding: var(--space-4);
+  background: var(--surface-warm);
   border-radius: var(--radius-md);
-  min-width: 160px;
-  transition: transform var(--transition-base);
+  transition: all var(--transition-fast);
 }
 
-.stat-item:hover {
-  transform: translateY(-3px);
+.recent-item:hover {
+  background: var(--green-50);
+  transform: translateX(4px);
 }
 
-.stat-icon {
-  width: 48px;
-  height: 48px;
+.recent-icon {
+  width: 40px;
+  height: 40px;
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--surface-white);
-  font-size: var(--text-xl);
-}
-
-.stat-value {
-  font-size: var(--text-2xl);
-  font-weight: var(--weight-bold);
-  color: var(--ink-900);
-  line-height: 1;
-}
-
-.stat-label {
-  font-size: var(--text-sm);
-  color: var(--ink-500);
-  margin-top: var(--space-1);
-}
-
-.quick-actions {
-  display: flex;
-  gap: 10px;
-  width: 100%;
-  margin-top: var(--space-5);
-}
-
-.profile-main {
-  display: flex;
-  gap: var(--space-5);
-}
-
-.profile-sidebar {
-  width: 260px;
+  color: white;
   flex-shrink: 0;
 }
 
-.profile-menu {
-  border: none;
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(10px);
-  border-radius: var(--radius-lg);
-  padding: 10px 0;
+.recent-info {
+  flex: 1;
 }
 
-:deep(.el-menu-item) {
-  height: 60px;
-  margin: var(--space-1) 10px;
-  border-radius: var(--radius-md);
+.recent-name {
+  font-weight: var(--weight-semibold);
+  color: var(--ink-900);
 }
 
-:deep(.el-menu-item.is-active) {
-  background: linear-gradient(135deg, rgba(5, 150, 105, 0.1), rgba(8, 145, 178, 0.1));
-  color: var(--green-500);
-  font-weight: var(--weight-medium);
+.recent-time {
+  font-size: var(--text-sm);
+  color: var(--ink-500);
+  margin-top: 2px;
 }
 
-.menu-item-content {
+.empty-state {
+  text-align: center;
+  padding: var(--space-10) 0;
+  color: var(--ink-400);
+}
+
+.empty-icon {
+  margin-bottom: var(--space-4);
+  opacity: 0.5;
+}
+
+.empty-state p {
+  margin: 0 0 var(--space-4) 0;
+}
+
+/* 收藏蛇种网格 */
+.favorites-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--space-4);
+}
+
+.favorite-item {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  width: 100%;
+  padding: var(--space-3);
+  background: var(--surface-warm);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
 }
 
-.menu-icon {
+.favorite-item:hover {
+  background: var(--green-50);
+  transform: translateY(-2px);
+}
+
+.favorite-image {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--green-100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.favorite-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.favorite-name {
+  font-weight: var(--weight-semibold);
+  color: var(--ink-900);
+}
+
+.favorite-latin {
+  font-size: var(--text-xs);
+  color: var(--ink-500);
+  font-style: italic;
+}
+
+/* 安全知识进度 */
+.knowledge-progress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.progress-item {
+  padding: var(--space-4);
+  background: var(--surface-warm);
+  border-radius: var(--radius-md);
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: var(--space-2);
+}
+
+.progress-label {
+  font-weight: var(--weight-medium);
+  color: var(--ink-700);
+}
+
+.progress-value {
+  font-weight: var(--weight-semibold);
+  color: var(--green-600);
+}
+
+/* 筛选栏 */
+.filter-card {
+  margin-bottom: var(--space-4);
+}
+
+.filter-row {
+  display: flex;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.filter-input {
+  flex: 1;
+  min-width: 200px;
+}
+
+.filter-select {
+  width: 150px;
+}
+
+.filter-date {
+  width: 280px;
+}
+
+/* 识别记录表格 */
+.snake-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.snake-icon {
   width: 36px;
   height: 36px;
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--surface-white);
-  font-size: var(--text-base);
+  color: white;
+  flex-shrink: 0;
 }
 
-.menu-badge {
-  margin-left: auto;
-}
-
-.profile-content {
-  flex: 1;
-}
-
-.glass-card {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(10px);
-  border-radius: var(--radius-lg);
-  padding: 30px;
-  box-shadow: var(--shadow-card);
-  margin-bottom: var(--space-5);
-}
-
-.card-header {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  margin-bottom: 30px;
-  padding-bottom: var(--space-5);
-  border-bottom: 1px solid rgba(226, 232, 240, 0.5);
-}
-
-.header-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--surface-white);
-  font-size: var(--text-2xl);
-}
-
-.header-content h3 {
-  margin: 0;
-  font-size: var(--text-xl);
+.snake-name {
   font-weight: var(--weight-semibold);
   color: var(--ink-900);
 }
 
-.header-content p {
-  margin: 5px 0 0 0;
-  color: var(--ink-500);
-  font-size: var(--text-sm);
-}
-
-.info-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: var(--space-5);
-  margin-bottom: 30px;
-}
-
-.info-item {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  padding: 15px;
-  background: rgba(255, 255, 255, 0.5);
-  border-radius: var(--radius-md);
-  transition: background var(--transition-base);
-}
-
-.info-label {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-width: 100px;
-}
-
-.info-icon {
-  color: var(--green-500);
-  font-size: var(--text-base);
-}
-
-.info-label span {
-  font-weight: var(--weight-medium);
-  color: var(--ink-700);
-}
-
-.info-value {
-  flex: 1;
-  color: var(--ink-900);
-  font-weight: var(--weight-medium);
-}
-
-.security-status {
-  padding: var(--space-5);
-  background: rgba(5, 150, 105, 0.05);
-  border-radius: var(--radius-md);
-}
-
-.security-status h4 {
-  margin: 0 0 15px 0;
-  color: var(--ink-900);
-}
-
-.security-progress {
-  margin-bottom: 15px;
-}
-
-.security-labels {
-  display: flex;
-  justify-content: space-between;
+.snake-latin {
   font-size: var(--text-xs);
   color: var(--ink-500);
-  margin-top: var(--space-2);
+  font-style: italic;
 }
 
-.security-tips {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
+.confidence-text {
+  font-size: var(--text-xs);
   color: var(--ink-500);
-  font-size: var(--text-sm);
+  margin-top: 4px;
+  display: block;
 }
 
-.edit-form {
-  margin-top: 30px;
+.pagination-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-6);
 }
 
-.form-section {
-  margin-bottom: 30px;
-}
-
-.form-section h4 {
-  margin: 0 0 var(--space-5) 0;
-  color: var(--ink-900);
-  font-size: var(--text-base);
-  font-weight: var(--weight-semibold);
+/* 设置表单 */
+.settings-form {
+  max-width: 600px;
 }
 
 .form-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: var(--space-5);
+  gap: var(--space-4);
 }
 
-:deep(.el-form-item__label) {
-  font-weight: var(--weight-medium);
-  color: var(--ink-700);
-}
-
-.avatar-upload-section {
+.form-actions {
   display: flex;
-  gap: 30px;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--green-100);
+}
+
+/* 头像设置 */
+.avatar-section {
+  display: flex;
+  gap: var(--space-8);
   align-items: flex-start;
 }
 
@@ -1249,12 +1473,12 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 15px;
+  gap: var(--space-4);
 }
 
 .avatar-actions {
   display: flex;
-  gap: 10px;
+  gap: var(--space-2);
 }
 
 .upload-tips {
@@ -1262,47 +1486,57 @@ onMounted(() => {
 }
 
 .upload-tips p {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   margin: var(--space-2) 0;
   color: var(--ink-500);
   font-size: var(--text-sm);
 }
 
-.upload-tips i {
-  margin-right: var(--space-2);
+.upload-tips .el-icon {
   color: var(--green-500);
 }
 
-.form-actions {
-  display: flex;
-  gap: 15px;
-  margin-top: var(--space-10);
-  padding-top: var(--space-5);
-  border-top: 1px solid rgba(226, 232, 240, 0.5);
-}
-
-.password-form {
-  margin-top: 30px;
-}
-
-.password-inputs {
+/* 通知设置 */
+.notification-settings {
   display: flex;
   flex-direction: column;
-  gap: 25px;
+  gap: var(--space-4);
 }
 
-.password-label {
+.notification-item {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  font-weight: var(--weight-medium);
+  justify-content: space-between;
+  padding: var(--space-4);
+  background: var(--surface-warm);
+  border-radius: var(--radius-md);
+}
+
+.notification-info h4 {
+  margin: 0 0 var(--space-1) 0;
+  font-weight: var(--weight-semibold);
+  color: var(--ink-900);
+}
+
+.notification-info p {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--ink-500);
+}
+
+/* 密码表单 */
+.password-form {
+  max-width: 500px;
 }
 
 .password-strength {
-  margin-top: 10px;
+  margin-top: var(--space-2);
 }
 
 .strength-bar {
-  height: var(--space-1);
+  height: 4px;
   border-radius: 2px;
   transition: width var(--transition-base);
 }
@@ -1319,166 +1553,133 @@ onMounted(() => {
 
 .strength-bar.strong {
   width: 100%;
-  background: var(--green-500);
+  background: var(--success);
 }
 
-.password-tips {
+/* 紧急联系人 */
+.emergency-contacts {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin: 30px 0;
-  padding: var(--space-5);
-  background: rgba(5, 150, 105, 0.05);
+  gap: var(--space-4);
+}
+
+.contact-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4);
+  background: var(--surface-warm);
   border-radius: var(--radius-md);
 }
 
-.tip-item {
+.contact-info {
   display: flex;
   align-items: center;
-  gap: 10px;
-  color: var(--ink-500);
+  gap: var(--space-4);
 }
 
-.settings-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: var(--space-5);
-  margin-top: 30px;
-}
-
-.setting-item {
+.contact-details {
   display: flex;
-  align-items: center;
-  gap: 15px;
-  padding: var(--space-5);
-  background: rgba(255, 255, 255, 0.5);
-  border-radius: var(--radius-md);
-  transition: transform var(--transition-base);
+  flex-direction: column;
 }
 
-.setting-item:hover {
-  transform: translateY(-3px);
-}
-
-.setting-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: var(--radius-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: var(--text-xl);
-  flex-shrink: 0;
-}
-
-.setting-content {
-  flex: 1;
-}
-
-.setting-content h4 {
-  margin: 0 0 5px 0;
-  font-size: var(--text-base);
+.contact-name {
   font-weight: var(--weight-semibold);
   color: var(--ink-900);
 }
 
-.setting-content p {
-  margin: 0;
-  color: var(--ink-500);
+.contact-phone {
   font-size: var(--text-sm);
+  color: var(--ink-500);
 }
 
-.profile-footer {
-  margin-top: var(--space-10);
-  padding: var(--space-5);
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(10px);
-  border-radius: var(--radius-lg);
-}
-
-.footer-content {
+.contact-actions {
   display: flex;
+  gap: var(--space-2);
+}
+
+.add-contact-btn {
+  align-self: flex-start;
+}
+
+/* 隐私设置 */
+.privacy-settings {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.privacy-item {
+  display: flex;
+  align-items: center;
   justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 15px;
+  padding: var(--space-4);
+  background: var(--surface-warm);
+  border-radius: var(--radius-md);
 }
 
-.footer-text {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--ink-500);
+.privacy-info h4 {
+  margin: 0 0 var(--space-1) 0;
+  font-weight: var(--weight-semibold);
+  color: var(--ink-900);
+}
+
+.privacy-info p {
+  margin: 0;
   font-size: var(--text-sm);
+  color: var(--ink-500);
 }
 
-.footer-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-@media (max-width: 1200px) {
-  .profile-main {
-    flex-direction: column;
+/* 响应式布局 */
+@media (max-width: 1024px) {
+  .hero-stats {
+    grid-template-columns: repeat(2, 1fr);
   }
 
-  .profile-sidebar {
-    width: 100%;
-  }
-
-  .summary-content {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .stats-section {
-    width: 100%;
-    justify-content: center;
+  .favorites-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
 @media (max-width: 768px) {
-  .info-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .settings-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .avatar-upload-section {
-    flex-direction: column;
-  }
-
-  .footer-content {
+  .hero-user-info {
     flex-direction: column;
     text-align: center;
   }
+
+  .hero-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-content {
+    padding: var(--space-4);
+  }
+
+  .filter-row {
+    flex-direction: column;
+  }
+
+  .filter-input,
+  .filter-select,
+  .filter-date {
+    width: 100%;
+  }
+
+  .avatar-section {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .favorites-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
-::-webkit-scrollbar {
-  width: var(--space-2);
-}
-
-::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.05);
-  border-radius: var(--radius-sm);
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.15);
-  border-radius: var(--radius-sm);
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.25);
-}
-
+/* 动画 */
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(var(--space-5));
+    transform: translateY(20px);
   }
   to {
     opacity: 1;
@@ -1486,7 +1687,7 @@ onMounted(() => {
   }
 }
 
-.glass-card {
+.section-card {
   animation: fadeInUp 0.6s ease-out;
 }
 </style>

@@ -99,6 +99,14 @@ export const userApi = {
   getUserInfo(id) { return api.get(`/user/info/${id}`) },
   updateUserInfo(data) { return api.put('/user/update', data) },
   changePassword(data) { return api.put('/user/change-password', data) },
+  uploadAvatar(data) {
+    const formData = new FormData()
+    formData.append('file', data.file)
+    formData.append('userId', data.userId)
+    return api.post('/user/avatar/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+  },
 
   getUserList(params) { return api.get('/user/list', { params }) },
   getUserRoles(userId) { return api.get(`/user/roles/${userId}`) },
@@ -164,18 +172,28 @@ export const sosAdminApi = {
 
 // ==================== C-end APIs (unchanged) ====================
 export const recognitionApi = {
-  identifySnake(formData) { return api.post('/recognition/identify', formData, { timeout: 60000 }) }
+  identifySnake(formData) { return api.post('/recognition/identify', formData, { timeout: 60000 }) },
+  getRecordsByUser(userId) { return api.get(`/recognition/records/user/${userId}`) },
+  getRecordCount(userId) { return api.get(`/recognition/records/user/${userId}/count`) },
+  getRecentRecords(userId, limit = 5) { return api.get(`/recognition/records/user/${userId}/recent`, { params: { limit } }) }
 }
 
 export const emergencyApi = {
   analyzeWoundImage(formData) { return api.post('/emergency/image/analyze', formData, { timeout: 60000 }) },
   askEmergencyQuestion(question) { return api.post('/emergency/guide/ask', question, { headers: { 'Content-Type': 'application/json' } }) },
   getEmergencyGuideByName(name) { return api.get(`/emergency/guide/${name}`) },
+  refreshEmergencyGuide(name) { return api.get(`/emergency/guide/${name}`, { params: { refresh: true } }) },
   getDetailedSnakeInfo(name) { return api.get(`/emergency/guide/details/${name}`) },
   getEmergencyGuidesBySymptoms(s) { return api.post('/emergency/guide/by-symptoms', s) },
   clearQaCache() { return api.delete('/emergency/guide/cache/clear') },
   submitEmergency(data) { return api.post('/emergency/help/submit', data) },
-  getEmergencyHistory() { return api.get('/emergency/help/history') }
+  getEmergencyHistory() { return api.get('/emergency/help/history') },
+  // Rescue dispatch (SOS management)
+  getRescueStats() { return api.get('/emergency/help/stats') },
+  getRescueList(params) { return api.get('/emergency/help/list', { params }) },
+  getRescueDetail(id) { return api.get(`/emergency/help/detail/${id}`) },
+  getRescueLatest(since) { return api.get('/emergency/help/latest', { params: { since } }) },
+  updateRescueStatus(id, status) { return api.put(`/emergency/help/${id}/status`, null, { params: { status } }) }
 }
 
 export const warningApi = {
@@ -183,7 +201,37 @@ export const warningApi = {
   getRecentWarnings(params) { return api.get('/warning/recent', { params }) },
   getActiveAreaDetail(id) { return api.get(`/warning/active-area/detail/${id}`) },
   getRealTimeWarning(data) { return api.post('/warning/real-time', data) },
-  convertLocation(params) { return api.get('/warning/convert-location', { params }) }
+  convertLocation(params) { return api.get('/warning/convert-location', { params }) },
+  checkProximity(params) { return api.get('/warning/check-proximity', { params }) },
+  getRegionTree() { return api.get('/warning/region-tree') },
+  getWarningByRegion(regionId) { return api.get('/warning/by-region', { params: { regionId } }) }
+}
+
+// ==================== Rescue Region API ====================
+export const rescueRegionApi = {
+  getTree() { return api.get('/rescue/regions/tree') },
+  getList(params) { return api.get('/rescue/regions', { params }) },
+  create(data) { return api.post('/rescue/regions', data) },
+  update(id, data) { return api.put(`/rescue/regions/${id}`, data) },
+  delete(id) { return api.delete(`/rescue/regions/${id}`) }
+}
+
+// ==================== Rescue Warning API ====================
+export const rescueWarningApi = {
+  getAreas(params) { return api.get('/rescue/warning/areas', { params }) },
+  createArea(data) { return api.post('/rescue/warning/areas', data) },
+  updateArea(id, data) { return api.put(`/rescue/warning/areas/${id}`, data) },
+  deleteArea(id, params) { return api.delete(`/rescue/warning/areas/${id}`, { params }) },
+  verifyPassword(data) { return api.post('/rescue/warning/verify-password', data) }
+}
+
+// ==================== Rescue Serum API ====================
+export const rescueSerumApi = {
+  getList(regionId) { return api.get('/rescue/serum', { params: { regionId } }) },
+  create(data) { return api.post('/rescue/serum', data) },
+  update(id, data) { return api.put(`/rescue/serum/${id}`, data) },
+  delete(id, params) { return api.delete(`/rescue/serum/${id}`, { params }) },
+  getHospitalsWithSerum(snakeId) { return api.get(`/hospital/with-serum/${snakeId}`) }
 }
 
 export const hospitalApi = {
@@ -198,4 +246,4 @@ export const hospitalApi = {
   }
 }
 
-export default { admin: adminApi, user: userApi, snakeAdmin: snakeAdminApi, hospitalAdmin: hospitalAdminApi, warningAdmin: warningAdminApi, sosAdmin: sosAdminApi, recognition: recognitionApi, emergency: emergencyApi, warning: warningApi, hospital: hospitalApi }
+export default { admin: adminApi, user: userApi, snakeAdmin: snakeAdminApi, hospitalAdmin: hospitalAdminApi, warningAdmin: warningAdminApi, sosAdmin: sosAdminApi, recognition: recognitionApi, emergency: emergencyApi, warning: warningApi, hospital: hospitalApi, rescueRegion: rescueRegionApi, rescueWarning: rescueWarningApi, rescueSerum: rescueSerumApi }

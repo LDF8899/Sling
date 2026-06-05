@@ -1,12 +1,28 @@
 <template>
-  <div class="rescue-dashboard" :class="{ 'dark-mode': darkMode }">
+  <div class="rescue-dashboard">
     <!-- 顶部操作栏 -->
     <div class="top-bar">
-      <el-button :icon="ArrowLeft" circle @click="$router.push('/dashboard')" class="back-btn" />
-      <h2>救助调度中心</h2>
+      <div class="top-bar-left">
+        <SButton variant="ghost" size="sm" @click="$router.push('/dashboard')">
+          <template #icon><el-icon><ArrowLeft /></el-icon></template>
+        </SButton>
+        <div class="top-title">
+          <h2>救助调度中心</h2>
+          <span class="top-subtitle">蛇伤救助 · 预警管理 · 血清调度</span>
+        </div>
+      </div>
       <div class="top-tabs">
-        <button :class="{ active: mainTab === 'dispatch' }" @click="mainTab = 'dispatch'">求助调度</button>
-        <button :class="{ active: mainTab === 'warning' }" @click="mainTab = 'warning'">预警管理</button>
+        <button :class="{ active: mainTab === 'dispatch' }" @click="mainTab = 'dispatch'">
+          <el-icon><Location /></el-icon> 求助调度
+        </button>
+        <button :class="{ active: mainTab === 'warning' }" @click="mainTab = 'warning'">
+          <el-icon><Warning /></el-icon> 预警管理
+        </button>
+      </div>
+      <div class="role-badge" v-if="roleVerified">
+        <el-tag :type="verifiedRole === 'forester' ? 'success' : 'warning'" effect="dark" round>
+          {{ ROLES[verifiedRole]?.label }}
+        </el-tag>
       </div>
     </div>
 
@@ -15,41 +31,40 @@
 
     <!-- 顶部统计 -->
     <div class="stats-bar">
-      <div class="stat-card total" @click="currentFilter = ''">
-        <div class="stat-num">{{ stats.total }}</div>
-        <div class="stat-label">全部求助</div>
-      </div>
-      <div class="stat-card pending" @click="currentFilter = 'pending'">
-        <div class="stat-num">{{ stats.pending }}</div>
-        <div class="stat-label">待处理</div>
-      </div>
-      <div class="stat-card processing" @click="currentFilter = 'processing'">
-        <div class="stat-num">{{ stats.processing }}</div>
-        <div class="stat-label">处理中</div>
-      </div>
-      <div class="stat-card resolved" @click="currentFilter = 'resolved'">
-        <div class="stat-num">{{ stats.resolved }}</div>
-        <div class="stat-label">已解决</div>
-      </div>
+      <SStatCard label="全部求助" :value="stats.total" clickable icon-bg="var(--green-100)" icon-color="var(--green-600)" @click="currentFilter = ''">
+        <template #icon><el-icon size="22"><Document /></el-icon></template>
+      </SStatCard>
+      <SStatCard label="待处理" :value="stats.pending" clickable icon-bg="var(--danger-bg)" icon-color="var(--danger)" @click="currentFilter = 'pending'">
+        <template #icon><el-icon size="22"><Warning /></el-icon></template>
+      </SStatCard>
+      <SStatCard label="处理中" :value="stats.processing" clickable icon-bg="var(--warning-bg)" icon-color="var(--warning)" @click="currentFilter = 'processing'">
+        <template #icon><el-icon size="22"><Loading /></el-icon></template>
+      </SStatCard>
+      <SStatCard label="已解决" :value="stats.resolved" clickable icon-bg="var(--blue-100, #E0F2FE)" icon-color="var(--blue-700)" @click="currentFilter = 'resolved'">
+        <template #icon><el-icon size="22"><FirstAidKit /></el-icon></template>
+      </SStatCard>
     </div>
 
     <!-- 主内容区 -->
     <div class="main-panels">
       <!-- 左侧列表 -->
-      <div class="list-panel">
-        <div class="list-header">
-          <h3>求助列表</h3>
-          <el-tag v-if="currentFilter" type="warning" closable @close="currentFilter = ''">
-            {{ statusLabel(currentFilter) }}
-          </el-tag>
-          <span class="polling-status" :class="{ active: pollingActive }">
-            {{ pollingActive ? '实时监控中' : '已暂停' }}
-          </span>
-        </div>
+      <SCard class="list-panel">
+        <template #header>
+          <div class="list-header">
+            <h3>求助列表</h3>
+            <el-tag v-if="currentFilter" type="warning" closable @close="currentFilter = ''" size="small">
+              {{ statusLabel(currentFilter) }}
+            </el-tag>
+            <span class="polling-status" :class="{ active: pollingActive }">
+              <span class="polling-dot" :class="{ active: pollingActive }"></span>
+              {{ pollingActive ? '实时监控中' : '已暂停' }}
+            </span>
+          </div>
+        </template>
 
         <div class="list-body">
           <div v-if="loading" class="loading-wrap">
-            <el-icon class="is-loading"><Loading /></el-icon>
+            <el-icon class="is-loading" size="24"><Loading /></el-icon>
             <span>加载中...</span>
           </div>
           <div v-else-if="helpList.length === 0" class="empty-wrap">
@@ -60,12 +75,12 @@
               v-for="item in helpList"
               :key="item.id"
               class="help-item"
-              :class="{ active: selectedId === item.id }"
+              :class="{ active: selectedId === item.id, [statusColor(item.status)]: true }"
               @click="selectHelp(item)"
             >
               <div class="item-top">
-                <el-tag :type="typeColor(item.type)" size="small">{{ typeLabel(item.type) }}</el-tag>
-                <el-tag :type="statusColor(item.status)" size="small">{{ statusLabel(item.status) }}</el-tag>
+                <el-tag :type="typeColor(item.type)" size="small" round>{{ typeLabel(item.type) }}</el-tag>
+                <el-tag :type="statusColor(item.status)" size="small" effect="plain" round>{{ statusLabel(item.status) }}</el-tag>
               </div>
               <div class="item-loc">{{ item.location }}</div>
               <div class="item-desc">{{ item.description?.slice(0, 60) }}{{ item.description?.length > 60 ? '...' : '' }}</div>
@@ -75,24 +90,32 @@
         </div>
 
         <!-- 分页 -->
-        <div class="list-pagination" v-if="total > pageSize">
-          <el-pagination
-            v-model:current-page="currentPage"
-            :page-size="pageSize"
-            :total="total"
-            layout="prev, pager, next"
-            small
-            @current-change="loadList"
-          />
-        </div>
-      </div>
+        <template #footer>
+          <div class="list-pagination" v-if="total > pageSize">
+            <el-pagination
+              v-model:current-page="currentPage"
+              :page-size="pageSize"
+              :total="total"
+              layout="prev, pager, next"
+              small
+              @current-change="loadList"
+            />
+          </div>
+        </template>
+      </SCard>
 
       <!-- 右侧详情/地图 -->
-      <div class="detail-panel">
-        <div class="detail-tabs">
-          <button :class="{ active: rightTab === 'detail' }" @click="rightTab = 'detail'">求助详情</button>
-          <button :class="{ active: rightTab === 'map' }" @click="rightTab = 'map'">地图分布</button>
-        </div>
+      <SCard class="detail-panel" :style="{ padding: '0' }">
+        <template #header>
+          <div class="detail-tabs">
+            <button :class="{ active: rightTab === 'detail' }" @click="rightTab = 'detail'">
+              <el-icon><Document /></el-icon> 求助详情
+            </button>
+            <button :class="{ active: rightTab === 'map' }" @click="rightTab = 'map'">
+              <el-icon><Location /></el-icon> 地图分布
+            </button>
+          </div>
+        </template>
 
         <!-- 详情模式 -->
         <div class="detail-content" v-if="rightTab === 'detail'">
@@ -102,7 +125,7 @@
           <div v-else class="detail-card">
             <div class="detail-header">
               <h4>#{{ selected.id }} — {{ typeLabel(selected.type) }}</h4>
-              <el-tag :type="statusColor(selected.status)" size="default">{{ statusLabel(selected.status) }}</el-tag>
+              <el-tag :type="statusColor(selected.status)" effect="dark" round>{{ statusLabel(selected.status) }}</el-tag>
             </div>
 
             <div class="detail-fields">
@@ -136,32 +159,78 @@
               </div>
             </div>
 
+            <!-- 识别信息（如果有） -->
+            <div class="recognition-info" v-if="selected.snakeName">
+              <h4>🐍 识别信息</h4>
+              <div class="info-grid">
+                <div class="info-item">
+                  <label>蛇种</label>
+                  <span class="snake-name">{{ selected.snakeName }}</span>
+                </div>
+                <div class="info-item" v-if="selected.toxicityLevel !== null">
+                  <label>毒性等级</label>
+                  <span :class="'toxicity-' + selected.toxicityLevel">
+                    {{ getToxicityText(selected.toxicityLevel) }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 急救信息（如果有） -->
+            <div class="emergency-info" v-if="emergencyDetail">
+              <h4>⚠️ 急救信息</h4>
+              <div class="info-section" v-if="emergencyDetail.venom_type">
+                <label>毒液类型</label>
+                <span>{{ emergencyDetail.venom_type }}</span>
+              </div>
+              <div class="info-section" v-if="emergencyDetail.emergency_treatment">
+                <label>急救措施</label>
+                <div class="treatment-text">{{ emergencyDetail.emergency_treatment }}</div>
+              </div>
+              <div class="info-section forbidden" v-if="emergencyDetail.forbidden_actions">
+                <label>❌ 严格禁止</label>
+                <div class="forbidden-text">{{ emergencyDetail.forbidden_actions }}</div>
+              </div>
+            </div>
+
+            <!-- 推荐医院（如果有） -->
+            <div class="hospital-recommend" v-if="hospitalList.length > 0">
+              <h4>🏥 推荐医院</h4>
+              <div class="hospital-item" v-for="hospital in hospitalList" :key="hospital.hospitalId">
+                <div class="hospital-name">{{ hospital.hospitalName }}</div>
+                <div class="hospital-meta">
+                  <span v-if="hospital.serumAmount">💉 库存: {{ hospital.serumAmount }}支</span>
+                  <span v-if="hospital.emergencyDepartment">🚑 有急诊</span>
+                </div>
+              </div>
+            </div>
+
             <!-- 状态流转按钮 -->
             <div class="action-bar">
-              <el-button
+              <SButton
                 v-if="selected.status === 'pending'"
-                type="primary"
+                variant="primary"
                 @click="changeStatus('processing')"
                 :loading="statusLoading"
               >
                 接单处理
-              </el-button>
-              <el-button
+              </SButton>
+              <SButton
                 v-if="selected.status === 'processing'"
-                type="success"
+                variant="primary"
                 @click="changeStatus('resolved')"
                 :loading="statusLoading"
               >
                 标记已解决
-              </el-button>
-              <el-button
+              </SButton>
+              <SButton
                 v-if="selected.status === 'resolved'"
-                type="warning"
+                variant="secondary"
                 @click="changeStatus('processing')"
                 :loading="statusLoading"
               >
                 重新打开
-              </el-button>
+              </SButton>
             </div>
           </div>
         </div>
@@ -170,7 +239,7 @@
         <div class="map-content" v-if="rightTab === 'map'">
           <div id="rescueMap" class="rescue-map"></div>
         </div>
-      </div>
+      </SCard>
     </div>
 
     </template><!-- /dispatch tab -->
@@ -179,11 +248,13 @@
     <template v-if="mainTab === 'warning'">
     <div class="warning-panels">
       <!-- 左侧：区域树 -->
-      <div class="region-tree-panel">
-        <div class="region-header">
-          <h3>区域管理</h3>
-          <el-button type="primary" size="small" @click="showAddRegionDialog">+ 新建</el-button>
-        </div>
+      <SCard class="region-tree-panel">
+        <template #header>
+          <div class="region-header">
+            <h3>区域管理</h3>
+            <SButton variant="primary" size="sm" @click="showAddRegionDialog">+ 新建</SButton>
+          </div>
+        </template>
         <div class="region-tree-body">
           <div v-if="regionTree.length === 0" class="empty-wrap">
             <el-empty description="暂无区域，请先创建大区" :image-size="60" />
@@ -217,28 +288,39 @@
             </div>
           </div>
         </div>
-      </div>
+      </SCard>
 
       <!-- 右侧：地图 + 操作 -->
-      <div class="warning-main-panel">
-        <div class="warning-tabs">
-          <button :class="{ active: warningTab === 'map' }" @click="warningTab = 'map'">预警地图</button>
-          <button :class="{ active: warningTab === 'areas' }" @click="warningTab = 'areas'">预警区域</button>
-          <button :class="{ active: warningTab === 'serum' }" @click="warningTab = 'serum'">血清库存</button>
-        </div>
+      <SCard class="warning-main-panel" :style="{ padding: '0' }">
+        <template #header>
+          <div class="warning-tabs">
+            <button :class="{ active: warningTab === 'map' }" @click="warningTab = 'map'">预警地图</button>
+            <button :class="{ active: warningTab === 'areas' }" @click="warningTab = 'areas'">预警区域</button>
+            <button :class="{ active: warningTab === 'serum' }" @click="warningTab = 'serum'">血清库存</button>
+          </div>
+        </template>
 
         <!-- 预警地图 -->
-        <div v-if="warningTab === 'map'" class="warning-content">
+        <div v-show="warningTab === 'map'" class="warning-content">
           <div v-if="!selectedRegionId" class="empty-wrap">
             <el-empty description="请先在左侧选择一个具体区域" />
           </div>
           <div v-else>
             <div class="map-toolbar">
-              <el-button type="primary" size="small" @click="startDrawPolygon" :disabled="!selectedRegionId">
-                绘制预警区域
-              </el-button>
-              <el-button size="small" @click="clearDraw" v-if="isDrawing">取消绘制</el-button>
-              <span class="map-hint" v-if="isDrawing">点击地图绘制多边形，双击完成</span>
+              <template v-if="verifiedRole === 'forester'">
+                <el-button type="primary" size="small" @click="startDrawPolygon" :disabled="!selectedRegionId" v-if="!isDrawing">
+                  绘制预警区域
+                </el-button>
+                <el-button size="small" @click="clearDraw" v-if="isDrawing">取消绘制</el-button>
+                <span class="map-hint" v-if="isDrawing">点击地图绘制多边形，双击完成</span>
+                <template v-if="selectedAreaId && !isDrawing">
+                  <el-button size="small" @click="openEditAreaDialog(warningAreas.find(a => a.id === selectedAreaId))">编辑信息</el-button>
+                  <el-button type="warning" size="small" @click="redrawSelectedArea">重绘边界</el-button>
+                  <el-button type="danger" size="small" @click="deleteSelectedArea" :loading="areaDeleting">删除</el-button>
+                  <el-button size="small" @click="selectedAreaId = null">取消选择</el-button>
+                </template>
+              </template>
+              <span v-else class="map-hint">当前角色仅可查看预警区域，林业员可编辑</span>
             </div>
             <div id="warningMap" class="warning-map"></div>
           </div>
@@ -264,6 +346,13 @@
             <el-table-column prop="createTime" label="创建时间" width="180">
               <template #default="{ row }">{{ formatTime(row.createTime) }}</template>
             </el-table-column>
+            <el-table-column label="操作" width="200" v-if="verifiedRole === 'forester'">
+              <template #default="{ row }">
+                <el-button size="small" @click="openEditAreaDialog(row)">编辑</el-button>
+                <el-button type="warning" size="small" @click="goRedrawArea(row)">重绘</el-button>
+                <el-button type="danger" size="small" @click="deleteAreaFromTable(row)">删除</el-button>
+              </template>
+            </el-table-column>
           </el-table>
         </div>
 
@@ -271,7 +360,8 @@
         <div v-if="warningTab === 'serum'" class="warning-content">
           <div class="area-toolbar">
             <span>当前区域：{{ selectedRegionName || '未选择' }}</span>
-            <el-button type="primary" size="small" @click="showAddSerumDialog" :disabled="!selectedRegionId">+ 新增血清</el-button>
+            <SButton variant="primary" size="sm" @click="showAddSerumDialog" :disabled="!selectedRegionId" v-if="verifiedRole === 'medic'">+ 新增血清</SButton>
+            <span v-if="verifiedRole === 'forester'" style="font-size: 12px; color: var(--ink-400)">医护人员可编辑血清信息</span>
           </div>
           <el-table :data="serumList" stripe style="width: 100%" v-loading="serumLoading">
             <el-table-column prop="hospital_name" label="医院" />
@@ -281,12 +371,12 @@
             <el-table-column prop="expiry_date" label="有效期" width="120" />
           </el-table>
         </div>
-      </div>
+      </SCard>
     </div>
     </template><!-- /warning tab -->
 
-    <!-- 预警区域创建对话框 -->
-    <el-dialog v-model="areaDialogVisible" title="创建预警区域" width="500px" :close-on-click-modal="false">
+    <!-- 预警区域 创建/编辑 对话框 -->
+    <el-dialog v-model="areaDialogVisible" :title="editingAreaId ? '编辑预警区域' : '创建预警区域'" width="500px" :close-on-click-modal="false">
       <el-form :model="areaForm" label-width="100px">
         <el-form-item label="区域名称" required>
           <el-input v-model="areaForm.areaName" placeholder="例如：杭州西部山区高风险区" />
@@ -305,13 +395,15 @@
         <el-form-item label="描述">
           <el-input v-model="areaForm.description" type="textarea" :rows="3" placeholder="预警区域描述..." />
         </el-form-item>
-        <el-form-item label="边界坐标">
+        <el-form-item label="边界坐标" v-if="!editingAreaId">
           <el-input v-model="areaForm.boundaryCoordinates" type="textarea" :rows="2" disabled />
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="areaDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitArea" :loading="areaDialogLoading">创建</el-button>
+        <el-button type="primary" @click="submitArea" :loading="areaDialogLoading">
+          {{ editingAreaId ? '保存修改' : '创建' }}
+        </el-button>
       </template>
     </el-dialog>
 
@@ -372,6 +464,40 @@
       </template>
     </el-dialog>
 
+    <!-- 进页面角色验证对话框 -->
+    <el-dialog v-model="roleDialogVisible" title="身份验证" width="440px"
+      :close-on-click-modal="false" :close-on-press-escape="false" :show-close="false">
+      <div style="margin-bottom: 16px; color: var(--ink-600); font-size: 13px;">
+        请选择您的角色并输入二级密码，验证通过后方可操作救助调度中心。
+      </div>
+      <el-form @submit.prevent="confirmRoleVerify">
+        <el-form-item label="角色">
+          <div class="role-select">
+            <div
+              v-for="(info, key) in ROLES"
+              :key="key"
+              class="role-option"
+              :class="{ active: selectedRole === key }"
+              @click="selectedRole = key"
+            >
+              <div class="role-option-label">{{ info.label }}</div>
+              <div class="role-option-desc">{{ info.desc }}</div>
+            </div>
+          </div>
+        </el-form-item>
+        <el-form-item label="二级密码">
+          <el-input v-model="rolePassword" type="password" show-password placeholder="请输入对应角色的二级密码" @keyup.enter="confirmRoleVerify" />
+        </el-form-item>
+      </el-form>
+      <div v-if="roleError" style="color: #ef4444; font-size: 12px; margin-top: -8px;">{{ roleError }}</div>
+      <template #footer>
+        <el-button @click="$router.push('/dashboard')">返回首页</el-button>
+        <el-button type="primary" @click="confirmRoleVerify" :loading="roleLoading">
+          验证并进入
+        </el-button>
+      </template>
+    </el-dialog>
+
   </div>
 </template>
 
@@ -379,8 +505,11 @@
 import { ref, reactive, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElNotification, ElMessageBox } from 'element-plus'
-import { Loading, ArrowLeft } from '@element-plus/icons-vue'
+import { Loading, ArrowLeft, Warning, FirstAidKit, Location, Document } from '@element-plus/icons-vue'
 import AMapLoader from '@amap/amap-jsapi-loader'
+import SCard from '../components/ui/SCard.vue'
+import SButton from '../components/ui/SButton.vue'
+import SStatCard from '../components/ui/SStatCard.vue'
 
 const router = useRouter()
 import { emergencyApi, rescueRegionApi, rescueWarningApi, rescueSerumApi } from '../services/api'
@@ -409,6 +538,10 @@ const selected = ref(null)
 const selectedId = ref(null)
 const statusLoading = ref(false)
 
+// 识别信息相关
+const emergencyDetail = ref(null)
+const hospitalList = ref([])
+
 // 右侧Tab
 const rightTab = ref('detail')
 
@@ -434,6 +567,8 @@ const areasLoading = ref(false)
 const serumList = ref([])
 const serumLoading = ref(false)
 const isDrawing = ref(false)
+const selectedAreaId = ref(null) // 地图上选中的预警区域
+const areaDeleting = ref(false)
 let warningMap = null
 let warningAMap = null
 let mouseTool = null
@@ -448,6 +583,9 @@ const areaForm = reactive({
   description: '',
   boundaryCoordinates: ''
 })
+
+// 编辑预警区域信息
+const editingAreaId = ref(null)
 
 const regionDialogVisible = ref(false)
 const regionDialogLoading = ref(false)
@@ -469,6 +607,57 @@ const serumForm = reactive({
   stockCount: 0,
   expiryDate: ''
 })
+
+// ===== 角色验证（进页面必须先验证） =====
+const roleDialogVisible = ref(false)
+const selectedRole = ref('forester')
+const rolePassword = ref('')
+const roleError = ref('')
+const roleLoading = ref(false)
+const verifiedRole = ref('')      // 验证通过后存储角色
+const verifiedPassword = ref('')   // 验证通过后存储密码
+const roleVerified = ref(false)    // 是否已验证
+
+const ROLES = {
+  forester: { label: '林业员', desc: '可编辑预警区域、预警等级' },
+  medic:    { label: '医护人员', desc: '可编辑血清库存、医疗信息' }
+}
+
+// 进页面弹出验证
+const initRoleVerify = () => {
+  roleDialogVisible.value = true
+  selectedRole.value = 'forester'
+  rolePassword.value = ''
+  roleError.value = ''
+}
+
+const confirmRoleVerify = async () => {
+  if (!rolePassword.value.trim()) {
+    roleError.value = '请输入二级密码'
+    return
+  }
+  roleLoading.value = true
+  roleError.value = ''
+  try {
+    const res = await rescueWarningApi.verifyPassword({
+      role: selectedRole.value,
+      password: rolePassword.value
+    })
+    if (res.data.code === 200 && res.data.data?.valid) {
+      verifiedRole.value = selectedRole.value
+      verifiedPassword.value = rolePassword.value
+      roleVerified.value = true
+      roleDialogVisible.value = false
+      ElMessage.success(`已以「${ROLES[selectedRole.value].label}」身份进入`)
+    } else {
+      roleError.value = res.data.message || '密码错误'
+    }
+  } catch (e) {
+    roleError.value = '验证失败：' + (e.response?.data?.message || e.message || '网络错误')
+  } finally {
+    roleLoading.value = false
+  }
+}
 
 // 格式化类型标签
 const typeLabel = (type) => {
@@ -537,15 +726,58 @@ const selectHelp = async (item) => {
   selected.value = item
   selectedId.value = item.id
   rightTab.value = 'detail'
+  emergencyDetail.value = null
+  hospitalList.value = []
+
   // 加载完整详情
   try {
     const res = await emergencyApi.getRescueDetail(item.id)
     if (res.data.code === 200) {
       selected.value = res.data.data
+
+      // 如果有蛇名，加载急救信息和医院列表
+      if (selected.value.snakeName) {
+        await loadEmergencyInfo(selected.value.snakeName)
+        if (selected.value.snakeId) {
+          await loadHospitalList(selected.value.snakeId)
+        }
+      }
     }
   } catch (e) {
     console.error('Failed to load detail', e)
   }
+}
+
+// 加载急救信息
+const loadEmergencyInfo = async (snakeName) => {
+  try {
+    const res = await emergencyApi.getEmergencyGuideByName(snakeName)
+    if (res.data.code === 200) {
+      emergencyDetail.value = res.data.data
+    }
+  } catch (e) {
+    console.error('Failed to load emergency info', e)
+  }
+}
+
+// 加载医院列表
+const loadHospitalList = async (snakeId) => {
+  try {
+    const res = await rescueSerumApi.getHospitalsWithSerum(snakeId)
+    if (res.data.code === 200) {
+      hospitalList.value = res.data.data || []
+    }
+  } catch (e) {
+    console.error('Failed to load hospital list', e)
+  }
+}
+
+// 获取毒性等级文本
+const getToxicityText = (level) => {
+  if (level >= 3) return '剧毒'
+  if (level >= 2) return '有毒'
+  if (level >= 1) return '低毒'
+  return '无毒'
 }
 
 // 状态流转
@@ -569,6 +801,40 @@ const changeStatus = async (newStatus) => {
   }
 }
 
+// 声音警报
+const playAlertSound = (type) => {
+  try {
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)()
+    const oscillator = audioContext.createOscillator()
+    const gainNode = audioContext.createGain()
+
+    oscillator.connect(gainNode)
+    gainNode.connect(audioContext.destination)
+
+    if (type === 'snake_bite') {
+      // 蛇咬伤：高频急促警报
+      oscillator.type = 'square'
+      oscillator.frequency.setValueAtTime(800, audioContext.currentTime)
+      oscillator.frequency.setValueAtTime(1000, audioContext.currentTime + 0.1)
+      oscillator.frequency.setValueAtTime(800, audioContext.currentTime + 0.2)
+      gainNode.gain.setValueAtTime(0.5, audioContext.currentTime)
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5)
+      oscillator.start(audioContext.currentTime)
+      oscillator.stop(audioContext.currentTime + 0.5)
+    } else {
+      // 普通求助：低频平缓
+      oscillator.type = 'sine'
+      oscillator.frequency.setValueAtTime(400, audioContext.currentTime)
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime)
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3)
+      oscillator.start(audioContext.currentTime)
+      oscillator.stop(audioContext.currentTime + 0.3)
+    }
+  } catch (e) {
+    console.warn('播放警报声音失败:', e)
+  }
+}
+
 // 实时轮询
 const pollLatest = async () => {
   if (!pollingActive.value) return
@@ -579,25 +845,34 @@ const pollLatest = async () => {
       const newItems = (res.data.data || []).filter(item => !knownIds.has(item.id))
       if (newItems.length > 0) {
         newItems.forEach(item => knownIds.add(item.id))
+
+        // 检查是否有蛇咬伤求助
+        const hasSnakeBite = newItems.some(item => item.type === 'snake_bite')
+
+        // 播放警报声音
+        playAlertSound(hasSnakeBite ? 'snake_bite' : 'normal')
+
         // 浏览器通知
         if (notificationGranted) {
           newItems.forEach(item => {
-            new Notification('新求助到达', {
+            new Notification(hasSnakeBite ? '⚠️ 蛇咬伤求助！' : '新求助到达', {
               body: `${typeLabel(item.type)} — ${item.location}`,
               icon: '/favicon.ico',
-              tag: `help-${item.id}`
+              tag: `help-${item.id}`,
+              requireInteraction: hasSnakeBite // 蛇咬伤通知不自动关闭
             })
           })
         }
+
         // 插入到列表顶部
         helpList.value = [...newItems, ...helpList.value]
         total.value += newItems.length
         stats.total += newItems.length
         stats.pending += newItems.filter(i => i.status === 'pending').length
         ElMessage({
-          message: `收到 ${newItems.length} 条新求助`,
-          type: 'warning',
-          duration: 5000
+          message: hasSnakeBite ? `⚠️ 收到蛇咬伤求助！` : `收到 ${newItems.length} 条新求助`,
+          type: hasSnakeBite ? 'error' : 'warning',
+          duration: hasSnakeBite ? 0 : 5000 // 蛇咬伤消息不自动关闭
         })
       }
     }
@@ -742,15 +1017,37 @@ const toggleRegionExpand = (id) => {
 const selectRegion = async (region) => {
   selectedRegionId.value = region.id
   selectedRegionName.value = region.name
+  selectedAreaId.value = null // 切换区域时清除选中的预警区域
 
-  // 如果是具体区域（level 3），加载预警区域和血清
+  // level 3 具体区域：加载预警区域和血清
   if (region.level === 3) {
     await Promise.all([loadWarningAreas(region.id), loadSerumList(region.id)])
-    // 如果在地图tab，初始化地图
-    if (warningTab.value === 'map') {
-      // 延迟初始化，确保容器已渲染
-      setTimeout(() => initWarningMap(region), 100)
+  }
+
+  // 所有级别都更新地图中心
+  if (warningTab.value === 'map') {
+    setTimeout(() => updateWarningMapCenter(region), 100)
+  }
+}
+
+// 更新预警地图中心（不销毁重建，直接移动）
+const updateWarningMapCenter = async (region) => {
+  const center = region.centerLng && region.centerLat
+    ? [parseFloat(region.centerLng), parseFloat(region.centerLat)]
+    : [116.39748, 39.90882]
+  const zoom = region.zoomLevel || (region.level === 1 ? 5 : region.level === 2 ? 8 : 12)
+
+  if (warningMap) {
+    // 已有实例，直接移动，秒级响应
+    warningMap.setCenter(center)
+    warningMap.setZoom(zoom, false, 300) // 300ms 动画
+    // level 3 时重绘区域
+    if (region.level === 3) {
+      drawExistingAreas()
     }
+  } else {
+    // 首次初始化
+    await initWarningMap(region)
   }
 }
 
@@ -794,7 +1091,7 @@ const levelText = (level) => {
   return map[level] || '未知'
 }
 
-// 初始化预警地图
+// 初始化预警地图（仅首次创建实例，后续用 updateWarningMapCenter 移动）
 const initWarningMap = async (region) => {
   await nextTick()
   try {
@@ -814,16 +1111,16 @@ const initWarningMap = async (region) => {
       return
     }
 
-    // 销毁旧地图实例
+    // 如果已有实例，只移动不重建
     if (warningMap) {
-      warningMap.destroy()
-      warningMap = null
+      updateWarningMapCenter(region)
+      return
     }
 
     const center = region.centerLng && region.centerLat
       ? [parseFloat(region.centerLng), parseFloat(region.centerLat)]
       : [116.39748, 39.90882]
-    const zoom = region.zoomLevel || 12
+    const zoom = region.zoomLevel || (region.level === 1 ? 5 : region.level === 2 ? 8 : 12)
 
     warningMap = new warningAMap.Map('warningMap', {
       center,
@@ -835,7 +1132,6 @@ const initWarningMap = async (region) => {
 
     warningMap.on('complete', () => {
       console.log('Warning map loaded successfully')
-      // 绘制已有的预警区域
       drawExistingAreas()
     })
 
@@ -864,20 +1160,56 @@ const drawExistingAreas = () => {
         const path = geo.coordinates[0].map(c => new warningAMap.LngLat(c[0], c[1]))
         const colors = { 1: '#10b981', 2: '#f59e0b', 3: '#ef4444', 4: '#991b1b' }
         const color = colors[area.warningLevel] || '#6b7280'
+        const isSelected = selectedAreaId.value === area.id
 
         const polygon = new warningAMap.Polygon({
           path,
           fillColor: color,
-          fillOpacity: 0.25,
-          strokeColor: color,
-          strokeWeight: 2
+          fillOpacity: isSelected ? 0.45 : 0.25,
+          strokeColor: isSelected ? '#3b82f6' : color,
+          strokeWeight: isSelected ? 3 : 2,
+          cursor: 'pointer'
         })
+
+        // 存储关联的 area id
+        polygon.setExtData({ areaId: area.id, areaName: area.areaName })
+
+        polygon.on('click', () => {
+          selectedAreaId.value = area.id
+          // 重绘以更新高亮
+          drawExistingAreas()
+        })
+
         warningMap.add(polygon)
       }
     } catch (e) {
       console.warn('Failed to parse area boundary', area.areaName)
     }
   })
+
+  // 选中区域时添加标签
+  if (selectedAreaId.value) {
+    const sel = warningAreas.value.find(a => a.id === selectedAreaId.value)
+    if (sel?.boundaryCoordinates) {
+      try {
+        const geo = JSON.parse(sel.boundaryCoordinates)
+        if (geo.coordinates?.[0]?.length > 0) {
+          const coords = geo.coordinates[0]
+          const centerLng = coords.reduce((s, c) => s + c[0], 0) / coords.length
+          const centerLat = coords.reduce((s, c) => s + c[1], 0) / coords.length
+          const label = new warningAMap.Marker({
+            position: [centerLng, centerLat],
+            label: {
+              content: `<div style="background:#3b82f6;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px;white-space:nowrap">${sel.areaName}</div>`,
+              direction: 'top'
+            },
+            offset: new warningAMap.Pixel(0, -10)
+          })
+          warningMap.add(label)
+        }
+      } catch (e) { /* ignore */ }
+    }
+  }
 
   warningMap.setFitView(null, false, [40, 40, 40, 40])
 }
@@ -917,8 +1249,118 @@ const clearDraw = () => {
   if (mouseTool) mouseTool.close(true)
 }
 
+// 删除地图上选中的预警区域
+const deleteSelectedArea = async () => {
+  if (!selectedAreaId.value) return
+  const area = warningAreas.value.find(a => a.id === selectedAreaId.value)
+  if (!area) return
+
+  try {
+    await ElMessageBox.confirm(
+      `确定删除预警区域「${area.areaName}」？此操作不可撤销。`,
+      '删除确认',
+      { confirmButtonText: '删除', cancelButtonText: '取消', type: 'warning' }
+    )
+  } catch {
+    return // 用户取消
+  }
+
+  areaDeleting.value = true
+  try {
+    const res = await rescueWarningApi.deleteArea(area.id, { secondaryPassword: verifiedPassword.value, role: verifiedRole.value })
+    if (res.data.code === 200) {
+      ElMessage.success('已删除')
+      selectedAreaId.value = null
+      await loadWarningAreas(selectedRegionId.value)
+      drawExistingAreas()
+    } else {
+      ElMessage.error(res.data.message || '删除失败')
+    }
+  } catch (e) {
+    ElMessage.error('删除失败：' + (e.message || '网络错误'))
+  } finally {
+    areaDeleting.value = false
+  }
+}
+
+// 重绘地图上选中的预警区域（删除旧的，开始绘制新的）
+const redrawSelectedArea = async () => {
+  if (!selectedAreaId.value) return
+  const area = warningAreas.value.find(a => a.id === selectedAreaId.value)
+  if (!area) return
+
+  try {
+    await ElMessageBox.confirm(
+      `确定重绘「${area.areaName}」？旧边界将被替换。`,
+      '重绘确认',
+      { confirmButtonText: '开始重绘', cancelButtonText: '取消', type: 'warning' }
+    )
+  } catch {
+    return
+  }
+
+  // 删除旧区域
+  areaDeleting.value = true
+  try {
+    const res = await rescueWarningApi.deleteArea(area.id, { secondaryPassword: verifiedPassword.value, role: verifiedRole.value })
+    if (res.data.code === 200) {
+      selectedAreaId.value = null
+      await loadWarningAreas(selectedRegionId.value)
+      drawExistingAreas()
+      // 预填表单信息，开始绘制
+      areaForm.areaName = area.areaName
+      areaForm.warningLevel = area.warningLevel
+      areaForm.snakeSpecies = area.snakeSpecies || ''
+      areaForm.description = area.description || ''
+      ElMessage.info('请在地图上绘制新的边界，双击完成')
+      startDrawPolygon()
+    } else {
+      ElMessage.error(res.data.message || '操作失败')
+    }
+  } catch (e) {
+    ElMessage.error('操作失败：' + (e.message || '网络错误'))
+  } finally {
+    areaDeleting.value = false
+  }
+}
+
+// 从表格跳转到地图重绘
+const goRedrawArea = (area) => {
+  selectedAreaId.value = area.id
+  warningTab.value = 'map'
+  // watcher 会触发地图初始化，等一下再重绘
+  setTimeout(() => redrawSelectedArea(), 300)
+}
+
+// 从表格删除
+const deleteAreaFromTable = async (area) => {
+  try {
+    await ElMessageBox.confirm(
+      `确定删除预警区域「${area.areaName}」？此操作不可撤销。`,
+      '删除确认',
+      { confirmButtonText: '删除', cancelButtonText: '取消', type: 'warning' }
+    )
+  } catch {
+    return
+  }
+
+  try {
+    const res = await rescueWarningApi.deleteArea(area.id, { secondaryPassword: verifiedPassword.value, role: verifiedRole.value })
+    if (res.data.code === 200) {
+      ElMessage.success('已删除')
+      await loadWarningAreas(selectedRegionId.value)
+      drawExistingAreas()
+    } else {
+      ElMessage.error(res.data.message || '删除失败')
+    }
+  } catch (e) {
+    ElMessage.error('删除失败：' + (e.message || '网络错误'))
+  }
+}
+
 // 打开创建预警区域对话框
 const openCreateAreaDialog = (geoJson) => {
+  editingAreaId.value = null
   areaForm.boundaryCoordinates = geoJson
   areaForm.areaName = ''
   areaForm.warningLevel = 1
@@ -927,7 +1369,18 @@ const openCreateAreaDialog = (geoJson) => {
   areaDialogVisible.value = true
 }
 
-// 提交预警区域
+// 打开编辑预警区域信息对话框
+const openEditAreaDialog = (area) => {
+  editingAreaId.value = area.id
+  areaForm.areaName = area.areaName || ''
+  areaForm.warningLevel = area.warningLevel || 1
+  areaForm.snakeSpecies = area.snakeSpecies || ''
+  areaForm.description = area.description || ''
+  areaForm.boundaryCoordinates = area.boundaryCoordinates || ''
+  areaDialogVisible.value = true
+}
+
+// 提交预警区域（创建或编辑）
 const submitArea = async () => {
   if (!areaForm.areaName.trim()) {
     ElMessage.warning('请输入预警区域名称')
@@ -936,34 +1389,42 @@ const submitArea = async () => {
 
   areaDialogLoading.value = true
   try {
-    // 确定当前用户角色
-    let creatorRole = 'admin'
-    if (userStore.isRescuer) creatorRole = 'rescuer'
-    else if (userStore.isAdmin) creatorRole = 'admin'
-
-    const res = await rescueWarningApi.createArea({
-      areaName: areaForm.areaName,
-      regionId: selectedRegionId.value,
-      warningLevel: areaForm.warningLevel,
-      snakeSpecies: areaForm.snakeSpecies,
-      description: areaForm.description,
-      boundaryCoordinates: areaForm.boundaryCoordinates,
-      creatorRole: creatorRole,
-      secondaryPassword: 'admin123' // 临时硬编码，后续接入二级密码
-    })
+    let res
+    if (editingAreaId.value) {
+      // 编辑模式
+      res = await rescueWarningApi.updateArea(editingAreaId.value, {
+        areaName: areaForm.areaName,
+        warningLevel: areaForm.warningLevel,
+        snakeSpecies: areaForm.snakeSpecies,
+        description: areaForm.description,
+        creatorRole: verifiedRole.value,
+        secondaryPassword: verifiedPassword.value
+      })
+    } else {
+      // 创建模式
+      res = await rescueWarningApi.createArea({
+        areaName: areaForm.areaName,
+        regionId: selectedRegionId.value,
+        warningLevel: areaForm.warningLevel,
+        snakeSpecies: areaForm.snakeSpecies,
+        description: areaForm.description,
+        boundaryCoordinates: areaForm.boundaryCoordinates,
+        creatorRole: verifiedRole.value,
+        secondaryPassword: verifiedPassword.value
+      })
+    }
 
     if (res.data.code === 200) {
-      ElMessage.success('预警区域创建成功，已同步至用户端')
+      ElMessage.success(editingAreaId.value ? '修改成功' : '预警区域创建成功，已同步至用户端')
       areaDialogVisible.value = false
-      // 重新加载预警区域列表
+      editingAreaId.value = null
       await loadWarningAreas(selectedRegionId.value)
-      // 重新绘制地图上的区域
       drawExistingAreas()
     } else {
-      ElMessage.error(res.data.message || '创建失败')
+      ElMessage.error(res.data.message || '操作失败')
     }
   } catch (e) {
-    ElMessage.error('创建失败：' + (e.message || '网络错误'))
+    ElMessage.error('操作失败：' + (e.message || '网络错误'))
   } finally {
     areaDialogLoading.value = false
   }
@@ -1047,13 +1508,14 @@ const submitSerum = async () => {
       snakeName: serumForm.snakeName,
       serumName: serumForm.serumName,
       stockCount: serumForm.stockCount,
-      expiryDate: serumForm.expiryDate
+      expiryDate: serumForm.expiryDate,
+      creatorRole: verifiedRole.value,
+      secondaryPassword: verifiedPassword.value
     })
 
     if (res.data.code === 200) {
       ElMessage.success('血清信息添加成功')
       serumDialogVisible.value = false
-      // 重新加载血清列表
       await loadSerumList(selectedRegionId.value)
     } else {
       ElMessage.error(res.data.message || '添加失败')
@@ -1070,8 +1532,15 @@ watch(warningTab, (tab) => {
   if (tab === 'map' && selectedRegionId.value) {
     const region = findRegionById(selectedRegionId.value)
     if (region) {
-      // 延迟初始化，确保容器已渲染
-      setTimeout(() => initWarningMap(region), 100)
+      setTimeout(() => {
+        if (warningMap) {
+          // v-show 保留了 DOM，只需 resize 让地图重新计算尺寸
+          warningMap.resize()
+          updateWarningMapCenter(region)
+        } else {
+          initWarningMap(region)
+        }
+      }, 100)
     }
   }
 })
@@ -1115,6 +1584,7 @@ watch(currentFilter, () => {
 })
 
 onMounted(async () => {
+  initRoleVerify()
   await requestNotification()
   await Promise.all([loadStats(), loadList(), loadRegionTree()])
   pollingTimer = setInterval(pollLatest, 5000)
@@ -1123,6 +1593,7 @@ onMounted(async () => {
 onUnmounted(() => {
   if (pollingTimer) clearInterval(pollingTimer)
   if (map) map.destroy()
+  if (warningMap) { warningMap.destroy(); warningMap = null }
 })
 </script>
 
@@ -1154,6 +1625,46 @@ onUnmounted(() => {
 
 .back-btn {
   flex-shrink: 0;
+}
+
+.role-badge {
+  margin-left: auto;
+}
+
+/* 角色选择 */
+.role-select {
+  display: flex;
+  gap: var(--space-3);
+  width: 100%;
+}
+.role-option {
+  flex: 1;
+  padding: var(--space-4);
+  border: 2px solid var(--green-100);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  background: var(--surface-white);
+}
+.role-option:hover {
+  border-color: var(--green-300);
+  background: var(--green-50);
+}
+.role-option.active {
+  border-color: var(--green-600);
+  background: var(--green-50);
+  box-shadow: 0 0 0 1px var(--green-600);
+}
+.role-option-label {
+  font-weight: var(--weight-semibold);
+  color: var(--ink-900);
+  font-size: var(--text-base);
+  margin-bottom: var(--space-1);
+}
+.role-option-desc {
+  font-size: var(--text-xs);
+  color: var(--ink-500);
+  line-height: var(--leading-normal);
 }
 
 /* 统计栏 */
@@ -1482,5 +1993,116 @@ onUnmounted(() => {
   margin-bottom: var(--space-3);
   font-size: var(--text-sm);
   color: var(--ink-700);
+}
+
+/* 识别信息样式 */
+.recognition-info,
+.emergency-info,
+.hospital-recommend {
+  margin-top: var(--space-4);
+  padding: var(--space-4);
+  background: var(--surface-white);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--green-100);
+}
+
+.recognition-info h4,
+.emergency-info h4,
+.hospital-recommend h4 {
+  margin: 0 0 var(--space-3) 0;
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  color: var(--ink-900);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--green-100);
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.info-item label {
+  font-size: var(--text-xs);
+  color: var(--ink-500);
+}
+
+.info-item .snake-name {
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  color: var(--ink-900);
+}
+
+.toxicity-3 { color: var(--red-600); font-weight: var(--weight-bold); }
+.toxicity-2 { color: var(--orange-600); font-weight: var(--weight-semibold); }
+.toxicity-1 { color: var(--yellow-600); }
+.toxicity-0 { color: var(--green-600); }
+
+.info-section {
+  margin-bottom: var(--space-3);
+}
+
+.info-section label {
+  display: block;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--ink-700);
+  margin-bottom: var(--space-1);
+}
+
+.info-section span {
+  font-size: var(--text-sm);
+  color: var(--ink-900);
+}
+
+.treatment-text,
+.forbidden-text {
+  font-size: var(--text-sm);
+  color: var(--ink-900);
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.info-section.forbidden {
+  background: rgba(239, 68, 68, 0.05);
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.forbidden-text {
+  color: var(--red-600);
+}
+
+.hospital-item {
+  padding: var(--space-3);
+  background: var(--surface-cool);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-2);
+}
+
+.hospital-item:last-child {
+  margin-bottom: 0;
+}
+
+.hospital-name {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--ink-900);
+  margin-bottom: var(--space-1);
+}
+
+.hospital-meta {
+  display: flex;
+  gap: var(--space-3);
+  font-size: var(--text-xs);
+  color: var(--ink-500);
 }
 </style>

@@ -22,15 +22,8 @@ public class ActiveAreaServiceImpl extends ServiceImpl<ActiveAreaMapper, ActiveA
 
     private final ActiveAreaMapper activeAreaMapper;
 
-    /**
-     * 根据风险等级和毒性等级查询风险区域
-     *
-     * @param riskLevels    风险等级列表
-     * @param toxicityLevels 毒性等级列表
-     * @return 风险区域列表
-     */
     @Override
-    public List<ActiveArea> getActiveAreasByRiskAndToxicity(List<Integer> riskLevels, List<Integer> toxicityLevels) {
-        return activeAreaMapper.selectActiveAreasByRiskAndToxicity(riskLevels, toxicityLevels);
+    public List<ActiveArea> getAllActiveAreas() {
+        return activeAreaMapper.selectAllActiveAreas();
     }
 }

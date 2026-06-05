@@ -27,6 +27,10 @@ api:
     model-id: doubao-seed-2-0-pro-260215
     base-url: https://ark.cn-beijing.volces.com/api/v3/chat/completions
 
+# 应用配置
+app:
+  image-upload-dir: ${user.dir}/uploads
+
 # 日志配置
 logging:
   level:

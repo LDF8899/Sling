@@ -52,7 +52,7 @@ public class RegionServiceImpl extends ServiceImpl<RegionMapper, Region> impleme
 
     private Map<String, Object> buildTreeNode(Region region, Map<Long, List<Region>> byParent) {
         Map<String, Object> node = new LinkedHashMap<>();
-        node.put("id", region.getRegionId());
+        node.put("id", region.getRegionId().toString());
         node.put("name", region.getName());
         node.put("level", region.getLevel());
         node.put("centerLng", region.getCenterLng());

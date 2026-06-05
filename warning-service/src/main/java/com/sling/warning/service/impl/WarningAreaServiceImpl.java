@@ -33,7 +33,7 @@ public class WarningAreaServiceImpl extends ServiceImpl<WarningAreaMapper, Warni
                 double[][] polygon = parsePolygon(area.getBoundaryCoordinates());
                 if (polygon != null && isPointInPolygon(lng, lat, polygon)) {
                     Map<String, Object> info = new LinkedHashMap<>();
-                    info.put("areaId", area.getAreaId());
+                    info.put("areaId", area.getAreaId().toString());
                     info.put("areaName", area.getAreaName());
                     info.put("warningLevel", area.getWarningLevel());
                     info.put("description", area.getDescription());

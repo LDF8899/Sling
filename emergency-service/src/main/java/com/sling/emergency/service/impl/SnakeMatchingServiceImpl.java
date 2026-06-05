@@ -48,14 +48,23 @@ public class SnakeMatchingServiceImpl implements SnakeMatchingService {
             String prompt = "Based on the following snake-bite symptom description: " + symptoms
                     + ", identify the 2-3 most likely snake species from the list below:\n"
                     + getAllSnakesInfo()
-                    + "Return only the snake species names, separated by commas.";
+                    + "严格以 JSON 格式返回，不要输出任何 JSON 之外的文字：\n"
+                    + "{\"names\": [\"蛇名1\", \"蛇名2\"]}";
 
-            String matchedSnakeNames = volcanoAIService.callTextModel(prompt);
+            String llmResult = volcanoAIService.callTextModel(prompt);
 
             List<SnakeEmergencyInfo> matchedSnakes = new ArrayList<>();
-            if (matchedSnakeNames != null && !matchedSnakeNames.isEmpty()) {
-                String[] snakeNameArray = matchedSnakeNames.split(",");
-                for (String snakeName : snakeNameArray) {
+            com.fasterxml.jackson.databind.JsonNode json = volcanoAIService.extractJson(llmResult);
+            if (json != null && json.has("names")) {
+                for (com.fasterxml.jackson.databind.JsonNode nameNode : json.get("names")) {
+                    SnakeEmergencyInfo snakeInfo = getSnakeInfoByName(nameNode.asText().trim());
+                    if (snakeInfo != null) {
+                        matchedSnakes.add(snakeInfo);
+                    }
+                }
+            } else if (llmResult != null && !llmResult.isEmpty()) {
+                // fallback: 逗号分隔
+                for (String snakeName : llmResult.split(",")) {
                     SnakeEmergencyInfo snakeInfo = getSnakeInfoByName(snakeName.trim());
                     if (snakeInfo != null) {
                         matchedSnakes.add(snakeInfo);

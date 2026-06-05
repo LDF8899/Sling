@@ -19,8 +19,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
 
 /**
  * REST controller for snake emergency guides.
@@ -48,10 +46,14 @@ public class EmergencyGuideController {
     /**
      * Look up emergency guide by snake species name.
      * Falls back to AI generation if the species is not in the database.
+     *
+     * @param refresh if true, force re-download images from Baidu
      */
     @GetMapping("/{snakeName}")
-    public Result<SnakeEmergencyInfo> getEmergencyGuideBySnakeName(@PathVariable String snakeName) {
-        return processSnakeNameQuery(snakeName);
+    public Result<SnakeEmergencyInfo> getEmergencyGuideBySnakeName(
+            @PathVariable String snakeName,
+            @RequestParam(defaultValue = "false") boolean refresh) {
+        return processSnakeNameQuery(snakeName, refresh);
     }
 
     /**
@@ -61,7 +63,7 @@ public class EmergencyGuideController {
      */
     @GetMapping("/scientific-name/{snakeName}")
     public Result<SnakeEmergencyInfo> getScientificNameInfo(@PathVariable String snakeName) {
-        return processSnakeNameQuery(snakeName);
+        return processSnakeNameQuery(snakeName, false);
     }
 
     /**
@@ -92,7 +94,7 @@ public class EmergencyGuideController {
      *   <li>Populate multi-image URLs from local storage</li>
      * </ol>
      */
-    private Result<SnakeEmergencyInfo> processSnakeNameQuery(String snakeName) {
+    private Result<SnakeEmergencyInfo> processSnakeNameQuery(String snakeName, boolean refresh) {
         try {
             log.info("Processing snake name query: {}", snakeName);
 
@@ -123,8 +125,13 @@ public class EmergencyGuideController {
                 log.info("Record already exists in DB for '{}'", snakeName);
             }
 
-            // Async image download (fire-and-forget)
-            emergencyImageAsyncService.updateImageForSnake(emergencyInfo);
+            if (refresh) {
+                // Synchronous: delete old images, re-fetch from Baidu, then populate
+                emergencyImageAsyncService.refreshImageSync(emergencyInfo);
+            } else {
+                // Async image download (fire-and-forget)
+                emergencyImageAsyncService.updateImageForSnake(emergencyInfo);
+            }
 
             // Populate multi-image URLs from local file system
             snakeEmergencyInfoService.populateImageUrls(emergencyInfo, imageDir);
@@ -224,16 +231,16 @@ public class EmergencyGuideController {
             String prompt =
                 "【已知蛇种查应急指南】\n" +
                 "蛇种名称：" + snakeName + "\n\n" +
-                "请严格按以下格式输出该蛇种的完整应急信息：\n\n" +
-                "中文通用名 + 拉丁学名：\n" +
-                "毒性等级：剧毒 / 无毒 / 微毒\n" +
-                "毒液类型：血液循环毒 / 神经毒 / 混合毒 / 无\n\n" +
-                "专属急救流程：\n" +
-                "1.\n2.\n3.\n\n" +
-                "严格禁止的行为：\n" +
-                "1.\n2.\n3.\n\n" +
-                "对症解毒血清类型：\n" +
-                "建议就医科室：";
+                "请严格以 JSON 格式返回，不要输出任何 JSON 之外的文字：\n" +
+                "{\n" +
+                "  \"snakeAlias\": \"中文通用名\",\n" +
+                "  \"latinName\": \"拉丁学名\",\n" +
+                "  \"venomType\": \"血液循环毒/神经毒/混合毒/无\",\n" +
+                "  \"emergencyTreatment\": \"急救流程（多条用\\n分隔）\",\n" +
+                "  \"forbiddenActions\": \"严格禁止的行为（多条用\\n分隔）\",\n" +
+                "  \"serumType\": \"对症解毒血清类型\",\n" +
+                "  \"hospitalDepartment\": \"建议就医科室\"\n" +
+                "}";
 
             log.debug("Calling AI model for snake details, prompt: {}", prompt);
             String result = volcanoAIService.callTextModel(prompt);
@@ -246,7 +253,7 @@ public class EmergencyGuideController {
     }
 
     /**
-     * Parse AI text output into SnakeEmergencyInfo entity fields.
+     * Parse AI JSON output into SnakeEmergencyInfo entity fields.
      */
     private void parseSnakeDetailsFromText(String text, SnakeEmergencyInfo info) {
         if (text == null || text.isEmpty()) {
@@ -254,57 +261,17 @@ public class EmergencyGuideController {
             return;
         }
 
-        // Parse 中文通用名 + 拉丁学名
-        Pattern namePattern = Pattern.compile("中文通用名\\s*[+]\\s*拉丁学名[：:]*\\s*([^\\n]+)");
-        Matcher nameMatcher = namePattern.matcher(text);
-        if (nameMatcher.find()) {
-            String names = nameMatcher.group(1).trim();
-            if (names.contains("/")) {
-                String[] parts = names.split("/");
-                info.setSnakeAlias(parts[0].trim());
-                info.setLatinName(parts[1].trim());
-            } else {
-                info.setSnakeAlias(names);
-            }
-        }
-
-        // Parse 毒液类型
-        Pattern typePattern = Pattern.compile("毒液类型[：:]*\\s*([^\\n]+)");
-        Matcher typeMatcher = typePattern.matcher(text);
-        if (typeMatcher.find()) {
-            info.setVenomType(typeMatcher.group(1).trim());
-        }
-
-        // Parse 专属急救流程
-        Pattern treatmentPattern = Pattern.compile("专属急救流程[：:]*\\s*[\\n]?([\\s\\S]*?)(?=严格禁止的行为|对症解毒血清|建议就医科室|$)");
-        Matcher treatmentMatcher = treatmentPattern.matcher(text);
-        if (treatmentMatcher.find()) {
-            info.setEmergencyTreatment(treatmentMatcher.group(1).trim());
-        }
-
-        // Parse 严格禁止的行为
-        Pattern forbidPattern = Pattern.compile("严格禁止的行为[：:]*\\s*[\\n]?([\\s\\S]*?)(?=对症解毒血清|建议就医科室|$)");
-        Matcher forbidMatcher = forbidPattern.matcher(text);
-        if (forbidMatcher.find()) {
-            info.setForbiddenActions(forbidMatcher.group(1).trim());
-        }
-
-        // Parse 对症解毒血清
-        Pattern serumPattern = Pattern.compile("对症解毒血清类型[：:]*\\s*([^\\n]+)");
-        Matcher serumMatcher = serumPattern.matcher(text);
-        if (serumMatcher.find()) {
-            info.setSerumType(serumMatcher.group(1).trim());
-        }
-
-        // Parse 建议就医科室
-        Pattern deptPattern = Pattern.compile("建议就医科室[：:]*\\s*([^\\n]+)");
-        Matcher deptMatcher = deptPattern.matcher(text);
-        if (deptMatcher.find()) {
-            info.setHospitalDepartment(deptMatcher.group(1).trim());
-        }
-
-        // If no structured fields found, store raw text as symptom description
-        if (info.getEmergencyTreatment() == null && info.getSerumType() == null) {
+        com.fasterxml.jackson.databind.JsonNode json = volcanoAIService.extractJson(text);
+        if (json != null) {
+            if (json.has("snakeAlias")) info.setSnakeAlias(json.get("snakeAlias").asText());
+            if (json.has("latinName")) info.setLatinName(json.get("latinName").asText());
+            if (json.has("venomType")) info.setVenomType(json.get("venomType").asText());
+            if (json.has("emergencyTreatment")) info.setEmergencyTreatment(json.get("emergencyTreatment").asText());
+            if (json.has("forbiddenActions")) info.setForbiddenActions(json.get("forbiddenActions").asText());
+            if (json.has("serumType")) info.setSerumType(json.get("serumType").asText());
+            if (json.has("hospitalDepartment")) info.setHospitalDepartment(json.get("hospitalDepartment").asText());
+        } else {
+            // fallback: JSON 解析失败时保存原始文本
             info.setSymptomDescription("AI-generated information for '" + info.getSnakeName() + "':\n" + text);
         }
     }

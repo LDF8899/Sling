@@ -23,6 +23,40 @@
     <main class="content-container">
       <!-- 左侧筛选面板 -->
       <aside class="filter-panel">
+        <!-- 地区选择器 -->
+        <div class="panel-card region-card">
+          <div class="panel-header">
+            <i class="el-icon-map-location"></i>
+            <h3>地区选择</h3>
+          </div>
+          <div class="region-selector">
+            <el-cascader
+              v-model="selectedRegionPath"
+              :options="regionOptions"
+              :props="{ value: 'id', label: 'name', children: 'children', checkStrictly: true }"
+              placeholder="选择大区 / 省市 / 区域"
+              clearable
+              filterable
+              style="width: 100%"
+              @change="onRegionChange"
+            />
+            <div class="region-current" v-if="currentRegionInfo">
+              <el-tag :type="currentRegionInfo.level === 3 ? 'danger' : 'info'" size="small">
+                {{ currentRegionInfo.name }}
+              </el-tag>
+              <span class="region-level-text">{{ regionLevelText(currentRegionInfo.level) }}</span>
+            </div>
+          </div>
+          <!-- 当前区域预警概要 -->
+          <div class="region-warning-summary" v-if="regionWarnings.length > 0">
+            <div class="summary-title">该区域预警 ({{ regionWarnings.length }})</div>
+            <div v-for="w in regionWarnings" :key="w.areaId" class="summary-item" @click="flyToArea(w)">
+              <el-tag :type="getRiskTagType(w.warningLevel)" size="small">{{ getRiskLevelText(w.warningLevel) }}</el-tag>
+              <span class="summary-name">{{ w.areaName }}</span>
+            </div>
+          </div>
+        </div>
+
         <div class="panel-card">
           <div class="panel-header">
             <i class="el-icon-filter"></i>
@@ -53,7 +87,7 @@
           <!-- 距离范围筛选 -->
           <div class="filter-group">
             <label class="filter-label">距离范围</label>
-            <el-select v-model="filters.distance" placeholder="请选择">
+            <el-select v-model="filters.distance" placeholder="请选择" id="filter-distance" name="distance">
               <el-option label="1公里内" value="1"></el-option>
               <el-option label="5公里内" value="5"></el-option>
               <el-option label="10公里内" value="10"></el-option>
@@ -70,6 +104,8 @@
                 :max="20"
                 label="条数"
                 controls-position="right"
+                id="filter-limit"
+                name="limit"
             ></el-input-number>
           </div>
 
@@ -175,68 +211,87 @@
                   {{ realTimeWarning.season || currentSeason }}
                 </el-tag>
               </div>
-              <div class="info-item">
-                <label>风险等级：</label>
-                <el-tag :type="getRiskTagType(realTimeWarning.riskLevel)">
-                  {{ getRiskLevelText(realTimeWarning.riskLevel) }}
+              <div class="info-item" v-if="realTimeWarning.matchedArea">
+                <label>所在预警区域：</label>
+                <el-tag :type="getRiskTagType(realTimeWarning.matchedArea.warningLevel)" size="small">
+                  {{ realTimeWarning.matchedArea.areaName }}
                 </el-tag>
               </div>
             </div>
 
-            <!-- 蛇类分布 -->
-            <div class="snake-distribution">
+            <!-- 命中预警区域详情 -->
+            <div class="snake-distribution" v-if="realTimeWarning.matchedArea">
               <h4>
-                <i class="el-icon-menu"></i> 常见蛇类分布
+                <i class="el-icon-warning"></i> 预警区域信息
               </h4>
-              <div class="snake-list" v-if="realTimeWarning.snakeList && realTimeWarning.snakeList.length">
-                <div
-                    class="snake-item"
-                    v-for="(snake, idx) in realTimeWarning.snakeList"
-                    :key="idx"
-                    :class="{ poisonous: isPoisonousSnake(snake) }"
-                >
-                  <i class="el-icon-danger" v-if="isPoisonousSnake(snake)"></i>
-                  <i class="el-icon-circle-check" v-else></i>
-                  <span>{{ snake }}</span>
-                  <span class="snake-tag">
-                    {{ isPoisonousSnake(snake) ? '有毒' : '无毒' }}
-                  </span>
-                </div>
-              </div>
-              <div class="empty-tip" v-else>
-                暂无蛇类分布数据
+              <div class="matched-area-info">
+                <p><strong>区域名称：</strong>{{ realTimeWarning.matchedArea.areaName }}</p>
+                <p><strong>风险等级：</strong>
+                  <el-tag :type="getRiskTagType(realTimeWarning.matchedArea.warningLevel)" size="small">
+                    {{ getRiskLevelText(realTimeWarning.matchedArea.warningLevel) }}
+                  </el-tag>
+                </p>
+                <p v-if="realTimeWarning.matchedArea.description"><strong>描述：</strong>{{ realTimeWarning.matchedArea.description }}</p>
+                <p v-if="realTimeWarning.matchedArea.snakeSpecies">
+                  <strong>常见蛇种：</strong>{{ parseSnakeSpecies(realTimeWarning.matchedArea.snakeSpecies) }}
+                </p>
               </div>
             </div>
 
-            <!-- 活跃度 -->
-            <div class="activity-level">
-              <h4>
-                <i class="el-icon-data-analysis"></i> 蛇类活跃度
-              </h4>
-              <div class="activity-content">
-                <el-rate
-                    :model-value="getActivityLevelValue(realTimeWarning.activityLevel)"
-                    disabled
-                    show-score
-                    text-color="#666"
-                    score-template="{value}级"
-                ></el-rate>
-                <p class="activity-desc">{{ realTimeWarning.activityDesc || '暂无活跃度描述' }}</p>
-              </div>
-            </div>
-
-            <!-- 安全建议 -->
+            <!-- LLM 分析结果 -->
             <div class="safety-tips">
               <h4>
-                <i class="el-icon-safety"></i> 安全防护建议
+                <i class="el-icon-safety"></i> AI 智能分析
               </h4>
-              <ul v-if="realTimeWarning.safetyTips && realTimeWarning.safetyTips.length">
-                <li v-for="(tip, idx) in realTimeWarning.safetyTips" :key="idx">
-                  {{ idx + 1 }}. {{ tip }}
-                </li>
-              </ul>
+              <div class="llm-cards" v-if="realTimeWarning.analysis">
+                <!-- 蛇类分布 -->
+                <div class="llm-card" v-if="realTimeWarning.analysis.snakes && realTimeWarning.analysis.snakes.length">
+                  <div class="llm-card-header">
+                    <span class="llm-card-icon">🐍</span>
+                    <span class="llm-card-title">蛇类分布</span>
+                  </div>
+                  <div class="llm-card-body">
+                    <div class="snake-tag-list">
+                      <span v-for="(s, i) in realTimeWarning.analysis.snakes" :key="i"
+                            class="snake-tag-item" :class="{ venomous: s.venomous }">
+                        <strong>{{ s.name }}</strong>
+                        <em v-if="s.note">（{{ s.note }}）</em>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <!-- 活跃度 -->
+                <div class="llm-card" v-if="realTimeWarning.analysis.activity">
+                  <div class="llm-card-header">
+                    <span class="llm-card-icon">📊</span>
+                    <span class="llm-card-title">活跃度</span>
+                    <el-tag :type="realTimeWarning.analysis.activity.level === '高' ? 'danger' : realTimeWarning.analysis.activity.level === '中' ? 'warning' : 'success'" size="small" style="margin-left:auto">
+                      {{ realTimeWarning.analysis.activity.level }}
+                    </el-tag>
+                  </div>
+                  <div class="llm-card-body">
+                    <p class="llm-card-text">{{ realTimeWarning.analysis.activity.reason }}</p>
+                  </div>
+                </div>
+                <!-- 安全建议 -->
+                <div class="llm-card" v-if="realTimeWarning.analysis.tips && realTimeWarning.analysis.tips.length">
+                  <div class="llm-card-header">
+                    <span class="llm-card-icon">🛡️</span>
+                    <span class="llm-card-title">安全建议</span>
+                  </div>
+                  <div class="llm-card-body">
+                    <ol class="llm-tip-list">
+                      <li v-for="(tip, i) in realTimeWarning.analysis.tips" :key="i">{{ tip }}</li>
+                    </ol>
+                  </div>
+                </div>
+              </div>
+              <!-- fallback: 无结构化数据时显示原始文本 -->
+              <div class="llm-response" v-else-if="realTimeWarning.llmResponse">
+                <pre class="llm-text">{{ realTimeWarning.llmResponse }}</pre>
+              </div>
               <div class="empty-tip" v-else>
-                暂无安全防护建议
+                暂无分析数据
               </div>
             </div>
           </div>
@@ -264,12 +319,12 @@
                 v-for="warning in recentWarnings"
                 :key="warning.id"
                 @click="viewAreaDetail(warning.areaId)"
-                :class="`risk-${warning.riskLevel}`"
+                :class="`risk-${warning.level}`"
             >
               <div class="warning-header">
                 <h4>{{ warning.areaName || '未知区域' }}</h4>
-                <el-tag :type="getRiskTagType(warning.riskLevel)">
-                  {{ getRiskLevelText(warning.riskLevel) }}
+                <el-tag :type="getRiskTagType(warning.level)">
+                  {{ warning.levelText || getRiskLevelText(warning.level) }}
                 </el-tag>
               </div>
               <div class="warning-meta">
@@ -315,8 +370,8 @@
     >
       <div v-if="selectedArea" class="area-detail">
         <div class="detail-header">
-          <el-tag :type="getRiskTagType(selectedArea.riskLevel)" size="large">
-            {{ getRiskLevelText(selectedArea.riskLevel) }}
+          <el-tag :type="getRiskTagType(selectedArea.level)" size="large">
+            {{ selectedArea.levelText || getRiskLevelText(selectedArea.level) }}
           </el-tag>
           <span class="update-time">
             最后更新：{{ selectedArea.lastUpdate || '未知' }}
@@ -334,14 +389,14 @@
           <div class="detail-section">
             <h4>蛇类信息</h4>
             <p><i class="el-icon-menu"></i> 常见蛇类：{{ selectedArea.commonSnakes || '暂无' }}</p>
-            <p><i class="el-icon-data-analysis"></i> 活跃时段：{{ selectedArea.activeTime || '无数据' }}</p>
-            <p><i class="el-icon-danger"></i> 主要毒性：{{ selectedArea.mainToxicity || '无数据' }}</p>
+            <p><i class="el-icon-data-analysis"></i> 活跃记录：{{ selectedArea.activeRecord || selectedArea.activityRecord || '无数据' }}</p>
+            <p><i class="el-icon-danger"></i> 毒性等级：{{ selectedArea.toxicityList || '无数据' }}</p>
           </div>
 
           <div class="detail-section">
             <h4>防护建议</h4>
             <ul v-if="selectedArea.protectionSuggestion && selectedArea.protectionSuggestion.split('；').length">
-              <li v-for="(tip, idx) in (selectedArea.protectionSuggestion?.split('；') || [])" :key="idx" v-if="tip.trim()">
+              <li v-for="(tip, idx) in (selectedArea.protectionSuggestion?.split('；') || []).filter(t => t && t.trim())" :key="idx">
                 {{ tip.trim() }}
               </li>
             </ul>
@@ -352,7 +407,7 @@
 
           <div class="detail-section">
             <h4>预警记录</h4>
-            <p>{{ selectedArea.warningRecord || '无数据' }}</p>
+            <p>{{ selectedArea.activeRecord || selectedArea.activityRecord || '无数据' }}</p>
           </div>
         </div>
       </div>
@@ -387,15 +442,16 @@ import { ref, reactive, onMounted, onUnmounted, onErrorCaptured } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Loading, ArrowLeft } from '@element-plus/icons-vue'
+import { warningApi } from '@/services/api'
 
 const router = useRouter()
 
 // ========== 高德地图配置（官方1.4.15版本） ==========
 // 前往 https://lbs.amap.com/ 申请 Web端(JS API) 密钥
 const AMAP_CONFIG = {
-  key: '5b3ed07d3b4e322b48421a9e4ebd9a',  // 替换成表格里的Key
-  version: '1.4.15',
-  plugins: 'AMAP.Scale,AMap.Zoom,AMap.ToolBar,AMap.InfoWindow'
+  key: '5b3ed07d3b4e322b48d421a9e84ebd9a',
+  version: '2.0',
+  plugins: 'AMap.Scale,AMap.Zoom,AMap.ToolBar,AMap.InfoWindow,AMap.Geolocation'
 }
 
 // ========== 状态管理 ==========
@@ -441,6 +497,108 @@ const getCurrentSeason = () => {
 }
 const currentSeason = ref(getCurrentSeason())
 
+// ========== 地区选择 ==========
+const regionOptions = ref([])
+const selectedRegionPath = ref([])
+const currentRegionInfo = ref(null)
+const regionWarnings = ref([])
+
+const regionLevelText = (level) => {
+  const map = { 1: '大区', 2: '省/市', 3: '具体区域' }
+  return map[level] || ''
+}
+
+// 加载区域树
+const loadRegionTree = async () => {
+  try {
+    const res = await warningApi.getRegionTree()
+    if (res.data.code === 200) {
+      regionOptions.value = buildCascaderOptions(res.data.data || [])
+    }
+  } catch (e) {
+    console.warn('加载区域树失败:', e)
+  }
+}
+
+// 构建级联选择器数据（过滤空children）
+const buildCascaderOptions = (nodes) => {
+  return nodes.map(n => ({
+    id: n.id,
+    name: n.name,
+    level: n.level,
+    centerLng: n.centerLng,
+    centerLat: n.centerLat,
+    zoomLevel: n.zoomLevel,
+    children: n.children && n.children.length > 0 ? buildCascaderOptions(n.children) : undefined
+  }))
+}
+
+// 区域选择变化
+const onRegionChange = async (path) => {
+  if (!path || path.length === 0) {
+    currentRegionInfo.value = null
+    regionWarnings.value = []
+    return
+  }
+
+  const regionId = path[path.length - 1]
+  // 查找区域信息
+  const region = findRegionInTree(regionOptions.value, regionId)
+  if (region) {
+    currentRegionInfo.value = region
+
+    // 如果是具体区域，加载预警并跳转地图
+    if (region.level === 3) {
+      await loadRegionWarnings(regionId)
+      if (region.centerLng && region.centerLat && mapInstance.value) {
+        mapInstance.value.setCenter([parseFloat(region.centerLng), parseFloat(region.centerLat)])
+        mapInstance.value.setZoom(region.zoomLevel || 14)
+      }
+    }
+  }
+}
+
+// 在树中查找区域
+const findRegionInTree = (nodes, id) => {
+  for (const n of nodes) {
+    if (n.id === id) return n
+    if (n.children) {
+      const found = findRegionInTree(n.children, id)
+      if (found) return found
+    }
+  }
+  return null
+}
+
+// 加载某区域的预警
+const loadRegionWarnings = async (regionId) => {
+  try {
+    const res = await warningApi.getWarningByRegion(regionId)
+    if (res.data.code === 200) {
+      regionWarnings.value = res.data.data || []
+    }
+  } catch (e) {
+    console.warn('加载区域预警失败:', e)
+  }
+}
+
+// 飞到某个预警区域
+const flyToArea = (area) => {
+  if (!area.boundaryCoordinates || !mapInstance.value) return
+  try {
+    const geo = JSON.parse(area.boundaryCoordinates)
+    if (geo.coordinates?.[0]?.length > 0) {
+      const coords = geo.coordinates[0]
+      const centerLng = coords.reduce((s, c) => s + c[0], 0) / coords.length
+      const centerLat = coords.reduce((s, c) => s + c[1], 0) / coords.length
+      mapInstance.value.setCenter([centerLng, centerLat])
+      mapInstance.value.setZoom(15)
+    }
+  } catch (e) {
+    console.warn('解析区域坐标失败')
+  }
+}
+
 // 有毒蛇类列表
 const poisonousSnakes = ['原矛头蝮', '银环蛇', '尖吻蝮', '竹叶青', '眼镜蛇', '金环蛇']
 
@@ -457,13 +615,13 @@ const loadAMapScript = () => {
     }
 
     // 如果已加载过，直接返回
-    if (window.AMap && mapScriptLoaded.value) {
+    if (window.AMap) {
       resolve(window.AMap)
       return
     }
 
     // 定义回调函数（官方异步加载规范）
-    window.initAMap = function() {
+    window.initAMapCallback = function() {
       mapScriptLoaded.value = true
       resolve(window.AMap)
     }
@@ -474,7 +632,7 @@ const loadAMapScript = () => {
     script.charset = 'utf-8'
 
     // 构建官方标准的URL（异步加载+回调）
-    const url = `https://webapi.amap.com/maps?v=${AMAP_CONFIG.version}&key=${AMAP_CONFIG.key}&plugin=${AMAP_CONFIG.plugins}&callback=initAMap`
+    const url = `https://webapi.amap.com/maps?v=${AMAP_CONFIG.version}&key=${AMAP_CONFIG.key}&plugin=${AMAP_CONFIG.plugins}&callback=initAMapCallback`
     script.src = url
 
     // 超时处理
@@ -483,9 +641,9 @@ const loadAMapScript = () => {
     }, 15000)
 
     // 加载失败处理
-    script.onerror = (error) => {
+    script.onerror = () => {
       clearTimeout(timeoutTimer)
-      reject(new Error(`高德地图API加载失败: ${error.message}`))
+      reject(new Error('高德地图API加载失败，请检查网络连接或API Key是否有效'))
     }
 
     // 加载完成清理
@@ -532,20 +690,19 @@ const initMap = async () => {
     mapInstance.value.on('complete', () => {
       try {
         // 添加比例尺控件
-        mapInstance.value.addControl(new AMap.Scale({
-          position: 'bottom-right'
-        }))
-
-        // 添加缩放控件
-        mapInstance.value.addControl(new AMap.Zoom({
-          position: 'top-right'
-        }))
+        if (AMap.Scale) {
+          mapInstance.value.addControl(new AMap.Scale({
+            position: 'bottom-right'
+          }))
+        }
 
         // 添加工具条控件
-        mapInstance.value.addControl(new AMap.ToolBar({
-          position: 'top-left',
-          liteStyle: true
-        }))
+        if (AMap.ToolBar) {
+          mapInstance.value.addControl(new AMap.ToolBar({
+            position: 'top-left',
+            liteStyle: true
+          }))
+        }
 
         // 加载风险区域数据
         loadActiveAreaMap()
@@ -573,71 +730,58 @@ const loadActiveAreaMap = async () => {
   if (!mapInstance.value) return
 
   try {
-    const params = {
-      riskLevels: filters.riskLevels,
-      toxicityIds: filters.toxicityIds,
-      distance: filters.distance,
-      userLng: userLocation.value.lng,
-      userLat: userLocation.value.lat
-    }
+    const params = new URLSearchParams()
+    filters.riskLevels.forEach(v => params.append('riskLevels', v))
+    filters.toxicityIds.forEach(v => params.append('toxicityIds', v))
+    if (filters.distance) params.append('distance', filters.distance)
+    if (userLocation.value.lng) params.append('userLng', userLocation.value.lng)
+    if (userLocation.value.lat) params.append('userLat', userLocation.value.lat)
 
-    // 模拟接口请求
-    const res = await api.getActiveAreaMap(params)
-    if (res.code === 200 && res.data) {
-      // 清空地图
+    const res = await warningApi.getActiveAreaMap(params)
+    const result = res.data
+    if (result.code === 200 && result.data) {
       mapInstance.value.clearMap()
 
-      // 添加风险区域标记
-      res.data.forEach(area => {
-        // 确保坐标是数字类型
+      result.data.forEach(area => {
         const lng = parseFloat(area.lng)
         const lat = parseFloat(area.lat)
+        if (isNaN(lng) || isNaN(lat)) return
 
-        // 创建标记点（官方标准写法）
         const marker = new window.AMap.Marker({
           position: [lng, lat],
           title: area.areaName,
           icon: new window.AMap.Icon({
             size: new window.AMap.Size(30, 30),
-            image: getRiskMarkerIcon(area.riskLevel),
+            image: getRiskMarkerIcon(area.level),
             imageSize: new window.AMap.Size(30, 30)
           }),
           offset: new window.AMap.Pixel(-15, -15)
         })
 
-        // 标记点击事件
-        marker.on('click', () => {
-          viewAreaDetail(area.areaId)
-        })
+        marker.on('click', () => viewAreaDetail(area.id))
 
-        // 创建信息窗口
         const infoWindow = new window.AMap.InfoWindow({
           content: `<div style="padding: 10px; min-width: 120px;">
             <h5 style="margin:0 0 5px; font-size:14px;">${area.areaName}</h5>
-            <p style="margin:0; font-size:12px; color:#666;">风险等级：${getRiskLevelText(area.riskLevel)}</p>
+            <p style="margin:0; font-size:12px; color:#666;">风险等级：${area.levelText || getRiskLevelText(area.level)}</p>
+            <p style="margin:0; font-size:12px; color:#666;">常见蛇类：${area.commonSnakes || '暂无'}</p>
           </div>`,
           offset: new window.AMap.Pixel(0, -30)
         })
 
-        // 鼠标悬停显示信息窗口
-        marker.on('mouseover', () => {
-          infoWindow.open(mapInstance.value, marker.getPosition())
-        })
+        marker.on('mouseover', () => infoWindow.open(mapInstance.value, marker.getPosition()))
+        marker.on('mouseout', () => infoWindow.close())
 
-        marker.on('mouseout', () => {
-          infoWindow.close()
-        })
-
-        // 添加标记到地图
         mapInstance.value.add(marker)
 
-        // 添加多边形区域
-        if (area.polygon && Array.isArray(area.polygon)) {
+        // 解析 GeoJSON 边界坐标绘制多边形
+        const polygonPath = parseBoundaryCoordinates(area.boundaryCoordinates)
+        if (polygonPath) {
           const polygon = new window.AMap.Polygon({
-            path: area.polygon,
-            fillColor: getRiskFillColor(area.riskLevel),
+            path: polygonPath,
+            fillColor: getRiskFillColor(area.level),
             fillOpacity: 0.3,
-            strokeColor: getRiskStrokeColor(area.riskLevel),
+            strokeColor: getRiskStrokeColor(area.level),
             strokeWeight: 2,
             strokeOpacity: 0.8
           })
@@ -666,6 +810,22 @@ const loadActiveAreaMap = async () => {
 }
 
 /**
+ * 解析 GeoJSON boundaryCoordinates 为 AMap 多边形路径
+ */
+const parseBoundaryCoordinates = (boundaryCoordinates) => {
+  if (!boundaryCoordinates) return null
+  try {
+    const geo = typeof boundaryCoordinates === 'string' ? JSON.parse(boundaryCoordinates) : boundaryCoordinates
+    if (geo.type === 'Polygon' && geo.coordinates && geo.coordinates[0]) {
+      return geo.coordinates[0].map(([lng, lat]) => [lng, lat])
+    }
+  } catch (e) {
+    console.warn('解析边界坐标失败:', e)
+  }
+  return null
+}
+
+/**
  * 加载最近预警数据
  */
 const loadRecentWarnings = async () => {
@@ -678,11 +838,12 @@ const loadRecentWarnings = async () => {
   try {
     const params = {
       limit: filters.limit,
-      riskLevel: filters.riskLevel
+      riskLevel: filters.riskLevel || undefined
     }
-    const res = await api.getRecentWarnings(params)
-    if (res.code === 200) {
-      recentWarnings.value = res.data || []
+    const res = await warningApi.getRecentWarnings(params)
+    const result = res.data
+    if (result.code === 200) {
+      recentWarnings.value = result.data || []
     }
   } catch (error) {
     console.error('加载最近预警失败:', error)
@@ -723,41 +884,55 @@ const getRealTimeWarning = async () => {
     userLocation.value.lng = lng.toFixed(6)
     userLocation.value.lat = lat.toFixed(6)
 
-    const addrRes = await api.convertLocation({ lng, lat })
-    if (addrRes.code === 200) {
-      userLocation.value.address = addrRes.data.address
+    const addrRes = await warningApi.convertLocation({ lng, lat })
+    const addrResult = addrRes.data
+    if (addrResult.code === 200) {
+      userLocation.value.address = addrResult.data.address
     }
 
-    const warningRes = await api.getRealTimeWarning({
+    const warningRes = await warningApi.getRealTimeWarning({
       lng,
       lat,
       address: userLocation.value.address,
       season: currentSeason.value
     })
 
-    if (warningRes.code === 200) {
+    const warningResult = warningRes.data
+    if (warningResult.code === 200) {
       realTimeWarning.value = {
-        ...warningRes.data,
+        address: warningResult.data.address || userLocation.value.address,
+        season: warningResult.data.season || currentSeason.value,
+        analysis: warningResult.data.analysis || null,
+        llmResponse: warningResult.data.llmResponse || '',
         updateTime: new Date().toLocaleString()
       }
       ElMessage.success('实时预警信息获取成功')
 
-      // 更新地图中心到用户位置
+      // 就近检测 — 判断是否在预警区域内
+      try {
+        const proxRes = await warningApi.checkProximity({ lng, lat })
+        const proxResult = proxRes.data
+        if (proxResult.code === 200 && proxResult.data && proxResult.data.length > 0) {
+          const topArea = proxResult.data[0]
+          realTimeWarning.value.matchedArea = topArea
+          realTimeWarning.value.riskLevel = topArea.warningLevel
+        }
+      } catch {}
+
       if (mapInstance.value) {
         mapInstance.value.setCenter([lng, lat])
         mapInstance.value.setZoom(15)
-        // 重新加载风险区域
         loadActiveAreaMap()
       }
     }
   } catch (error) {
     console.error('获取实时预警失败:', error)
     if (error.code === error.PERMISSION_DENIED) {
-      ElMessage.error('位置权限被拒绝，请开启权限后重试')
+      ElMessage.error('位置权限被拒绝，请在浏览器设置中开启定位权限')
     } else if (error.code === error.TIMEOUT) {
       ElMessage.error('定位超时，请重试')
     } else {
-      ElMessage.error('获取实时预警信息失败，请检查位置权限')
+      ElMessage.error('获取实时预警信息失败')
     }
   } finally {
     locating.value = false
@@ -779,9 +954,10 @@ const viewAreaDetail = async (areaId) => {
   detailDialogVisible.value = true
 
   try {
-    const res = await api.getAreaDetail(areaId)
-    if (res.code === 200) {
-      selectedArea.value = res.data
+    const res = await warningApi.getActiveAreaDetail(areaId)
+    const result = res.data
+    if (result.code === 200) {
+      selectedArea.value = result.data
     }
   } catch (error) {
     console.error('获取区域详情失败:', error)
@@ -948,15 +1124,16 @@ const getActivityLevelValue = (level) => {
 }
 
 /**
- * 获取风险标记图标
+ * 获取风险标记图标（SVG data URI，不受广告拦截器影响）
  */
 const getRiskMarkerIcon = (level) => {
-  const iconMap = {
-    1: 'https://a.amap.com/jsapi_demos/static/demo-center/icons/poi-marker-green.png',
-    2: 'https://a.amap.com/jsapi_demos/static/demo-center/icons/poi-marker-yellow.png',
-    3: 'https://a.amap.com/jsapi_demos/static/demo-center/icons/poi-marker-red.png'
-  }
-  return iconMap[String(level)] || iconMap['1']
+  const colorMap = { 1: '#22c55e', 2: '#eab308', 3: '#ef4444' }
+  const color = colorMap[String(level)] || colorMap['1']
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="30" height="40" viewBox="0 0 30 40">
+    <path d="M15 0C6.7 0 0 6.7 0 15c0 11.25 15 25 15 25s15-13.75 15-25C30 6.7 23.3 0 15 0z" fill="${color}"/>
+    <circle cx="15" cy="14" r="7" fill="white"/>
+  </svg>`
+  return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg)
 }
 
 /**
@@ -983,111 +1160,16 @@ const getRiskStrokeColor = (level) => {
   return colorMap[String(level)] || colorMap['1']
 }
 
-// ========== 模拟API接口 ==========
-const api = {
-  getActiveAreaMap: async (params) => {
-    await new Promise(resolve => setTimeout(resolve, 800))
-    return {
-      code: 200,
-      data: [
-        {
-          areaId: 1,
-          areaName: '红花岗区凤凰山',
-          lng: 107.047983,
-          lat: 27.707961,
-          riskLevel: 2,
-          polygon: [[107.047983, 27.707961], [107.057983, 27.707961], [107.057983, 27.717961], [107.047983, 27.717961]]
-        },
-        {
-          areaId: 2,
-          areaName: '汇川区海龙屯',
-          lng: 106.957983,
-          lat: 27.757961,
-          riskLevel: 3,
-          polygon: [[106.957983, 27.757961], [106.967983, 27.757961], [106.967983, 27.767961], [106.957983, 27.767961]]
-        }
-      ]
-    }
-  },
-
-  getRecentWarnings: async (params) => {
-    await new Promise(resolve => setTimeout(resolve, 600))
-    return {
-      code: 200,
-      data: [
-        {
-          id: 1,
-          areaId: 1,
-          areaName: '红花岗区凤凰山',
-          riskLevel: 2,
-          warningTime: new Date(Date.now() - 3600000).toLocaleString(),
-          distance: 800,
-          warningContent: '该区域近期发现竹叶青蛇活动，请注意防范'
-        },
-        {
-          id: 2,
-          areaId: 2,
-          areaName: '汇川区海龙屯',
-          riskLevel: 3,
-          warningTime: new Date(Date.now() - 86400000).toLocaleString(),
-          distance: 1500,
-          warningContent: '该区域发现银环蛇出没，毒性极强，请勿靠近'
-        }
-      ]
-    }
-  },
-
-  getAreaDetail: async (areaId) => {
-    await new Promise(resolve => setTimeout(resolve, 500))
-    return {
-      code: 200,
-      data: {
-        areaId,
-        areaName: areaId === 1 ? '红花岗区凤凰山' : '汇川区海龙屯',
-        lng: areaId === 1 ? 107.047983 : 106.957983,
-        lat: areaId === 1 ? 27.707961 : 27.757961,
-        riskLevel: areaId === 1 ? 2 : 3,
-        address: areaId === 1 ? '遵义市红花岗区凤凰山森林公园' : '遵义市汇川区海龙屯景区',
-        impactRange: areaId === 1 ? '2.5' : '4.2',
-        commonSnakes: areaId === 1 ? '竹叶青、原矛头蝮' : '银环蛇、尖吻蝮',
-        activeTime: '18:00-22:00',
-        mainToxicity: areaId === 1 ? '中毒' : '剧毒',
-        protectionSuggestion: areaId === 1 ? '穿长衣长裤；携带驱蛇药；避免进入草丛深处' : '禁止单独进入；配备专业防护装备；发现蛇类立即撤离并报警',
-        warningRecord: areaId === 1 ? '近7天共预警3次' : '近7天共预警5次',
-        lastUpdate: new Date().toLocaleString()
-      }
-    }
-  },
-
-  getRealTimeWarning: async (params) => {
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    return {
-      code: 200,
-      data: {
-        address: params.address,
-        season: params.season,
-        riskLevel: 2,
-        snakeList: ['竹叶青', '原矛头蝮', '乌梢蛇'],
-        activityLevel: '中',
-        activityDesc: '当前温度适宜，蛇类活动频繁，主要集中在草丛和石缝区域',
-        safetyTips: [
-          '避免在草丛、树林等区域长时间停留',
-          '穿高帮鞋和长衣长裤，减少皮肤暴露',
-          '随身携带驱蛇药品，发现蛇类保持距离',
-          '被咬伤后立即远离并拨打急救电话，不要自行处理'
-        ]
-      }
-    }
-  },
-
-  convertLocation: async (params) => {
-    await new Promise(resolve => setTimeout(resolve, 500))
-    return {
-      code: 200,
-      data: {
-        address: '遵义市红花岗区中华南路123号'
-      }
-    }
+/**
+ * 解析蛇种 JSON
+ */
+const parseSnakeSpecies = (species) => {
+  if (!species) return '暂无'
+  try {
+    const arr = typeof species === 'string' ? JSON.parse(species) : species
+    return arr.map(s => s.name || s).join('、')
+  } catch {
+    return species
   }
 }
 
@@ -1134,6 +1216,9 @@ onMounted(() => {
   // 加载最近预警
   loadRecentWarnings()
 
+  // 加载区域树
+  loadRegionTree()
+
   // 监听网络状态
   window.addEventListener('online', updateOnlineStatus)
   window.addEventListener('offline', updateOnlineStatus)
@@ -1160,8 +1245,8 @@ onUnmounted(() => {
   }
 
   // 清理回调函数
-  if (window.initAMap) {
-    delete window.initAMap
+  if (window.initAMapCallback) {
+    delete window.initAMapCallback
   }
 })
 </script>
@@ -1276,6 +1361,50 @@ onUnmounted(() => {
   font-weight: var(--weight-semibold);
   color: var(--ink-700);
   margin: 0;
+}
+
+/* 地区选择器 */
+.region-card {
+  border: 1px solid var(--green-200);
+}
+.region-selector {
+  padding: var(--space-4) var(--space-5);
+}
+.region-current {
+  margin-top: var(--space-2);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.region-level-text {
+  font-size: var(--text-xs);
+  color: var(--ink-500);
+}
+.region-warning-summary {
+  padding: 0 var(--space-5) var(--space-4);
+}
+.summary-title {
+  font-size: var(--text-xs);
+  color: var(--ink-500);
+  margin-bottom: var(--space-2);
+  font-weight: var(--weight-semibold);
+}
+.summary-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 6px 0;
+  cursor: pointer;
+  border-bottom: 1px solid var(--ink-50);
+  transition: background var(--transition-fast);
+}
+.summary-item:hover {
+  background: var(--surface-cool);
+  border-radius: var(--radius-sm);
+}
+.summary-name {
+  font-size: var(--text-sm);
+  color: var(--ink-700);
 }
 
 .filter-group {
@@ -1540,6 +1669,136 @@ onUnmounted(() => {
   color: var(--ink-400);
   font-size: 13px;
   padding: var(--space-2) 0;
+}
+
+.matched-area-info {
+  background: var(--ink-50);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+}
+.matched-area-info p {
+  margin: var(--space-1) 0;
+  font-size: var(--text-sm);
+  color: var(--ink-700);
+}
+.matched-area-info strong {
+  color: var(--ink-600);
+}
+
+.llm-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.llm-card {
+  background: var(--surface-white);
+  border: 1px solid var(--ink-100);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.llm-card-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: var(--ink-50);
+  border-bottom: 1px solid var(--ink-100);
+}
+
+.llm-card-icon {
+  font-size: 16px;
+}
+
+.llm-card-title {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--ink-700);
+}
+
+.llm-card-body {
+  padding: var(--space-3) var(--space-4);
+}
+
+.llm-card-text {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--ink-600);
+  line-height: 1.6;
+}
+
+/* 蛇类标签列表 */
+.snake-tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.snake-tag-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-lg);
+  background: var(--ink-50);
+  font-size: var(--text-sm);
+  color: var(--ink-700);
+  border: 1px solid var(--ink-100);
+}
+
+.snake-tag-item.venomous {
+  background: var(--danger-bg);
+  color: var(--danger);
+  border-color: var(--danger-border);
+}
+
+.snake-tag-item strong {
+  font-weight: var(--weight-semibold);
+}
+
+.snake-tag-item em {
+  font-style: normal;
+  font-size: var(--text-xs);
+  color: var(--ink-400);
+}
+
+.snake-tag-item.venomous em {
+  color: var(--danger);
+  opacity: 0.7;
+}
+
+/* 安全建议列表 */
+.llm-tip-list {
+  margin: 0;
+  padding-left: var(--space-5);
+}
+
+.llm-tip-list li {
+  font-size: var(--text-sm);
+  color: var(--ink-700);
+  line-height: 1.7;
+  margin-bottom: var(--space-1);
+}
+
+.llm-tip-list li:last-child {
+  margin-bottom: 0;
+}
+
+/* fallback 原始文本 */
+.llm-response {
+  background: var(--ink-50);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+}
+
+.llm-text {
+  margin: 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-size: var(--text-sm);
+  color: var(--ink-700);
+  line-height: 1.6;
 }
 
 .recent-warning-card {

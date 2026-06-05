@@ -5,8 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sling.common.utils.Result;
 import com.sling.warning.entity.ActiveArea;
 import com.sling.warning.entity.WarningRecord;
-import com.sling.warning.service.ActiveAreaService;
-import com.sling.warning.service.WarningRecordService;
+import com.sling.warning.entity.WarningArea;
+import com.sling.warning.service.RegionService;
+import com.sling.warning.service.WarningAreaService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,13 +33,12 @@ import java.util.Map;
 @Slf4j
 @RestController
 @RequestMapping("/api/warning")
-@CrossOrigin(origins = "*")
 @RequiredArgsConstructor
 public class WarningController {
 
-    private final ActiveAreaService activeAreaService;
+    private final WarningAreaService warningAreaService;
 
-    private final WarningRecordService warningRecordService;
+    private final RegionService regionService;
 
     @Value("${api.volcano.key}")
     private String apiKey;
@@ -65,17 +65,83 @@ public class WarningController {
      */
     @GetMapping("/active-area/map")
     public Result getActiveAreaMap(@RequestParam(required = false) List<Integer> riskLevels,
-                                   @RequestParam(required = false) List<Integer> toxicityIds,
+                                   @RequestParam(required = false) List<String> toxicityIds,
                                    @RequestParam(required = false) String distance,
                                    @RequestParam(required = false) Double userLng,
                                    @RequestParam(required = false) Double userLat) {
-        List<ActiveArea> areas = activeAreaService.getActiveAreasByRiskAndToxicity(riskLevels, toxicityIds);
+        // 构建查询条件
+        com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<WarningArea> qw =
+                new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<WarningArea>()
+                        .orderByDesc("warning_level");
 
-        if (areas.isEmpty()) {
-            areas = createMockActiveAreas();
+        // 风险等级筛选
+        if (riskLevels != null && !riskLevels.isEmpty()) {
+            qw.in("warning_level", riskLevels);
+        }
+
+        List<WarningArea> dbAreas = warningAreaService.list(qw);
+
+        // 解析距离上限（km）
+        double maxDistKm = 0;
+        if (distance != null && !distance.isEmpty()) {
+            try { maxDistKm = Double.parseDouble(distance); } catch (NumberFormatException ignored) {}
+        }
+
+        ObjectMapper om = new ObjectMapper();
+        List<ActiveArea> areas = new ArrayList<>();
+        for (WarningArea wa : dbAreas) {
+            // 毒性筛选：检查 snakeSpecies JSON 中是否包含目标毒性关键词
+            if (toxicityIds != null && !toxicityIds.isEmpty()) {
+                String species = wa.getSnakeSpecies();
+                if (species != null) {
+                    boolean match = false;
+                    for (String tid : toxicityIds) {
+                        if (species.contains(tid)) { match = true; break; }
+                    }
+                    if (!match) continue;
+                }
+            }
+
+            double[] center = computeCentroid(wa.getBoundaryCoordinates(), om);
+
+            // 距离筛选：计算用户位置到区域中心的距离
+            if (maxDistKm > 0 && userLng != null && userLat != null && center != null) {
+                double distKm = haversine(userLng, userLat, center[0], center[1]);
+                if (distKm > maxDistKm) continue;
+            }
+
+            ActiveArea aa = new ActiveArea();
+            aa.setId(wa.getAreaId());
+            aa.setAreaName(wa.getAreaName());
+            aa.setLevel(wa.getWarningLevel());
+            aa.setLevelText(getRiskLevelText(wa.getWarningLevel()));
+            aa.setCommonSnakes(parseSnakeSpeciesStr(wa.getSnakeSpecies()));
+            aa.setBoundaryCoordinates(wa.getBoundaryCoordinates());
+            aa.setDescription(wa.getDescription());
+            aa.setLastUpdate(wa.getUpdatedAt() != null ?
+                    wa.getUpdatedAt().toString().replace("T", " ").substring(0, 19) :
+                    (wa.getCreateTime() != null ? wa.getCreateTime().toString().replace("T", " ").substring(0, 19) : ""));
+            if (center != null) {
+                aa.setLng(center[0]);
+                aa.setLat(center[1]);
+            }
+            areas.add(aa);
         }
 
         return Result.success(areas);
+    }
+
+    /**
+     * Haversine 公式计算两点间距离（km）
+     */
+    private double haversine(double lng1, double lat1, double lng2, double lat2) {
+        double R = 6371.0;
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLng = Math.toRadians(lng2 - lng1);
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                 + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                 * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
 
     /**
@@ -89,13 +155,46 @@ public class WarningController {
     @GetMapping("/recent")
     public Result getRecentWarnings(@RequestParam(required = false, defaultValue = "10") Integer limit,
                                     @RequestParam(required = false) Integer riskLevel) {
-        List<WarningRecord> warnings = warningRecordService.getRecentWarnings(limit, riskLevel);
+        // 从 warning_area 读取真实数据，按创建时间倒序
+        com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<WarningArea> qw =
+                new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<WarningArea>()
+                        .orderByDesc("create_time")
+                        .last("LIMIT " + limit);
+        if (riskLevel != null) {
+            qw.eq("warning_level", riskLevel);
+        }
+        List<WarningArea> dbAreas = warningAreaService.list(qw);
 
-        if (warnings.isEmpty()) {
-            warnings = createMockRecentWarnings();
+        List<WarningRecord> warnings = new ArrayList<>();
+        for (WarningArea wa : dbAreas) {
+            WarningRecord wr = new WarningRecord();
+            wr.setId(wa.getAreaId());
+            wr.setAreaId(wa.getAreaId());
+            wr.setAreaName(wa.getAreaName());
+            wr.setLevel(wa.getWarningLevel());
+            wr.setLevelText(getRiskLevelText(wa.getWarningLevel()));
+            wr.setSnakeNames(parseSnakeSpeciesStr(wa.getSnakeSpecies()));
+            wr.setToxicityDesc(parseToxicityList(wa.getSnakeSpecies()));
+            wr.setWarningContent(wa.getDescription());
+            wr.setWarningTime(wa.getCreateTime() != null ?
+                    wa.getCreateTime().toString().replace("T", " ").substring(0, 19) : "未知时间");
+            warnings.add(wr);
         }
 
         return Result.success(warnings);
+    }
+
+    /**
+     * 就近检测 — 判断用户坐标是否在预警区域内
+     *
+     * @param lng 用户经度
+     * @param lat 用户纬度
+     * @return 命中的预警区域列表
+     */
+    @GetMapping("/check-proximity")
+    public Result checkProximity(@RequestParam Double lng, @RequestParam Double lat) {
+        List<Map<String, Object>> matched = warningAreaService.checkProximity(lng, lat);
+        return Result.success(matched);
     }
 
     /**
@@ -107,17 +206,31 @@ public class WarningController {
      */
     @GetMapping("/active-area/detail/{areaId}")
     public Result getActiveAreaDetail(@PathVariable Long areaId) {
+        WarningArea wa = warningAreaService.getById(areaId);
+        if (wa == null) {
+            return Result.fail("区域不存在");
+        }
+
+        ObjectMapper om = new ObjectMapper();
         ActiveArea area = new ActiveArea();
-        area.setAreaName("青龙山区域");
-        area.setLevel(3);
-        area.setLevelText("高风险");
-        area.setCommonSnakes("竹叶青、银环蛇");
-        area.setToxicityList("剧毒");
-        area.setProtectionSuggestion("建议避免夜间出行，穿着长裤和靴子");
-        area.setActiveRecord("近一周内识别到5次剧毒蛇类活动");
-        area.setLastUpdate("2025-12-02 10:30");
-        area.setSuggestions("建议避免夜间出行，穿着长裤和靴子");
-        area.setActivityRecord("近一周内识别到5次剧毒蛇类活动");
+        area.setId(wa.getAreaId());
+        area.setAreaName(wa.getAreaName());
+        area.setLevel(wa.getWarningLevel());
+        area.setLevelText(getRiskLevelText(wa.getWarningLevel()));
+        area.setCommonSnakes(parseSnakeSpeciesStr(wa.getSnakeSpecies()));
+        area.setToxicityList(parseToxicityList(wa.getSnakeSpecies()));
+        area.setBoundaryCoordinates(wa.getBoundaryCoordinates());
+        area.setDescription(wa.getDescription());
+        area.setProtectionSuggestion(wa.getDescription());
+        area.setLastUpdate(wa.getUpdatedAt() != null ?
+                wa.getUpdatedAt().toString().replace("T", " ").substring(0, 19) :
+                (wa.getCreateTime() != null ? wa.getCreateTime().toString().replace("T", " ").substring(0, 19) : ""));
+
+        double[] center = computeCentroid(wa.getBoundaryCoordinates(), om);
+        if (center != null) {
+            area.setLng(center[0]);
+            area.setLat(center[1]);
+        }
 
         return Result.success(area);
     }
@@ -145,19 +258,33 @@ public class WarningController {
                 address = getAddressFromCoordinates(lng, lat);
             }
 
+            // Prompt 要求 LLM 返回严格 JSON
             String llmPrompt = String.format(
-                "请回答以下问题，格式要求：蛇类分布列表（仅列常见种类，不超过5种）、活跃度等级（高/中/低）、安全建议（2-3条）：" +
-                "1. 中国%s区域常见的野生蛇类有哪些？" +
-                "2. %s该区域的蛇类活跃度如何？（结合季节习性：夏季活跃、冬季冬眠等）" +
-                "3. 普通人在该区域活动时，应注意哪些蛇类防护事项？",
+                "你是一个蛇类风险分析专家。请根据以下条件分析蛇类风险，严格以 JSON 格式返回，不要输出任何 JSON 之外的文字：\n" +
+                "地点：%s\n季节：%s\n\n" +
+                "请返回如下 JSON 结构：\n" +
+                "{\n" +
+                "  \"snakes\": [{\"name\": \"蛇名\", \"venomous\": true/false, \"note\": \"简短特征\"}],\n" +
+                "  \"activity\": {\"level\": \"高/中/低\", \"reason\": \"原因说明\"},\n" +
+                "  \"tips\": [\"防护建议1\", \"防护建议2\", \"防护建议3\"]\n" +
+                "}\n" +
+                "要求：snakes 不超过5种，tips 2-3条，只返回 JSON。",
                 address, season
             );
 
             String llmResult = callLLM(llmPrompt);
 
+            // 解析 LLM 返回的 JSON
+            ObjectMapper om = new ObjectMapper();
             Map<String, Object> result = new HashMap<>();
             result.put("address", address);
             result.put("season", season);
+
+            JsonNode analysis = extractJson(llmResult, om);
+            if (analysis != null) {
+                result.put("analysis", om.convertValue(analysis, Map.class));
+            }
+            // 始终保留原始文本作为 fallback
             result.put("llmResponse", llmResult);
 
             return Result.success(result);
@@ -165,6 +292,32 @@ public class WarningController {
             log.error("获取实时预警信息失败", e);
             return Result.fail("获取实时预警信息失败: " + e.getMessage());
         }
+    }
+
+    /**
+     * 从 LLM 响应中提取 JSON 对象。
+     * 兼容纯 JSON、markdown 包裹的 JSON（```json...```）等格式。
+     */
+    private JsonNode extractJson(String text, ObjectMapper om) {
+        if (text == null || text.isEmpty()) return null;
+        try {
+            // 先尝试直接解析
+            return om.readTree(text.trim());
+        } catch (Exception ignored) {}
+        // 尝试提取 ```json ... ``` 或 ``` ... ``` 中的 JSON
+        try {
+            java.util.regex.Matcher m = java.util.regex.Pattern
+                    .compile("```(?:json)?\\s*\\n?(\\{.*?\\})\\s*```", java.util.regex.Pattern.DOTALL)
+                    .matcher(text);
+            if (m.find()) return om.readTree(m.group(1));
+        } catch (Exception ignored) {}
+        // 尝试提取第一个 { ... } 块
+        try {
+            int start = text.indexOf('{');
+            int end = text.lastIndexOf('}');
+            if (start >= 0 && end > start) return om.readTree(text.substring(start, end + 1));
+        } catch (Exception ignored) {}
+        return null;
     }
 
     /**
@@ -185,6 +338,29 @@ public class WarningController {
             log.error("地址转换失败", e);
             return Result.fail("地址转换失败: " + e.getMessage());
         }
+    }
+
+    /**
+     * 获取区域树（供用户端选择地区）
+     */
+    @GetMapping("/region-tree")
+    public Result getRegionTree() {
+        return Result.success(regionService.getRegionTree());
+    }
+
+    /**
+     * 按区域查询预警信息（供用户端查看某地区的预警）
+     *
+     * @param regionId 区域ID（具体区域）
+     * @return 该区域下的所有预警区域
+     */
+    @GetMapping("/by-region")
+    public Result getWarningByRegion(@RequestParam Long regionId) {
+        List<WarningArea> areas = warningAreaService.list(
+                new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<WarningArea>()
+                        .eq("region_id", regionId)
+                        .orderByDesc("warning_level"));
+        return Result.success(areas);
     }
 
     /**
@@ -310,51 +486,83 @@ public class WarningController {
     }
 
     /**
-     * [开发专用] 生成模拟风险区域数据
-     *
-     * <p>当数据库中没有实际数据时，提供占位数据用于前端开发联调。
-     * 正式上线前应移除本方法，确保数据来自真实数据库。
-     *
-     * @return 模拟的风险区域列表
+     * 从 GeoJSON Polygon 计算中心点坐标 [lng, lat]
      */
-    private List<ActiveArea> createMockActiveAreas() {
-        log.debug("数据库无数据，使用开发模拟数据填充风险区域");
-        List<ActiveArea> areas = new ArrayList<>();
-        ActiveArea area = new ActiveArea();
-        area.setId(1L);
-        area.setAreaName("青龙山区域");
-        area.setLevel(3);
-        area.setLevelText("高风险");
-        area.setLng(116.403414);
-        area.setLat(39.915085);
-        area.setCommonSnakes("竹叶青、银环蛇");
-        area.setToxicityList("剧毒、剧毒");
-        area.setProtectionSuggestion("避免夜间出行，穿着长裤和靴子");
-        areas.add(area);
-        return areas;
+    private double[] computeCentroid(String boundaryCoordinates, ObjectMapper om) {
+        if (boundaryCoordinates == null || boundaryCoordinates.isEmpty()) return null;
+        try {
+            JsonNode root = om.readTree(boundaryCoordinates);
+            JsonNode coords = root.path("coordinates");
+            if (coords.isMissingNode() || !coords.isArray() || coords.isEmpty()) return null;
+            JsonNode ring = coords.get(0);
+            if (ring == null || !ring.isArray() || ring.size() < 3) return null;
+            double sumLng = 0, sumLat = 0;
+            for (JsonNode p : ring) {
+                sumLng += p.get(0).asDouble();
+                sumLat += p.get(1).asDouble();
+            }
+            return new double[]{ sumLng / ring.size(), sumLat / ring.size() };
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     /**
-     * [开发专用] 生成模拟预警记录数据
-     *
-     * <p>当数据库中没有实际数据时，提供占位数据用于前端开发联调。
-     * 正式上线前应移除本方法，确保数据来自真实数据库。
-     *
-     * @return 模拟的预警记录列表
+     * 风险等级 → 中文文本
      */
-    private List<WarningRecord> createMockRecentWarnings() {
-        log.debug("数据库无数据，使用开发模拟数据填充预警记录");
-        List<WarningRecord> warnings = new ArrayList<>();
-        WarningRecord warning = new WarningRecord();
-        warning.setId(1L);
-        warning.setAreaName("青龙山区域");
-        warning.setLevel(3);
-        warning.setLevelText("高风险");
-        warning.setWarningTime("1小时前");
-        warning.setWarningContent("发现剧毒蛇类（银环蛇）活动迹象");
-        warning.setSnakeNames("竹叶青、银环蛇");
-        warning.setToxicityDesc("剧毒");
-        warnings.add(warning);
-        return warnings;
+    private String getRiskLevelText(Integer level) {
+        if (level == null) return "未知风险";
+        switch (level) {
+            case 1: return "低风险";
+            case 2: return "中风险";
+            case 3: return "高风险";
+            default: return "未知风险";
+        }
+    }
+
+    /**
+     * 解析 snakeSpecies JSON 为可读字符串
+     * 格式: "[{\"name\":\"银环蛇\"},{\"name\":\"眼镜蛇\"}]" → "银环蛇、眼镜蛇"
+     * 或纯字符串 "银环蛇" → "银环蛇"
+     */
+    private String parseSnakeSpeciesStr(String snakeSpecies) {
+        if (snakeSpecies == null || snakeSpecies.isEmpty()) return "暂无";
+        try {
+            JsonNode arr = new ObjectMapper().readTree(snakeSpecies);
+            if (arr.isArray()) {
+                StringBuilder sb = new StringBuilder();
+                for (JsonNode node : arr) {
+                    if (sb.length() > 0) sb.append("、");
+                    if (node.isObject()) {
+                        sb.append(node.path("name").asText(node.toString()));
+                    } else {
+                        sb.append(node.asText());
+                    }
+                }
+                return sb.length() > 0 ? sb.toString() : "暂无";
+            }
+        } catch (Exception ignored) {}
+        return snakeSpecies;
+    }
+
+    /**
+     * 从 snakeSpecies JSON 提取毒性描述
+     */
+    private String parseToxicityList(String snakeSpecies) {
+        if (snakeSpecies == null || snakeSpecies.isEmpty()) return "暂无";
+        try {
+            JsonNode arr = new ObjectMapper().readTree(snakeSpecies);
+            if (arr.isArray()) {
+                StringBuilder sb = new StringBuilder();
+                for (JsonNode node : arr) {
+                    if (node.isObject() && node.has("toxicity")) {
+                        if (sb.length() > 0) sb.append("、");
+                        sb.append(node.path("toxicity").asText());
+                    }
+                }
+                return sb.length() > 0 ? sb.toString() : "暂无数据";
+            }
+        } catch (Exception ignored) {}
+        return "暂无数据";
     }
 }

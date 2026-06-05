@@ -39,14 +39,14 @@ mybatis-plus:
       logic-delete-value: 1
       logic-not-delete-value: 0
       
-# 火山引擎 / 高德 API 配置（通过环境变量覆盖）
+# DeepSeek / 高德 API 配置
 api:
   volcano:
-    key: ${VOLCANO_API_KEY:your-api-key-here}
-    model-id: doubao-seed-1-6-vision-250815
-    base-url: https://ark.cn-beijing.volces.com/api/v3/chat/completions
+    key: sk-b068f5f692764007b5e1180cb31049c9
+    model-id: deepseek-v4-flash
+    base-url: https://api.deepseek.com/v1/chat/completions
   gaode:
-    key: ${GAODE_API_KEY:your-gaode-key-here}
+    key: 6b27e2cf049182541e6f659eacf63d89
 
 # 增加重试机制，以便在网络不稳定时能够重新连接
 nacos:

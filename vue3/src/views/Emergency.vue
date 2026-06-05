@@ -437,6 +437,7 @@ const currentImageSrc = ref('')
 const imageLoading = ref(false)
 const showImageViewer = ref(false)
 const viewerImageUrl = ref('')
+const imageCacheBuster = ref(0) // 刷新时更新，用于绕过浏览器图片缓存
 
 // 图片轮播方法
 const prevImage = () => {
@@ -495,14 +496,24 @@ const snakeImage = ref(null)
 
 // 获取图片URL数组
 const getImageUrls = () => {
-  if (!emergencyGuide.value || !emergencyGuide.value.imageUrl) {
+  if (!emergencyGuide.value) {
+    return [];
+  }
+
+  // 后端返回了 imageUrls 字段（populateImageUrls 填充，校验文件是否存在）
+  if ('imageUrls' in emergencyGuide.value) {
+    // 字段存在：有数据就用，为空就是真没图，不降级
+    return (emergencyGuide.value.imageUrls || []).filter(url => url && url.trim() !== '');
+  }
+
+  // 降级：后端没返回 imageUrls 字段时，从主图片URL拼接构造
+  if (!emergencyGuide.value.imageUrl) {
     return [];
   }
 
   const mainImageUrl = emergencyGuide.value.imageUrl;
   const imageUrls = [mainImageUrl];
 
-  // 从主图片URL中提取基础名称（去掉编号和扩展名），尝试构建多张图片的URL
   const match = mainImageUrl.match(/^(.+?)_(\d+)\.(\w+)$/);
   if (match) {
     const baseName = match[1];
@@ -519,25 +530,29 @@ const getImageUrls = () => {
 const getImageUrlProxy = (imageUrl) => {
   if (!imageUrl) return null;
 
+  const bust = imageCacheBuster.value ? `&_t=${imageCacheBuster.value}` : '';
+
   // 如果图片URL是在线URL，则使用后端代理接口
   if (imageUrl.startsWith('http')) {
     const encodedUrl = encodeURIComponent(imageUrl)
-    return `/api/emergency/image/online?url=${encodedUrl}`
+    return `/api/emergency/image/online?url=${encodedUrl}${bust}`
   } else {
     // 如果是本地图片名称（如 蛇名.jpg），则使用本地图片接口
     const encodedPath = encodeURIComponent(imageUrl);
-    return `/api/emergency/image/local?path=${encodedPath}`;
+    return `/api/emergency/image/local?path=${encodedPath}${bust}`;
   }
 }
 
 // 获取后端代理的图片URL
 const getBackendImageUrl = (emergencyGuide) => {
   if (emergencyGuide && emergencyGuide.imageUrl) {
+    const bust = imageCacheBuster.value ? `&_t=${imageCacheBuster.value}` : '';
+
     // 如果图片URL是在线URL，则使用后端代理接口
     if (emergencyGuide.imageUrl.startsWith('http')) {
       // 使用后端代理接口访问在线图片
       const encodedUrl = encodeURIComponent(emergencyGuide.imageUrl)
-      return `/api/emergency/image/online?url=${encodedUrl}`
+      return `/api/emergency/image/online?url=${encodedUrl}${bust}`
     } else {
       // 如果是本地图片名称（如 蛇名.jpg），则使用本地图片接口
       // 提取文件名部分，不包含路径
@@ -547,7 +562,7 @@ const getBackendImageUrl = (emergencyGuide) => {
         fileName = fileName.split('/').pop();
       }
       const encodedPath = encodeURIComponent(fileName);
-      return `/api/emergency/image/local?path=${encodedPath}`;
+      return `/api/emergency/image/local?path=${encodedPath}${bust}`;
     }
   }
   return null
@@ -559,8 +574,8 @@ const handleImageLoad = () => {
   imageLoadFailed.value = false
 }
 
-// 清空结果
-const refreshQuery = () => {
+// 清空结果并强制重新下载图片
+const refreshQuery = async () => {
   if (!snakeName.value.trim()) return
   emergencyGuide.value = null
   errorMessage.value = ''
@@ -568,7 +583,35 @@ const refreshQuery = () => {
   imageLoadErrors.value = []
   currentImageIndex.value = 0
   showImageViewer.value = false
-  queryByName()
+  imageCacheBuster.value = Date.now() // 绕过浏览器图片缓存
+
+  querying.value = true
+  imageLoadFailed.value = false
+  currentImageSrc.value = ''
+  imageLoading.value = true
+
+  try {
+    const response = await api.emergency.refreshEmergencyGuide(snakeName.value.trim())
+
+    if (response.data.code === 200) {
+      emergencyGuide.value = response.data.data
+      if (emergencyGuide.value && emergencyGuide.value.imageUrl) {
+        currentImageSrc.value = getBackendImageUrl(emergencyGuide.value)
+      }
+      saveNameToHistory(snakeName.value.trim())
+      ElMessage.success('已触发图片重新获取，请稍后刷新查看新图片')
+    } else {
+      errorMessage.value = response.data.message || '未找到该蛇类的应急信息'
+      emergencyGuide.value = null
+    }
+  } catch (error) {
+    console.error('刷新查询失败:', error)
+    errorMessage.value = '刷新查询失败: ' + (error.message || '未知错误')
+    emergencyGuide.value = null
+  } finally {
+    querying.value = false
+    imageLoading.value = false
+  }
 }
 
 // 加载历史记录

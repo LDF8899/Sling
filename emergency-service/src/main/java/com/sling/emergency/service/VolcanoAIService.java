@@ -12,11 +12,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import jakarta.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * 火山引擎豆包 AI 服务 — doubao-seed-2-0-pro
@@ -198,5 +203,44 @@ public class VolcanoAIService {
 
     public VolcanoConfig getVolcanoConfig() {
         return this.volcanoConfig;
+    }
+
+    // ==================== JSON 提取工具 ====================
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
+    /**
+     * 从 LLM 响应中提取 JSON 对象。
+     * 兼容纯 JSON、```json 包裹、自由文本中提取 {} 等格式。
+     */
+    public JsonNode extractJson(String text) {
+        if (text == null || text.isEmpty()) return null;
+        try { return OBJECT_MAPPER.readTree(text.trim()); } catch (Exception ignored) {}
+        try {
+            Matcher m = Pattern.compile("```(?:json)?\\s*\\n?(\\{.*?\\})\\s*```", Pattern.DOTALL).matcher(text);
+            if (m.find()) return OBJECT_MAPPER.readTree(m.group(1));
+        } catch (Exception ignored) {}
+        try {
+            int start = text.indexOf('{'), end = text.lastIndexOf('}');
+            if (start >= 0 && end > start) return OBJECT_MAPPER.readTree(text.substring(start, end + 1));
+        } catch (Exception ignored) {}
+        return null;
+    }
+
+    /**
+     * 从 LLM 响应中提取 JSON 数组。
+     */
+    public JsonNode extractJsonArray(String text) {
+        if (text == null || text.isEmpty()) return null;
+        try { return OBJECT_MAPPER.readTree(text.trim()); } catch (Exception ignored) {}
+        try {
+            Matcher m = Pattern.compile("```(?:json)?\\s*\\n?(\\[.*?\\])\\s*```", Pattern.DOTALL).matcher(text);
+            if (m.find()) return OBJECT_MAPPER.readTree(m.group(1));
+        } catch (Exception ignored) {}
+        try {
+            int start = text.indexOf('['), end = text.lastIndexOf(']');
+            if (start >= 0 && end > start) return OBJECT_MAPPER.readTree(text.substring(start, end + 1));
+        } catch (Exception ignored) {}
+        return null;
     }
 }

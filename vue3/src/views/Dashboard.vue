@@ -1,5 +1,8 @@
 <template>
   <div class="dashboard-page">
+    <!-- ===== 预警横幅 ===== -->
+    <WarningAlert />
+
     <!-- ===== 轮播图 ===== -->
     <div class="banner-carousel" v-if="showBanner">
       <div class="banner-wrapper">
@@ -125,7 +128,7 @@
           <div class="record-list">
             <div class="record-item" v-for="record in recentRecords" :key="record.id" @click="goToSnakeDetail(record.snakeName)">
               <div class="record-thumb">
-                <img :src="getSnakeImage(record.snakeName)" :alt="record.snakeName" @error="handleImageError" />
+                <img :src="getSnakeImage(record)" :alt="record.snakeName" @error="handleImageError" />
               </div>
               <div class="record-info">
                 <h4>{{ record.snakeName }}</h4>
@@ -139,48 +142,25 @@
       </div>
     </section>
 
-    <!-- ===== 热门蛇类知识库 ===== -->
-    <section class="knowledge-section">
-      <h3 class="section-title">热门蛇类知识库</h3>
-      <div class="tag-row">
-        <el-tag
-          v-for="tag in snakeTags"
-          :key="tag"
-          class="snake-tag"
-          :type="activeTag === tag ? 'primary' : ''"
-          @click="filterByTag(tag)"
-        >{{ tag }}</el-tag>
-      </div>
-      <div class="snake-grid" v-if="displayedSnakeList.length">
-        <div class="snake-card" v-for="snake in displayedSnakeList" :key="snake.id" @click="goToSnakeDetail(snake.name)">
-          <div class="snake-img">
-            <img :src="getSnakeImage(snake.name)" :alt="snake.name" @error="handleImageError" />
-            <div class="snake-overlay"><el-icon :size="24"><View /></el-icon></div>
-          </div>
-          <div class="snake-info">
-            <h4>{{ snake.name }}</h4>
-            <p class="toxicity" :class="snake.toxicityClass">{{ snake.toxicity }}</p>
-            <span class="view-detail">查看详情 <el-icon><ArrowRight /></el-icon></span>
-          </div>
-        </div>
-      </div>
-      <div class="empty-tips" v-else>
-        <el-icon><WarningFilled /></el-icon>
-        <p>暂无数据，请选择其他标签</p>
-      </div>
-    </section>
+    <!-- ===== 户外资讯 ===== -->
+    <OutdoorNews />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, computed, nextTick } from 'vue'
+import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Camera, MapLocation, FirstAidKit, OfficeBuilding, Help, DataAnalysis, ArrowRight, View, WarningFilled, Close } from '@element-plus/icons-vue'
+import { Camera, MapLocation, FirstAidKit, OfficeBuilding, DataAnalysis, ArrowRight, Close } from '@element-plus/icons-vue'
 import cytoscape from 'cytoscape'
 import axios from 'axios'
+import OutdoorNews from '@/components/OutdoorNews.vue'
+import WarningAlert from '@/components/WarningAlert.vue'
+import { recognitionApi } from '../services/api.js'
+import { useUserStore } from '../store/user.js'
 
 const router = useRouter()
+const userStore = useUserStore()
 
 // — 轮播图 —
 const showBanner = ref(true)
@@ -212,8 +192,7 @@ const features = ref([
   { title: '智能识别', description: '基于深度学习的蛇类识别技术，快速准确识别蛇类品种', color: 'linear-gradient(135deg, #059669, #047857)', route: 'recognition', iconComp: Camera },
   { title: '实时预警', description: '基于地理位置的蛇类活动预警，提前规避风险区域', color: 'linear-gradient(135deg, #0891B2, #0E7490)', route: 'warning', iconComp: MapLocation },
   { title: '应急指导', description: '被蛇咬伤后的标准化急救流程指导，关键时刻能救命', color: 'linear-gradient(135deg, #DC2626, #B91C1C)', route: 'emergency', iconComp: FirstAidKit },
-  { title: '精准寻医', description: '全国蛇伤救治医院数据库，快速找到最近的专业医院', color: 'linear-gradient(135deg, #7C3AED, #6D28D9)', route: 'medical', iconComp: OfficeBuilding },
-  { title: '救助调度', description: '实时接收与处理用户紧急求助，调度救助资源', color: 'linear-gradient(135deg, #D97706, #F59E0B)', route: 'rescue', iconComp: Help }
+  { title: '精准寻医', description: '全国蛇伤救治医院数据库，快速找到最近的专业医院', color: 'linear-gradient(135deg, #7C3AED, #6D28D9)', route: 'medical', iconComp: OfficeBuilding }
 ])
 
 // — 统计 —
@@ -221,39 +200,11 @@ const stats = ref({ snakeSpecies: 300, hospitals: 1500, users: 500000, accuracy:
 const statLabels = { snakeSpecies: '蛇类识别', hospitals: '合作医院', users: '用户信赖', accuracy: '识别准确率' }
 const statUnits = { snakeSpecies: '+', hospitals: '+', users: '+', accuracy: '%' }
 
-// — 蛇类数据 —
-const activeTag = ref('')
-const recentRecords = ref([
-  { id: 1, snakeName: '眼镜王蛇', toxicity: '剧毒', toxicityClass: 'high-toxicity', time: '2025-12-01 14:30' },
-  { id: 2, snakeName: '银环蛇', toxicity: '剧毒', toxicityClass: 'high-toxicity', time: '2025-11-30 09:15' },
-  { id: 3, snakeName: '竹叶青', toxicity: '剧毒', toxicityClass: 'high-toxicity', time: '2025-11-28 16:45' },
-  { id: 4, snakeName: '王锦蛇', toxicity: '低毒', toxicityClass: 'low-toxicity', time: '2025-11-27 11:20' }
-])
-
-const snakeTags = ref(['剧毒蛇类', '常见蛇类', '保护蛇类', '全部蛇类'])
-const snakeList = ref([
-  { id: 1, name: '眼镜王蛇', toxicity: '剧毒', toxicityClass: 'high-toxicity' },
-  { id: 2, name: '银环蛇', toxicity: '剧毒', toxicityClass: 'high-toxicity' },
-  { id: 3, name: '竹叶青', toxicity: '剧毒', toxicityClass: 'high-toxicity' },
-  { id: 4, name: '赤链蛇', toxicity: '低毒', toxicityClass: 'low-toxicity' },
-  { id: 5, name: '王锦蛇', toxicity: '低毒', toxicityClass: 'low-toxicity' },
-  { id: 6, name: '乌梢蛇', toxicity: '低毒', toxicityClass: 'low-toxicity' },
-  { id: 7, name: '五步蛇', toxicity: '剧毒', toxicityClass: 'high-toxicity' },
-  { id: 8, name: '蝮蛇', toxicity: '剧毒', toxicityClass: 'high-toxicity' }
-])
-
-const displayedSnakeList = computed(() => {
-  if (!activeTag.value || activeTag.value === '全部蛇类') return snakeList.value
-  switch (activeTag.value) {
-    case '剧毒蛇类': return snakeList.value.filter(s => s.toxicity === '剧毒')
-    case '常见蛇类': return snakeList.value.filter(s => ['眼镜王蛇','银环蛇','竹叶青','赤链蛇','王锦蛇','乌梢蛇'].includes(s.name))
-    case '保护蛇类': return snakeList.value.filter(s => ['眼镜王蛇','蟒蛇'].includes(s.name))
-    default: return snakeList.value
-  }
-})
+// — 最近识别记录 —
+const recentRecords = ref([])
 
 const navigateTo = (page) => {
-  const m = { recognition: '/recognition', warning: '/warning', emergency: '/emergency', medical: '/hospital', rescue: '/rescue', profile: '/profile', settings: '/settings' }
+  const m = { recognition: '/recognition', warning: '/warning', emergency: '/emergency', medical: '/hospital', profile: '/profile', settings: '/settings' }
   if (m[page]) router.push(m[page])
   else ElMessage.info('该功能正在开发中，敬请期待！')
 }
@@ -263,25 +214,13 @@ const goToSnakeDetail = (snakeName) => {
   router.push({ path: '/emergency', query: { snakeName, tab: 'name' } })
 }
 
-const filterByTag = (tag) => { activeTag.value = tag }
-
 // — 图片映射 —
 const IMAGE_FALLBACK_SVG = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23e2e8f0%22 width=%22200%22 height=%22200%22/%3E%3Ctext fill=%22%2394a3b8%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 font-size=%2214%22%3ENo Image%3C/text%3E%3C/svg%3E'
 
-const snakeFileNameMap = {
-  '眼镜王蛇': '/images/snakes/眼镜王蛇.jpg', '银环蛇': '/images/snakes/银环蛇.jpg',
-  '竹叶青': '/images/snakes/竹叶青.jpg', '五步蛇': '/images/snakes/五步蛇.jpg',
-  '蝮蛇': '/images/snakes/蝮蛇.jpg', '赤链蛇': '/images/snakes/赤链蛇.jpg',
-  '王锦蛇': '/images/snakes/王锦蛇.jpg', '乌梢蛇': '/images/snakes/乌梢蛇.jpg'
-}
-
-const getSnakeImage = (name) => {
-  if (!name) return '/images/default-snake.jpg'
-  if (snakeFileNameMap[name]) return snakeFileNameMap[name]
-  for (const [k, v] of Object.entries(snakeFileNameMap)) {
-    if (name.includes(k) || k.includes(name)) return v
-  }
-  return '/images/default-snake.jpg'
+const getSnakeImage = (record) => {
+  if (!record.snakeName) return IMAGE_FALLBACK_SVG
+  // 用蛇名通过 emergency 代理查图（图片在 tu 目录，由 Python 脚本下载）
+  return `/api/emergency/image/local?path=${encodeURIComponent(record.snakeName + '_1.jpg')}`
 }
 
 const handleImageError = (e) => {
@@ -324,14 +263,26 @@ const loadMiniGraph = async () => {
   } catch (e) { console.warn('迷你图谱加载失败:', e) }
 }
 
-const loadRecognitionRecords = () => {
+const loadRecognitionRecords = async () => {
   try {
-    const saved = localStorage.getItem('recognitionRecords')
-    if (saved) {
-      const parsed = JSON.parse(saved)
-      recentRecords.value = [...parsed, ...recentRecords.value].slice(0, 10)
+    const userId = userStore.userInfo?.id || localStorage.getItem('userId')
+    if (!userId) return
+
+    const response = await recognitionApi.getRecordsByUser(userId)
+    if (response.data.code === 200 && response.data.data?.length > 0) {
+      const records = response.data.data.map(record => ({
+        id: record.recordId,
+        snakeName: record.recognitionResult || '未知蛇类',
+        toxicity: '待确认',
+        toxicityClass: 'low-toxicity',
+        time: record.recognitionTime || '',
+        imagePath: record.imagePath || ''
+      }))
+      recentRecords.value = records.slice(0, 10)
     }
-  } catch (e) { console.error('加载识别记录失败:', e) }
+  } catch (e) {
+    console.error('加载识别记录失败，使用默认数据:', e)
+  }
 }
 
 onMounted(() => {
@@ -653,72 +604,4 @@ onBeforeUnmount(() => {
 .record-time { font-size: var(--text-xs); color: var(--ink-500); margin: 0; }
 .record-arrow { color: var(--ink-400); }
 
-/* ===== 蛇类知识库 ===== */
-.knowledge-section {
-  margin-bottom: var(--space-8);
-}
-
-.tag-row {
-  display: flex; flex-wrap: wrap; gap: var(--space-3);
-  margin-bottom: var(--space-5);
-}
-
-.snake-tag { cursor: pointer; }
-
-.snake-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: var(--space-4);
-}
-
-.snake-card {
-  background: var(--surface-white);
-  border: 1px solid var(--green-100);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  cursor: pointer;
-  transition: all var(--transition-base);
-}
-.snake-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-card);
-  border-color: var(--green-200);
-}
-
-.snake-img {
-  position: relative; height: 160px; overflow: hidden;
-}
-.snake-img img {
-  width: 100%; height: 100%; object-fit: cover;
-  transition: transform var(--transition-base);
-}
-.snake-card:hover .snake-img img { transform: scale(1.05); }
-
-.snake-overlay {
-  position: absolute; inset: 0;
-  background: rgba(0,0,0,0.3);
-  display: flex; align-items: center; justify-content: center;
-  color: white; opacity: 0;
-  transition: opacity var(--transition-base);
-}
-.snake-card:hover .snake-overlay { opacity: 1; }
-
-.snake-info {
-  padding: var(--space-4);
-  display: flex; flex-direction: column; gap: var(--space-2);
-}
-.snake-info h4 {
-  margin: 0; font-size: var(--text-base); font-weight: var(--weight-semibold);
-  color: var(--ink-900);
-}
-
-.view-detail {
-  display: inline-flex; align-items: center; gap: var(--space-1);
-  font-size: var(--text-xs); color: var(--blue-700);
-}
-
-.empty-tips {
-  text-align: center; padding: var(--space-10) 0; color: var(--ink-500);
-}
-.empty-tips .el-icon { font-size: 32px; margin-bottom: var(--space-3); }
 </style>

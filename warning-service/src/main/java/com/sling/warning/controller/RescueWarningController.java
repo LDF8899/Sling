@@ -4,8 +4,10 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.sling.common.utils.Result;
 import com.sling.warning.entity.WarningArea;
+import com.sling.warning.entity.WarningRecord;
 import com.sling.warning.mapper.WarningAreaMapper;
 import com.sling.warning.service.RescuerSecondaryPasswordService;
+import com.sling.warning.service.WarningRecordService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,6 +25,19 @@ public class RescueWarningController {
 
     private final WarningAreaMapper areaMapper;
     private final RescuerSecondaryPasswordService secondaryPasswordService;
+    private final WarningRecordService warningRecordService;
+
+    /**
+     * 确保 snakeSpecies 值为合法 JSON（MySQL JSON 列要求）。
+     * 如果前端传来普通字符串如 "银环蛇"，自动包装为 JSON 数组 "[\"银环蛇\"]"。
+     */
+    private String ensureJson(String value) {
+        if (value == null || value.isBlank()) return null;
+        String trimmed = value.trim();
+        if (trimmed.startsWith("[") || trimmed.startsWith("{")) return trimmed;
+        // 普通字符串 → JSON 数组
+        return "[\"" + trimmed.replace("\\", "\\\\").replace("\"", "\\\"") + "\"]";
+    }
 
     /**
      * 获取预警区域列表（按区域筛选）
@@ -60,12 +75,20 @@ public class RescueWarningController {
         area.setRegionId(body.get("regionId") != null ? Long.valueOf(body.get("regionId").toString()) : null);
         area.setDescription((String) body.get("description"));
         area.setBoundaryCoordinates((String) body.get("boundaryCoordinates"));
-        area.setSnakeSpecies((String) body.get("snakeSpecies"));
+        area.setSnakeSpecies(ensureJson((String) body.get("snakeSpecies")));
         area.setWarningLevel(body.get("warningLevel") != null ? Integer.valueOf(body.get("warningLevel").toString()) : 1);
         area.setCreatedBy(body.get("createdBy") != null ? Long.valueOf(body.get("createdBy").toString()) : null);
         area.setCreatorRole(role);
 
         areaMapper.insert(area);
+
+        // 自动生成预警记录，使用户端 /warning 页面能看到
+        WarningRecord record = new WarningRecord();
+        record.setAreaId(area.getAreaId());
+        record.setWarningContent(area.getDescription() != null ? area.getDescription() : area.getAreaName() + " 预警区域创建");
+        record.setIsValid(1);
+        warningRecordService.save(record);
+
         return Result.success("创建成功", area);
     }
 
@@ -90,7 +113,7 @@ public class RescueWarningController {
         if (body.get("regionId") != null) area.setRegionId(Long.valueOf(body.get("regionId").toString()));
         if (body.get("description") != null) area.setDescription((String) body.get("description"));
         if (body.get("boundaryCoordinates") != null) area.setBoundaryCoordinates((String) body.get("boundaryCoordinates"));
-        if (body.get("snakeSpecies") != null) area.setSnakeSpecies((String) body.get("snakeSpecies"));
+        if (body.get("snakeSpecies") != null) area.setSnakeSpecies(ensureJson((String) body.get("snakeSpecies")));
         if (body.get("warningLevel") != null) area.setWarningLevel(Integer.valueOf(body.get("warningLevel").toString()));
 
         areaMapper.updateById(area);
@@ -109,6 +132,10 @@ public class RescueWarningController {
         }
 
         areaMapper.deleteById(id);
+        // 同步删除关联的预警记录
+        warningRecordService.remove(
+                new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<WarningRecord>()
+                        .eq("area_id", id));
         return Result.success("删除成功");
     }
 

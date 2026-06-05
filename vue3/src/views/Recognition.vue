@@ -254,6 +254,7 @@
 
 <script>
 import { recognitionApi } from '../services/api.js'
+import { useUserStore } from '../store/user.js'
 import MarkdownIt from 'markdown-it'
 
 export default {
@@ -458,18 +459,26 @@ export default {
         const formData = new FormData()
         formData.append('image', this.uploadedImageFile)
 
+        // 附加 userId 用于自动保存识别记录
+        const userStore = useUserStore()
+        const userId = userStore.userInfo?.id || localStorage.getItem('userId')
+        if (userId) {
+          formData.append('userId', userId)
+        }
+
         const response = await recognitionApi.identifySnake(formData)
 
         this.recognitionTime = ((Date.now() - startTime) / 1000).toFixed(1)
         const resultData = response.data
 
         if (resultData && resultData.data) {
-          this.rawRecognitionText = resultData.data
+          // 后端返回 { result, recordId }
+          this.rawRecognitionText = resultData.data.result || resultData.data
         } else {
           this.rawRecognitionText = '### 识别完成\n未能获取有效识别结果，请重试。'
         }
 
-        this.$message.success('识别完成')
+        this.$message.success('识别完成，已自动保存')
       } catch (error) {
         console.error('识别失败:', error)
         let errorMsg = '识别失败'
@@ -498,7 +507,7 @@ export default {
     },
 
     saveResult() {
-      this.$message.info('保存功能开发中')
+      this.$message.success('识别结果已自动保存')
     }
   }
 }
