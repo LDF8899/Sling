@@ -4,6 +4,8 @@ import com.sling.common.utils.Result;
 import com.sling.hospital.entity.HospitalInfo;
 import com.sling.hospital.entity.dto.HospitalSearchDTO;
 import com.sling.hospital.entity.dto.RouteDTO;
+import com.sling.hospital.service.HospitalGeoService;
+import com.sling.hospital.service.HospitalInfoService;
 import com.sling.hospital.service.HospitalSearchService;
 import com.sling.hospital.service.PythonIntegrationService;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +26,8 @@ public class HospitalMapController {
 
     private final PythonIntegrationService pythonIntegrationService;
     private final HospitalSearchService hospitalSearchService;
+    private final HospitalInfoService hospitalInfoService;
+    private final HospitalGeoService hospitalGeoService;
 
     /**
      * Convert address to coordinates (geocoding).
@@ -137,6 +141,42 @@ public class HospitalMapController {
         } catch (Exception e) {
             log.error("Snake venom hospital search failed", e);
             return Result.fail("Search failed: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 查询有特定蛇种血清的医院列表
+     * @param snakeId 蛇类ID
+     * @return 医院列表，包含血清库存信息
+     */
+    @GetMapping("/with-serum/{snakeId}")
+    public Result<?> getHospitalsWithSerum(@PathVariable Long snakeId) {
+        try {
+            List<Map<String, Object>> hospitals = hospitalInfoService.getHospitalsWithSerum(snakeId);
+            return Result.success(hospitals);
+        } catch (Exception e) {
+            log.error("查询有血清的医院失败", e);
+            return Result.fail("查询失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 基于 Redis GEO 查找附近有指定蛇种血清的医院（Agent 调度用）
+     */
+    @GetMapping("/nearby-with-serum")
+    public Result<?> findNearbyWithSerum(
+            @RequestParam Double lng,
+            @RequestParam Double lat,
+            @RequestParam Long snakeId,
+            @RequestParam(defaultValue = "50") Double radiusKm,
+            @RequestParam(defaultValue = "5") Integer limit) {
+        try {
+            List<Map<String, Object>> hospitals =
+                    hospitalGeoService.findNearbyHospitalsWithSerum(lng, lat, snakeId, radiusKm, limit);
+            return Result.success(hospitals);
+        } catch (Exception e) {
+            log.error("GEO 查询附近有血清医院失败", e);
+            return Result.fail("查询失败: " + e.getMessage());
         }
     }
 }

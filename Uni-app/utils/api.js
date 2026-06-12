@@ -210,6 +210,17 @@ export const recognitionApi = {
     })
   },
 
+  // 完整识别（包含蛇类信息、急救信息、医院列表）
+  identifySnakeFull(filePath, userId) {
+    return uploadFile({
+      url: '/api/recognition/identify-full',
+      filePath: filePath,
+      name: 'image',
+      formData: { userId: userId },
+      timeout: 60000
+    })
+  },
+
   // Get user recognition records
   getRecordsByUser(userId) {
     return request({

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hand Particle Interaction</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { overflow: hidden; background: #000; }
+    #scene {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      display: block;
+    }
+    #camera-feed { display: none; }
+    #hud {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      z-index: 10;
+      color: rgba(255, 255, 255, 0.7);
+      font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      pointer-events: none;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+    }
+    #hud .gesture-name {
+      font-size: 18px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.9);
+    }
+    #hud .status {
+      margin-top: 4px;
+      opacity: 0.6;
+      font-size: 11px;
+    }
+  </style>
+  <script type="module" crossorigin src="/assets/index-DxL4NVSE.js"></script>
+</head>
+<body>
+  <canvas id="scene"></canvas>
+  <video id="camera-feed" autoplay playsinline></video>
+  <div id="hud">
+    <div class="gesture-name" id="gesture-display">—</div>
+    <div class="status" id="status-display">initializing…</div>
+  </div>
+</body>
+</html>

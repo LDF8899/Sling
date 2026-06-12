@@ -14,13 +14,15 @@ echo 6. Restart Recognition
 echo 7. Restart Warning
 echo 8. Restart Emergency
 echo 9. Restart Hospital
-echo 0. Restart Frontend
-echo A. Exit
+echo 0. Restart Agent
+echo A. Restart Frontend
+echo B. Exit
 echo ================================
 
-choice /c 1234567890a /m "Enter your choice"
-if errorlevel 11 goto :eof
-if errorlevel 10 goto restart_frontend
+choice /c 1234567890ab /m "Enter your choice"
+if errorlevel 12 goto :eof
+if errorlevel 11 goto restart_frontend
+if errorlevel 10 goto restart_agent
 if errorlevel 9 goto restart_hospital
 if errorlevel 8 goto restart_emergency
 if errorlevel 7 goto restart_warning
@@ -87,6 +89,13 @@ start "Hospital" wt --title "Hospital (8089)" cmd /k "cd /d C:\Users\Asuka\Deskt
 echo Hospital restarted.
 goto end
 
+:restart_agent
+call :kill_port 7010
+timeout /t 2 /nobreak >nul
+start "Agent" wt --title "Agent (7010)" cmd /k "cd /d C:\Users\Asuka\Desktop\1\Sling\agent-service && mvn spring-boot:run"
+echo Agent restarted.
+goto end
+
 :restart_frontend
 call :kill_port 3000
 timeout /t 2 /nobreak >nul
@@ -101,6 +110,7 @@ call :kill_port 7002
 call :kill_port 7003
 call :kill_port 7005
 call :kill_port 7006
+call :kill_port 7010
 call :kill_port 8089
 call :kill_port 8092
 call :kill_port 9093
@@ -123,6 +133,8 @@ timeout /t 8 /nobreak >nul
 start "Emergency" wt --title "Emergency (9093)" cmd /k "cd /d %BASE%\emergency-service && mvn spring-boot:run"
 timeout /t 8 /nobreak >nul
 start "Hospital" wt --title "Hospital (8089)" cmd /k "cd /d %BASE%\hospital-service && mvn spring-boot:run"
+timeout /t 8 /nobreak >nul
+start "Agent" wt --title "Agent (7010)" cmd /k "cd /d %BASE%\agent-service && mvn spring-boot:run"
 timeout /t 8 /nobreak >nul
 start "Frontend" wt --title "Frontend (3000)" cmd /k "cd /d %BASE%\vue3 && npm run dev"
 echo All services restarted.

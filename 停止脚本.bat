@@ -21,7 +21,7 @@ if errorlevel 1 goto stop_all
 
 :stop_all
 echo Stopping all services...
-for %%i in (8888 3000 7002 7003 7005 7006 8089 8092 9093) do (
+for %%i in (7002 7003 7005 7006 7010 8089 8092 8888 9093 3000) do (
     for /f "tokens=5" %%a in ('netstat -ano 2^>nul ^| findstr :%%i ^| findstr LISTENING') do (
         echo    Killing PID %%a on port %%i
         taskkill /f /pid %%a >nul 2>&1
@@ -32,7 +32,7 @@ goto end
 
 :stop_backends
 echo Stopping backend services...
-for %%i in (8888 7002 7003 7005 7006 8089 8092 9093) do (
+for %%i in (7002 7003 7005 7006 7010 8089 8092 8888 9093) do (
     for /f "tokens=5" %%a in ('netstat -ano 2^>nul ^| findstr :%%i ^| findstr LISTENING') do (
         echo    Killing PID %%a on port %%i
         taskkill /f /pid %%a >nul 2>&1
@@ -52,7 +52,7 @@ goto end
 
 :stop_all_release
 echo Stopping all and releasing ports...
-for %%i in (8848 8888 3000 6379 7002 7003 7005 7006 8089 8092 9093) do (
+for %%i in (3000 3307 5672 6379 7002 7003 7005 7006 7010 8089 8092 8848 8888 9093 15672 27017) do (
     for /f "tokens=5" %%a in ('netstat -ano 2^>nul ^| findstr :%%i ^| findstr LISTENING') do (
         echo    Killing PID %%a on port %%i
         taskkill /f /pid %%a >nul 2>&1

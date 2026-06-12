@@ -405,7 +405,7 @@ const fetchNews = async (forceRefresh = false) => {
       categories.map(cat =>
         axios.get('/searxng/search', {
           params: { q: SEARXNG_QUERIES[cat], format: 'json', language: 'zh-CN', time_range: 'month' },
-          timeout: 8000,
+          timeout: 10000,
         }).then(res => mapSeaxngResults(res.data.results, cat))
       )
     )

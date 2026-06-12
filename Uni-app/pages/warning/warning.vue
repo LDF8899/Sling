@@ -166,15 +166,20 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { warningApi } from '@/utils/api.js'
 import GlassNavbar from '@/components/GlassNavbar.vue'
+import { connectWebSocket, onWsMessage, disconnectWebSocket } from '@/utils/websocket.js'
 
 // Reactive data
 const currentRiskLevel = ref(null)
 const warnings = ref([])
 const showDetail = ref(false)
 const selectedWarning = ref(null)
+
+// 实时推送状态
+const wsConnected = ref(false)
+let removeWsListener = null
 
 // Map data
 const mapCenter = ref({ lng: 116.397428, lat: 39.90923 })
@@ -459,6 +464,23 @@ const shareWarning = () => {
 onMounted(() => {
   currentSeason.value = getCurrentSeason()
   loadWarnings()
+
+  // 连接 WebSocket 接收实时预警推送
+  connectWebSocket()
+  wsConnected.value = true
+  removeWsListener = onWsMessage((msg) => {
+    if (msg.type === 'warning_upgraded' || msg.type === 'sos_new') {
+      // 收到新预警或 SOS，刷新预警列表
+      loadWarnings()
+      uni.showToast({ title: '收到新的预警信息', icon: 'none' })
+    }
+  })
+})
+
+onUnmounted(() => {
+  if (removeWsListener) removeWsListener()
+  disconnectWebSocket()
+  wsConnected.value = false
 })
 </script>
 

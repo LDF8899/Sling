@@ -1,14 +1,14 @@
 package com.sling.user.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
-import com.sling.common.entity.BaseEntity;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
+
+import java.util.Date;
 
 @Data
-@EqualsAndHashCode(callSuper = true)
 @TableName("user_role")
-public class UserRole extends BaseEntity {
+public class UserRole {
     /**
      * 主键ID
      */
@@ -31,8 +31,6 @@ public class UserRole extends BaseEntity {
      * 创建时间
      */
     @TableField(value = "create_time")
-    private java.util.Date createTime;
-    
-    @TableField(exist = false)  // user_role表中没有del_flag字段
-    private Integer delFlag;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Shanghai")
+    private Date createTime;
 }

@@ -61,6 +61,14 @@ public class EmergencyHelp {
     // 毒性等级 (0=无毒, 1=低毒, 2=有毒, 3=剧毒)
     private Integer toxicityLevel;
 
+    // ========== 新增字段：地理坐标 ==========
+
+    // 经度
+    private Double longitude;
+
+    // 纬度
+    private Double latitude;
+
     // 创建时初始化时间
     public EmergencyHelp() {
         this.createTime = new Date();

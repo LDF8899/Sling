@@ -94,7 +94,7 @@
 import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import cytoscape from 'cytoscape'
+import * as THREE from 'three'
 import axios from 'axios'
 import SvgIcon from '@/components/SvgIcon.vue'
 import OutdoorNews from '@/components/OutdoorNews.vue'
@@ -176,38 +176,245 @@ const goToSnakeDetail = (snakeName) => {
   router.push({ path: '/emergency', query: { snakeName, tab: 'name' } })
 }
 
-// ==================== 知识图谱 ====================
+// ==================== 知识图谱（3D 迷你版） ====================
 const miniGraphRef = ref(null)
 const miniGraphStats = ref(null)
-let miniCy = null
 
-const renderMiniGraph = (graphData) => {
-  if (miniCy) { miniCy.stop(); miniCy.destroy(); miniCy = null }
-  const nodes = graphData.nodes.filter(n => ['snake', 'family', 'toxin', 'danger'].includes(n.data.type))
-  const nodeIds = new Set(nodes.map(n => n.data.id))
-  const edges = graphData.edges.filter(e => nodeIds.has(e.data.source) && nodeIds.has(e.data.target))
+// 与详情页 use3DGraph 一致的节点样式
+const MINI_NODE_STYLES = {
+  family:  { color: 0x409EFF, size: 18, emissive: 0x2060CC },
+  snake:   { color: 0x50b8f0, size: 6,  emissive: 0x2a6090 },
+  toxin:   { color: 0xF56C6C, size: 14, emissive: 0xCC3030 },
+  symptom: { color: 0xE6A23C, size: 8,  emissive: 0xB07010 },
+  serum:   { color: 0x67C23A, size: 12, emissive: 0x308010 },
+  danger:  { color: 0xFF3333, size: 14, emissive: 0xCC0000 },
+}
+const MINI_EDGE_COLORS = {
+  toxin: 0xF56C6C, serum: 0x67C23A, symptom: 0xE6A23C, danger: 0xFF3333,
+}
 
-  miniCy = cytoscape({
-    container: miniGraphRef.value,
-    elements: [...nodes, ...edges],
-    minZoom: 0.3, maxZoom: 2, userZoomingEnabled: false,
-    style: [
-      { selector: 'node', style: { 'label': 'data(label)', 'text-valign': 'center', 'text-halign': 'center', 'font-size': '8px', 'color': '#fff', 'text-outline-width': 1.5, 'text-outline-color': '#555' } },
-      { selector: 'node[type="snake"]', style: { 'background-color': 'var(--accent)', 'width': 14, 'height': 14, 'font-size': '0px' } },
-      { selector: 'node[type="family"]', style: { 'background-color': '#67C23A', 'shape': 'round-rectangle', 'width': 50, 'height': 20, 'font-size': '9px', 'font-weight': 'bold' } },
-      { selector: 'node[type="toxin"]', style: { 'background-color': '#F56C6C', 'shape': 'diamond', 'width': 30, 'height': 30, 'font-size': '8px', 'font-weight': 'bold' } },
-      { selector: 'node[type="danger"]', style: { 'background-color': '#E6A23C', 'shape': 'star', 'width': 24, 'height': 24, 'font-size': '7px' } },
-      { selector: 'edge', style: { 'width': 0.8, 'line-color': '#ccc', 'target-arrow-color': '#ccc', 'target-arrow-shape': 'triangle', 'arrow-scale': 0.5, 'curve-style': 'bezier' } },
-      { selector: 'node[danger="重度"]', style: { 'border-width': 2, 'border-color': '#F56C6C' } }
-    ],
-    layout: { name: 'cose', idealEdgeLength: 80, nodeOverlap: 10, refresh: 10, fit: true, padding: 15, randomize: false, componentSpacing: 60, nodeRepulsion: 4000, edgeElasticity: 100, nestingFactor: 1.0, gravity: 0.3, numIter: 300, animate: false }
-  })
+let miniRenderer = null, miniScene = null, miniCamera = null, miniAnimId = null
+const miniNodeMap = new Map()
+const miniEdges = []
+let miniEdgeMeshes = []
+let miniEdgeGroup = null
+
+function guessEdgeType(src, tgt) {
+  const s = src.split(':')[0], t = tgt.split(':')[0]
+  if (s === 'toxin' || t === 'toxin') return 'toxin'
+  if (s === 'serum' || t === 'serum') return 'serum'
+  if (s === 'symptom' || t === 'symptom') return 'symptom'
+  if (s === 'danger' || t === 'danger') return 'danger'
+  return 'default'
+}
+
+function makeGlowTex(size = 64) {
+  const c = document.createElement('canvas'); c.width = c.height = size
+  const ctx = c.getContext('2d')
+  const g = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2)
+  g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.2, 'rgba(255,255,255,0.7)')
+  g.addColorStop(0.5, 'rgba(255,255,255,0.15)'); g.addColorStop(1, 'rgba(255,255,255,0)')
+  ctx.fillStyle = g; ctx.fillRect(0, 0, size, size)
+  return new THREE.CanvasTexture(c)
+}
+
+function renderMiniGraph(graphData) {
+  const container = miniGraphRef.value
+  if (!container) return
+  // 清理旧场景
+  destroyMiniGraph()
+
+  const w = container.clientWidth, h = container.clientHeight
+  miniScene = new THREE.Scene()
+  miniCamera = new THREE.PerspectiveCamera(50, w / h, 0.1, 5000)
+  miniCamera.position.set(0, 0, 500)
+
+  miniRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
+  miniRenderer.setSize(w, h)
+  miniRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+  miniRenderer.domElement.style.position = 'absolute'
+  miniRenderer.domElement.style.top = '0'
+  miniRenderer.domElement.style.left = '0'
+  container.appendChild(miniRenderer.domElement)
+
+  // 背景粒子
+  const starGeo = new THREE.BufferGeometry()
+  const starPos = new Float32Array(600 * 3)
+  for (let i = 0; i < 600; i++) {
+    const theta = Math.random() * Math.PI * 2
+    const phi = Math.acos(2 * Math.random() - 1)
+    const r = 1500 + Math.random() * 200
+    starPos[i*3] = r * Math.sin(phi) * Math.cos(theta)
+    starPos[i*3+1] = r * Math.sin(phi) * Math.sin(theta)
+    starPos[i*3+2] = r * Math.cos(phi)
+  }
+  starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPos, 3))
+  miniScene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({
+    color: 0xffffff, size: 1.5, sizeAttenuation: false,
+    transparent: true, opacity: 0.6, depthWrite: false,
+  })))
+
+  // 灯光
+  miniScene.add(new THREE.AmbientLight(0xffffff, 0.4))
+  const dir = new THREE.DirectionalLight(0xffffff, 0.8)
+  dir.position.set(200, 300, 400)
+  miniScene.add(dir)
+
+  miniEdgeGroup = new THREE.Group()
+  miniScene.add(miniEdgeGroup)
+
+  const glowTex = makeGlowTex()
+
+  // 构建节点 — 使用全部数据，与详情页一致
+  const nodes = graphData.nodes
+  const edges = graphData.edges
+
+  for (const n of nodes) {
+    const d = n.data
+    const style = MINI_NODE_STYLES[d.type] ?? MINI_NODE_STYLES.snake
+    const geo = new THREE.SphereGeometry(style.size, 16, 12)
+    const mat = new THREE.MeshStandardMaterial({
+      color: style.color, emissive: style.emissive, emissiveIntensity: 1.2,
+      metalness: 0.3, roughness: 0.6, transparent: true, opacity: 0.92,
+    })
+    const mesh = new THREE.Mesh(geo, mat)
+    mesh.position.set((Math.random()-0.5)*400, (Math.random()-0.5)*400, (Math.random()-0.5)*200)
+    miniScene.add(mesh)
+
+    // 发光光晕
+    const glowMat = new THREE.MeshBasicMaterial({
+      color: style.color, transparent: true, opacity: 0.12,
+      depthWrite: false, blending: THREE.AdditiveBlending,
+    })
+    const glow = new THREE.Mesh(new THREE.SphereGeometry(style.size * 2.2, 12, 8), glowMat)
+    mesh.add(glow)
+
+    miniNodeMap.set(d.id, { mesh, glow, data: d, vx: 0, vy: 0, vz: 0 })
+  }
+
+  // 构建边
+  for (const e of edges) {
+    const src = e.data.source, tgt = e.data.target
+    if (!miniNodeMap.has(src) || !miniNodeMap.has(tgt)) continue
+    const type = guessEdgeType(src, tgt)
+    miniEdges.push({ src, tgt, type })
+    const geo = new THREE.BufferGeometry()
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(6), 3))
+    const mat = new THREE.LineBasicMaterial({
+      color: MINI_EDGE_COLORS[type] ?? 0x3a6a4a,
+      transparent: true, opacity: 0.25, blending: THREE.AdditiveBlending, depthWrite: false,
+    })
+    const line = new THREE.Line(geo, mat)
+    line.userData = { src, tgt, type }
+    miniEdgeGroup.add(line)
+    miniEdgeMeshes.push(line)
+  }
+
   miniGraphStats.value = graphData.stats
+  animateMiniGraph()
+}
+
+let miniSimFrame = 0
+function simulateMiniGraph(dt) {
+  const alpha = Math.max(0.1, 1 - miniSimFrame / 500) * 0.3
+  const nodes = Array.from(miniNodeMap.values())
+  const n = nodes.length
+  const repulsion = 3000, springLen = 120, springK = 0.06, gravity = 0.02
+
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 1; j < n; j++) {
+      const a = nodes[i], b = nodes[j]
+      const dx = a.mesh.position.x - b.mesh.position.x
+      const dy = a.mesh.position.y - b.mesh.position.y
+      const dz = a.mesh.position.z - b.mesh.position.z
+      const distSq = dx*dx + dy*dy + dz*dz + 1
+      const dist = Math.sqrt(distSq)
+      const force = repulsion / distSq * alpha
+      const fx = (dx/dist)*force, fy = (dy/dist)*force, fz = (dz/dist)*force
+      a.vx += fx; a.vy += fy; a.vz += fz
+      b.vx -= fx; b.vy -= fy; b.vz -= fz
+    }
+  }
+
+  for (const edge of miniEdges) {
+    const src = miniNodeMap.get(edge.src), tgt = miniNodeMap.get(edge.tgt)
+    if (!src || !tgt) continue
+    const dx = tgt.mesh.position.x - src.mesh.position.x
+    const dy = tgt.mesh.position.y - src.mesh.position.y
+    const dz = tgt.mesh.position.z - src.mesh.position.z
+    const dist = Math.sqrt(dx*dx + dy*dy + dz*dz) + 0.1
+    const force = (dist - springLen) * springK * alpha
+    const fx = (dx/dist)*force, fy = (dy/dist)*force, fz = (dz/dist)*force
+    src.vx += fx; src.vy += fy; src.vz += fz
+    tgt.vx -= fx; tgt.vy -= fy; tgt.vz -= fz
+  }
+
+  for (const node of nodes) {
+    node.vx -= node.mesh.position.x * gravity * alpha
+    node.vy -= node.mesh.position.y * gravity * alpha
+    node.vz -= node.mesh.position.z * gravity * alpha
+    node.vx *= 0.92; node.vy *= 0.92; node.vz *= 0.92
+    node.mesh.position.x += node.vx * dt * 60
+    node.mesh.position.y += node.vy * dt * 60
+    node.mesh.position.z += node.vz * dt * 60
+  }
+
+  // 更新边位置
+  for (const line of miniEdgeMeshes) {
+    const src = miniNodeMap.get(line.userData.src), tgt = miniNodeMap.get(line.userData.tgt)
+    if (!src || !tgt) continue
+    const pos = line.geometry.getAttribute('position')
+    pos.array[0] = src.mesh.position.x; pos.array[1] = src.mesh.position.y; pos.array[2] = src.mesh.position.z
+    pos.array[3] = tgt.mesh.position.x; pos.array[4] = tgt.mesh.position.y; pos.array[5] = tgt.mesh.position.z
+    pos.needsUpdate = true
+  }
+
+  miniSimFrame++
+}
+
+let miniPrevTime = 0
+function animateMiniGraph() {
+  miniAnimId = requestAnimationFrame(animateMiniGraph)
+  if (!miniRenderer || !miniScene || !miniCamera) return
+
+  const now = performance.now()
+  const dt = miniPrevTime ? Math.min((now - miniPrevTime) / 1000, 0.05) : 0.016
+  miniPrevTime = now
+
+  simulateMiniGraph(dt)
+
+  // 缓慢自转
+  const t = now / 1000
+  miniNodeMap.forEach(n => {
+    const pulse = 1 + Math.sin(t * 2 + n.mesh.position.x * 0.01) * 0.15
+    n.glow.scale.setScalar(pulse)
+    n.glow.material.opacity = 0.08 + Math.sin(t * 1.5 + n.mesh.position.y * 0.01) * 0.04
+  })
+
+  miniCamera.position.x = Math.sin(t * 0.08) * 500
+  miniCamera.position.z = Math.cos(t * 0.08) * 500
+  miniCamera.position.y = Math.sin(t * 0.04) * 150
+  miniCamera.lookAt(0, 0, 0)
+
+  miniRenderer.render(miniScene, miniCamera)
+}
+
+function destroyMiniGraph() {
+  if (miniAnimId !== null) { cancelAnimationFrame(miniAnimId); miniAnimId = null }
+  miniNodeMap.forEach(n => {
+    n.mesh.geometry.dispose(); n.mesh.material.dispose()
+    n.glow.geometry.dispose(); n.glow.material.dispose()
+  })
+  miniNodeMap.clear()
+  miniEdgeMeshes.forEach(l => { l.geometry.dispose(); l.material.dispose() })
+  miniEdgeMeshes.length = 0; miniEdges.length = 0
+  if (miniRenderer) { miniRenderer.domElement.remove(); miniRenderer.dispose(); miniRenderer = null }
+  miniScene = null; miniCamera = null; miniPrevTime = 0; miniSimFrame = 0
 }
 
 const loadMiniGraph = async () => {
   try {
-    const { data } = await axios.get('/snake/graph/overview')
+    const { data } = await axios.get('/snake/graph/full')
     if (data.code === 200 && miniGraphRef.value) renderMiniGraph(data.data)
   } catch (e) { console.warn('迷你图谱加载失败:', e) }
 }
@@ -252,7 +459,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
-  if (miniCy) { miniCy.stop(); miniCy.destroy(); miniCy = null }
+  destroyMiniGraph()
 })
 </script>
 

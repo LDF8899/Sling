@@ -2,6 +2,7 @@ package com.sling.emergency.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.sling.emergency.entity.EmergencyHelp;
+import com.sling.emergency.event.SosEventPublisher;
 import com.sling.emergency.mapper.EmergencyHelpMapper;
 import com.sling.emergency.service.EmergencyHelpService;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ import java.util.Map;
 public class EmergencyHelpServiceImpl implements EmergencyHelpService {
 
     private final EmergencyHelpMapper emergencyHelpMapper;
+    private final SosEventPublisher sosEventPublisher;
 
     @Override
     public boolean saveEmergencyHelp(EmergencyHelp emergencyHelp) {
@@ -31,6 +33,15 @@ public class EmergencyHelpServiceImpl implements EmergencyHelpService {
             int result = emergencyHelpMapper.insert(emergencyHelp);
             log.info("Saved emergency help record, id: {}, result: {}", emergencyHelp.getId(),
                     result > 0 ? "success" : "failure");
+
+            // 发布 SOS 创建事件到 RabbitMQ
+            if (result > 0) {
+                try {
+                    sosEventPublisher.publishSosCreated(emergencyHelp);
+                } catch (Exception e) {
+                    log.warn("发布 SOS 事件失败（不影响保存）: {}", e.getMessage());
+                }
+            }
             return result > 0;
         } catch (Exception e) {
             log.error("Error saving emergency help record", e);
@@ -180,6 +191,15 @@ public class EmergencyHelpServiceImpl implements EmergencyHelpService {
             help.setStatus(status);
             help.setUpdateTime(new Date());
             int result = emergencyHelpMapper.updateById(help);
+
+            // 发布状态变更事件
+            if (result > 0) {
+                try {
+                    sosEventPublisher.publishSosStatusChanged(help);
+                } catch (Exception e) {
+                    log.warn("发布状态变更事件失败: {}", e.getMessage());
+                }
+            }
             return result > 0;
         } catch (Exception e) {
             log.error("Error updating help status for id: {}", id, e);

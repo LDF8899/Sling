@@ -24,6 +24,7 @@ import WarningManagement from '../views/admin/WarningManagement.vue'
 import SOSManagement from '../views/admin/SOSManagement.vue'
 import SystemConfig from '../views/admin/SystemConfig.vue'
 import LogManagement from '../views/admin/LogManagement.vue'
+import SerumSupplyChain from '../views/admin/SerumSupplyChain.vue'
 
 const routes = [
   { path: '/login', name: 'Login', component: Login },
@@ -68,7 +69,8 @@ const routes = [
       { path: 'warnings', name: 'WarningManagement', component: WarningManagement },
       { path: 'sos', name: 'SOSManagement', component: SOSManagement },
       { path: 'config', name: 'SystemConfig', component: SystemConfig },
-      { path: 'logs', name: 'LogManagement', component: LogManagement }
+      { path: 'logs', name: 'LogManagement', component: LogManagement },
+      { path: 'serum', name: 'SerumSupplyChain', component: SerumSupplyChain }
     ]
   }
 ]

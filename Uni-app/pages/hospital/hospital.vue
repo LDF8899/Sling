@@ -113,6 +113,12 @@
               <view class="hospital-meta">
                 <view class="distance-tag">{{ hospital.distanceDesc || '未知距离' }}</view>
                 <view class="type-tag">{{ hospital.hospitalType || '医院' }}</view>
+                <view v-if="hospital.serumAmount > 0" class="serum-tag has">
+                  💉 血清 {{ hospital.serumAmount }} 支
+                </view>
+                <view v-else class="serum-tag none">
+                  💉 无血清
+                </view>
               </view>
             </view>
             <view class="arrow-icon">›</view>
@@ -643,6 +649,22 @@ const callHospital = () => {
   border-radius: 8px;
   font-size: 13px;
   color: #64748b;
+}
+
+/* 血清状态标签 */
+.serum-tag {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+.serum-tag.has {
+  background: #d1fae5;
+  color: #065f46;
+}
+.serum-tag.none {
+  background: #f3f4f6;
+  color: #9ca3af;
 }
 
 /* Animations */

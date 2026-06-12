@@ -144,6 +144,166 @@
                 🚑 紧急救治
               </view>
             </view>
+
+            <!-- SOS 实时状态 -->
+            <view v-if="showSosStatus && sosStatus" class="sos-status-card">
+              <view class="sos-status-header">
+                <text class="sos-status-icon">{{ sosStatus.isDecision ? '🤖' : '📡' }}</text>
+                <text class="sos-status-title">
+                  {{ sosStatus.isDecision ? 'AI 决策已完成' : '求助处理中' }}
+                </text>
+              </view>
+              <text class="sos-status-desc">
+                {{ sosStatus.summary || sosStatus.status || '正在处理，请保持冷静...' }}
+              </text>
+              <view v-if="sosStatus.hospitals?.length" class="sos-hospitals">
+                <text class="sos-hospital-title">🏥 推荐医院：</text>
+                <text v-for="h in sosStatus.hospitals" :key="h.hospitalId" class="sos-hospital-item">
+                  {{ h.hospitalName }}（血清 {{ h.serumAmount }} 支）
+                </text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 蛇类信息卡片 -->
+      <view class="info-card glass-card" v-if="snakeInfo">
+        <view class="card-header">
+          <view class="header-icon snake-icon">🐍</view>
+          <view class="header-content">
+            <text class="header-title">蛇类信息</text>
+            <text class="header-subtitle">{{ snakeName }}</text>
+          </view>
+        </view>
+
+        <view class="info-content">
+          <view class="info-row" v-if="snakeInfo.toxicity_level !== undefined">
+            <text class="info-label">毒性等级</text>
+            <text class="info-value" :class="getToxicityClass(snakeInfo.toxicity_level)">
+              {{ getToxicityText(snakeInfo.toxicity_level) }}
+            </text>
+          </view>
+          <view class="info-row" v-if="snakeInfo.toxin_type">
+            <text class="info-label">毒素类型</text>
+            <text class="info-value">{{ snakeInfo.toxin_type }}</text>
+          </view>
+          <view class="info-row" v-if="snakeInfo.family">
+            <text class="info-label">科属</text>
+            <text class="info-value">{{ snakeInfo.family }} {{ snakeInfo.genus || '' }}</text>
+          </view>
+          <view class="info-row" v-if="snakeInfo.latin_name">
+            <text class="info-label">拉丁学名</text>
+            <text class="info-value latin">{{ snakeInfo.latin_name }}</text>
+          </view>
+          <view class="info-row" v-if="snakeInfo.danger_level">
+            <text class="info-label">危险梯队</text>
+            <text class="info-value">{{ snakeInfo.danger_level }}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 急救信息卡片 -->
+      <view class="emergency-card glass-card" v-if="emergencyInfo">
+        <view class="card-header">
+          <view class="header-icon emergency-icon">⚠️</view>
+          <view class="header-content">
+            <text class="header-title">急救信息</text>
+            <text class="header-subtitle">关键救命信息，请仔细阅读</text>
+          </view>
+        </view>
+
+        <view class="emergency-content">
+          <!-- 毒液类型 -->
+          <view class="emergency-section" v-if="emergencyInfo.venom_type">
+            <view class="section-title">
+              <text>💉</text>
+              <text>毒液类型</text>
+            </view>
+            <text class="section-text">{{ emergencyInfo.venom_type }}</text>
+          </view>
+
+          <!-- 中毒症状 -->
+          <view class="emergency-section" v-if="emergencyInfo.symptom_description">
+            <view class="section-title">
+              <text>🩺</text>
+              <text>中毒症状</text>
+            </view>
+            <text class="section-text">{{ emergencyInfo.symptom_description }}</text>
+          </view>
+
+          <!-- 急救措施 -->
+          <view class="emergency-section" v-if="emergencyInfo.emergency_treatment">
+            <view class="section-title">
+              <text>🏥</text>
+              <text>急救措施</text>
+            </view>
+            <text class="section-text highlight">{{ emergencyInfo.emergency_treatment }}</text>
+          </view>
+
+          <!-- 禁忌行为 -->
+          <view class="emergency-section forbidden" v-if="emergencyInfo.forbidden_actions">
+            <view class="section-title">
+              <text>❌</text>
+              <text>严格禁止</text>
+            </view>
+            <text class="section-text danger">{{ emergencyInfo.forbidden_actions }}</text>
+          </view>
+
+          <!-- 血清类型 -->
+          <view class="emergency-section" v-if="emergencyInfo.serum_type">
+            <view class="section-title">
+              <text>💊</text>
+              <text>解毒血清</text>
+            </view>
+            <text class="section-text highlight">{{ emergencyInfo.serum_type }}</text>
+          </view>
+
+          <!-- 建议科室 -->
+          <view class="emergency-section" v-if="emergencyInfo.hospital_department">
+            <view class="section-title">
+              <text>🏨</text>
+              <text>建议科室</text>
+            </view>
+            <text class="section-text">{{ emergencyInfo.hospital_department }}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 医院列表卡片 -->
+      <view class="hospital-card glass-card" v-if="hospitalList.length > 0">
+        <view class="card-header">
+          <view class="header-icon hospital-icon">🏥</view>
+          <view class="header-content">
+            <text class="header-title">有血清的医院</text>
+            <text class="header-subtitle">附近 {{ hospitalList.length }} 家医院有对应血清</text>
+          </view>
+        </view>
+
+        <view class="hospital-list">
+          <view class="hospital-item" v-for="(hospital, index) in hospitalList" :key="index">
+            <view class="hospital-info">
+              <text class="hospital-name">{{ hospital.hospitalName }}</text>
+              <text class="hospital-address">{{ hospital.address }}</text>
+              <view class="hospital-meta">
+                <view class="meta-tag" v-if="hospital.serumAmount">
+                  <text>💉</text>
+                  <text>库存: {{ hospital.serumAmount }}支</text>
+                </view>
+                <view class="meta-tag" v-if="hospital.emergencyDepartment">
+                  <text>🚑</text>
+                  <text>有急诊</text>
+                </view>
+              </view>
+            </view>
+            <view class="hospital-actions">
+              <view class="action-btn-small" @click="callHospital(hospital.contactInfo)">
+                📞 拨打
+              </view>
+              <view class="action-btn-small primary" @click="navigateToHospital(hospital)">
+                🗺️ 导航
+              </view>
+            </view>
           </view>
         </view>
       </view>
@@ -179,10 +339,11 @@
 
 <script setup>
 import { ref, computed, onUnmounted } from 'vue'
-import { recognitionApi } from '@/utils/api.js'
+import { recognitionApi, emergencyApi } from '@/utils/api.js'
 import { formatFileSize } from '@/utils/helpers.js'
 import GlassNavbar from '@/components/GlassNavbar.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
+import { connectWebSocket, onWsMessage, disconnectWebSocket } from '@/utils/websocket.js'
 
 // Reactive data
 const uploadedImage = ref(null)
@@ -195,6 +356,18 @@ const recognitionTime = ref(0)
 const recognitionProgress = ref(0)
 const progressTimer = ref(null)
 const isDragging = ref(false)
+
+// 完整识别结果数据
+const snakeInfo = ref(null)
+const emergencyInfo = ref(null)
+const hospitalList = ref([])
+const snakeName = ref('')
+
+// SOS 实时状态
+const sosStatus = ref(null)
+const showSosStatus = ref(false)
+let removeWsListener = null
+const recordId = ref(null)
 
 // Computed - formatted recognition text
 const formattedRecognitionText = computed(() => {
@@ -336,12 +509,37 @@ const submitForRecognition = async () => {
   const startTime = Date.now()
 
   try {
-    const response = await recognitionApi.identifySnake(uploadedImageFile.value)
+    // 获取用户ID
+    const userInfo = uni.getStorageSync('userInfo')
+    const userId = userInfo ? userInfo.userId : null
+
+    // 调用完整识别接口
+    const response = await recognitionApi.identifySnakeFull(uploadedImageFile.value, userId)
 
     recognitionTime.value = ((Date.now() - startTime) / 1000).toFixed(1)
 
     if (response && response.data) {
-      rawRecognitionText.value = response.data
+      const data = response.data
+
+      // 保存AI原始结果
+      rawRecognitionText.value = data.aiResult || '识别完成'
+      snakeName.value = data.snakeName || ''
+      recordId.value = data.recordId || null
+
+      // 保存蛇类信息
+      if (data.snakeInfo) {
+        snakeInfo.value = data.snakeInfo
+      }
+
+      // 保存急救信息
+      if (data.emergencyInfo) {
+        emergencyInfo.value = data.emergencyInfo
+      }
+
+      // 保存医院列表
+      if (data.hospitals && data.hospitals.length > 0) {
+        hospitalList.value = data.hospitals
+      }
     } else {
       rawRecognitionText.value = '### 识别完成\n未能获取有效识别结果，请重试。'
     }
@@ -379,10 +577,84 @@ const submitForRecognition = async () => {
   }
 }
 
-const findMedicalCare = () => {
-  uni.switchTab({
-    url: '/pages/emergency/emergency'
-  })
+const findMedicalCare = async () => {
+  // 如果有识别结果，先提交求助信息
+  if (snakeName.value) {
+    uni.showModal({
+      title: '紧急求助',
+      content: '是否提交求助信息并拨打急救电话？',
+      confirmText: '提交并拨打',
+      cancelText: '取消',
+      success: async (res) => {
+        if (res.confirm) {
+          // 获取用户信息
+          const userInfo = uni.getStorageSync('userInfo')
+          const userId = userInfo ? userInfo.userId : null
+
+          // 获取位置信息（经纬度分开传）
+          let location = '未知位置'
+          let lng = null
+          let lat = null
+          try {
+            const locationRes = await new Promise((resolve, reject) => {
+              uni.getLocation({
+                type: 'gcj02',
+                success: resolve,
+                fail: reject
+              })
+            })
+            lat = locationRes.latitude
+            lng = locationRes.longitude
+            location = `${lat}, ${lng}`
+          } catch (e) {
+            console.warn('获取位置失败:', e)
+          }
+
+          // 提交求助信息（携带识别信息 + 坐标）
+          const helpData = {
+            type: 'snake_bite',
+            location: location,
+            description: `识别到蛇类：${snakeName.value}，用户请求紧急救助`,
+            phone: userInfo ? userInfo.phone : '',
+            userId: userId,
+            snakeName: snakeName.value,
+            snakeId: snakeInfo.value ? snakeInfo.value.snakeId : null,
+            recognitionRecordId: recordId.value,
+            toxicityLevel: snakeInfo.value ? snakeInfo.value.toxicity_level : null,
+            longitude: lng,
+            latitude: lat
+          }
+
+          try {
+            await emergencyApi.submitEmergency(helpData)
+            uni.showToast({ title: '求助信息已提交', icon: 'success' })
+
+            // 连接 WebSocket 接收实时状态
+            connectWebSocket()
+            removeWsListener = onWsMessage((msg) => {
+              if (msg.type === 'agent_decision' || msg.type === 'sos_status') {
+                sosStatus.value = msg.data
+                showSosStatus.value = true
+              }
+            })
+          } catch (e) {
+            console.warn('求助信息提交失败:', e)
+            uni.showToast({ title: '求助信息提交失败', icon: 'none' })
+          }
+
+          // 拨打 120
+          uni.makePhoneCall({
+            phoneNumber: '120'
+          })
+        }
+      }
+    })
+  } else {
+    // 没有识别结果，直接跳转到应急页面
+    uni.switchTab({
+      url: '/pages/emergency/emergency'
+    })
+  }
 }
 
 const saveResult = () => {
@@ -392,11 +664,60 @@ const saveResult = () => {
   })
 }
 
+// 获取毒性等级样式
+const getToxicityClass = (level) => {
+  if (level >= 3) return 'danger'
+  if (level >= 2) return 'warning'
+  if (level >= 1) return 'info'
+  return 'safe'
+}
+
+// 获取毒性等级文本
+const getToxicityText = (level) => {
+  if (level >= 3) return '剧毒'
+  if (level >= 2) return '有毒'
+  if (level >= 1) return '低毒'
+  return '无毒'
+}
+
+// 拨打医院电话
+const callHospital = (phone) => {
+  if (!phone) {
+    uni.showToast({ title: '暂无联系电话', icon: 'none' })
+    return
+  }
+  uni.makePhoneCall({
+    phoneNumber: phone,
+    fail: () => {
+      uni.showToast({ title: '拨打失败', icon: 'none' })
+    }
+  })
+}
+
+// 导航到医院
+const navigateToHospital = (hospital) => {
+  if (hospital.latitude && hospital.longitude) {
+    uni.openLocation({
+      latitude: Number(hospital.latitude),
+      longitude: Number(hospital.longitude),
+      name: hospital.hospitalName,
+      address: hospital.address,
+      fail: () => {
+        uni.showToast({ title: '打开地图失败', icon: 'none' })
+      }
+    })
+  } else {
+    uni.showToast({ title: '暂无位置信息', icon: 'none' })
+  }
+}
+
 // Cleanup timer on unmount
 onUnmounted(() => {
   if (progressTimer.value) {
     clearInterval(progressTimer.value)
   }
+  if (removeWsListener) removeWsListener()
+  disconnectWebSocket()
 })
 </script>
 
@@ -734,6 +1055,175 @@ onUnmounted(() => {
 .result-action-btn.danger { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
 .result-action-btn.danger:active { background: rgba(239, 68, 68, 0.2); }
 
+/* 蛇类信息卡片 */
+.snake-icon { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+
+.info-content {
+  padding: 20px 24px;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  font-size: 14px;
+  color: #64748b;
+}
+
+.info-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.info-value.danger { color: #ef4444; }
+.info-value.warning { color: #f59e0b; }
+.info-value.info { color: #3b82f6; }
+.info-value.safe { color: #10b981; }
+.info-value.latin { font-style: italic; color: #64748b; }
+
+/* 急救信息卡片 */
+.emergency-icon { background: linear-gradient(135deg, #ef4444, #dc2626); }
+
+.emergency-content {
+  padding: 20px 24px;
+}
+
+.emergency-section {
+  margin-bottom: 20px;
+  padding: 16px;
+  background: rgba(248, 250, 252, 0.8);
+  border-radius: 12px;
+}
+
+.emergency-section:last-child {
+  margin-bottom: 0;
+}
+
+.emergency-section.forbidden {
+  background: rgba(239, 68, 68, 0.05);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 10px;
+}
+
+.section-text {
+  font-size: 14px;
+  color: #334155;
+  line-height: 1.8;
+  white-space: pre-wrap;
+}
+
+.section-text.highlight {
+  color: #10b981;
+  font-weight: 500;
+}
+
+.section-text.danger {
+  color: #ef4444;
+}
+
+/* 医院列表卡片 */
+.hospital-icon { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+
+.hospital-list {
+  padding: 20px 24px;
+}
+
+.hospital-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 16px;
+  background: rgba(248, 250, 252, 0.8);
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+
+.hospital-item:last-child {
+  margin-bottom: 0;
+}
+
+.hospital-info {
+  flex: 1;
+  margin-right: 12px;
+}
+
+.hospital-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.hospital-address {
+  font-size: 13px;
+  color: #64748b;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.hospital-meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.meta-tag {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: rgba(16, 185, 129, 0.1);
+  border-radius: 6px;
+  font-size: 12px;
+  color: #10b981;
+}
+
+.hospital-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.action-btn-small {
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  background: rgba(248, 250, 252, 0.8);
+  color: #1e293b;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.action-btn-small:active {
+  transform: scale(0.95);
+}
+
+.action-btn-small.primary {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+}
+
 /* Placeholder */
 .placeholder-section {
   text-align: center;
@@ -822,5 +1312,57 @@ onUnmounted(() => {
   0% { top: 0; }
   50% { top: 100%; }
   100% { top: 0; }
+}
+
+/* SOS 实时状态卡片 */
+.sos-status-card {
+  margin-top: 16px;
+  padding: 16px;
+  background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+  border-radius: 12px;
+  border: 2px solid #10b981;
+  animation: slideUp 0.3s ease;
+}
+.sos-status-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.sos-status-icon {
+  font-size: 20px;
+}
+.sos-status-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #065f46;
+}
+.sos-status-desc {
+  font-size: 14px;
+  color: #047857;
+  line-height: 1.5;
+}
+.sos-hospitals {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(16, 185, 129, 0.3);
+}
+.sos-hospital-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #065f46;
+  display: block;
+  margin-bottom: 4px;
+}
+.sos-hospital-item {
+  font-size: 13px;
+  color: #047857;
+  display: block;
+  padding: 2px 0;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 </style>

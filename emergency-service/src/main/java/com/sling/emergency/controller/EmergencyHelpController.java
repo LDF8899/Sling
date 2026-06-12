@@ -34,9 +34,14 @@ public class EmergencyHelpController {
             @RequestParam(value = "description", required = true) String description,
             @RequestParam(value = "phone", required = true) String phone,
             @RequestParam(value = "isPublic", required = false, defaultValue = "false") Boolean isPublic,
+            @RequestParam(value = "longitude", required = false) Double longitude,
+            @RequestParam(value = "latitude", required = false) Double latitude,
+            @RequestParam(value = "snakeName", required = false) String snakeName,
+            @RequestParam(value = "snakeId", required = false) Long snakeId,
+            @RequestParam(value = "toxicityLevel", required = false) Integer toxicityLevel,
             @RequestParam(value = "images", required = false) MultipartFile[] images) {
 
-        log.info("Emergency help submission: type={}, location={}, description={}", type, location, description);
+        log.info("Emergency help submission: type={}, location={}, snake={}", type, location, snakeName);
 
         try {
             EmergencyHelp emergencyHelp = new EmergencyHelp();
@@ -45,6 +50,11 @@ public class EmergencyHelpController {
             emergencyHelp.setDescription(description);
             emergencyHelp.setPhone(phone);
             emergencyHelp.setIsPublic(isPublic);
+            emergencyHelp.setLongitude(longitude);
+            emergencyHelp.setLatitude(latitude);
+            emergencyHelp.setSnakeName(snakeName);
+            emergencyHelp.setSnakeId(snakeId);
+            emergencyHelp.setToxicityLevel(toxicityLevel);
 
             if (images != null && images.length > 0) {
                 emergencyHelp.setImageCount(images.length);

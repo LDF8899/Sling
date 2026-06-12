@@ -18,6 +18,13 @@ import java.util.List;
 public class SnakeInfoServiceImpl extends ServiceImpl<SnakeInfoMapper, SnakeInfo> implements SnakeInfoService {
 
     @Override
+    public SnakeInfo getByName(String snakeName) {
+        return getOne(new QueryWrapper<SnakeInfo>()
+                .eq("snake_name", snakeName)
+                .last("LIMIT 1"));
+    }
+
+    @Override
     public List<SnakeInfo> searchByName(String keyword) {
         return list(new QueryWrapper<SnakeInfo>()
                 .like("snake_name", keyword)

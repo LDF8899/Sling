@@ -1,6 +1,0 @@
-com\sling\common\entity\BaseEntity.class
-com\sling\common\redis\RedisService.class
-com\sling\common\utils\Result.class
-com\sling\common\dto\PageDTO.class
-com\sling\common\exception\BusinessException.class
-com\sling\common\config\RedisConfig.class

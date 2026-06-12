@@ -30,6 +30,22 @@
       </view>
     </view>
 
+    <!-- 实时 SOS 状态横幅 -->
+    <view v-if="showSosBanner && latestSosStatus" class="sos-banner" :class="latestSosStatus.isDecision ? 'decision' : 'status'">
+      <view class="sos-banner-content">
+        <text class="sos-banner-icon">{{ latestSosStatus.isDecision ? '🤖' : '📡' }}</text>
+        <view class="sos-banner-text">
+          <text class="sos-banner-title">
+            {{ latestSosStatus.isDecision ? 'AI 决策已完成' : '求助状态更新' }}
+          </text>
+          <text class="sos-banner-desc">
+            {{ latestSosStatus.summary || latestSosStatus.status || '处理中...' }}
+          </text>
+        </view>
+        <text class="sos-banner-close" @click="showSosBanner = false">✕</text>
+      </view>
+    </view>
+
     <!-- Main content -->
     <scroll-view class="main-content" scroll-y enhanced show-scrollbar>
       <!-- Banner carousel -->
@@ -137,13 +153,18 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useUserStore } from '@/store/user'
-import api from '@/utils/api'
+import api, { emergencyApi } from '@/utils/api'
 import { getBackendImageUrl } from '@/utils/helpers.js'
+import { connectWebSocket, disconnectWebSocket, onWsMessage } from '@/utils/websocket.js'
 
 const userStore = useUserStore()
 const isOnline = ref(true)
+
+// 实时 SOS 状态
+const latestSosStatus = ref(null)
+const showSosBanner = ref(false)
 const showBanner = ref(true)
 const currentBannerIndex = ref(0)
 
@@ -244,13 +265,50 @@ const navigateTo = (path) => {
 }
 
 // Emergency call
-const emergencyCall = () => {
+const emergencyCall = async () => {
   uni.showModal({
     title: '紧急求助',
-    content: '是否立即拨打急救电话？',
-    confirmText: '拨打 120',
-    success: (res) => {
+    content: '是否提交求助信息并拨打急救电话？',
+    confirmText: '提交并拨打',
+    cancelText: '取消',
+    success: async (res) => {
       if (res.confirm) {
+        // 获取用户信息
+        const userInfo = uni.getStorageSync('userInfo')
+        const userId = userInfo ? userInfo.userId : null
+
+        // 获取位置信息
+        let location = '未知位置'
+        try {
+          const locationRes = await new Promise((resolve, reject) => {
+            uni.getLocation({
+              type: 'gcj02',
+              success: resolve,
+              fail: reject
+            })
+          })
+          location = `${locationRes.latitude}, ${locationRes.longitude}`
+        } catch (e) {
+          console.warn('获取位置失败:', e)
+        }
+
+        // 提交求助信息
+        const helpData = {
+          type: 'other',
+          location: location,
+          description: '用户通过首页紧急求助按钮发起求助',
+          phone: userInfo ? userInfo.phone : '',
+          userId: userId
+        }
+
+        try {
+          await emergencyApi.submitEmergency(helpData)
+          console.log('求助信息提交成功')
+        } catch (e) {
+          console.warn('求助信息提交失败:', e)
+        }
+
+        // 拨打 120
         uni.makePhoneCall({
           phoneNumber: '120'
         })
@@ -302,8 +360,31 @@ const loadExhibitionSnakes = async () => {
   }
 }
 
+// WebSocket 实时状态
+let removeWsListener = null
+
 onMounted(() => {
   loadExhibitionSnakes()
+
+  // 连接 WebSocket 接收实时 SOS 状态
+  connectWebSocket()
+  removeWsListener = onWsMessage((msg) => {
+    if (msg.type === 'sos_status') {
+      latestSosStatus.value = msg.data
+      showSosBanner.value = true
+      // 5 秒后自动隐藏
+      setTimeout(() => { showSosBanner.value = false }, 5000)
+    }
+    if (msg.type === 'agent_decision') {
+      latestSosStatus.value = { ...msg.data, isDecision: true }
+      showSosBanner.value = true
+    }
+  })
+})
+
+onUnmounted(() => {
+  if (removeWsListener) removeWsListener()
+  disconnectWebSocket()
 })
 </script>
 
@@ -614,5 +695,52 @@ onMounted(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* SOS 实时状态横幅 */
+.sos-banner {
+  padding: 12px 16px;
+  animation: slideDown 0.3s ease;
+}
+.sos-banner.status {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border-bottom: 2px solid #f59e0b;
+}
+.sos-banner.decision {
+  background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+  border-bottom: 2px solid #10b981;
+}
+.sos-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.sos-banner-icon {
+  font-size: 24px;
+}
+.sos-banner-text {
+  flex: 1;
+}
+.sos-banner-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  display: block;
+}
+.sos-banner-desc {
+  font-size: 12px;
+  color: #475569;
+  display: block;
+  margin-top: 2px;
+}
+.sos-banner-close {
+  font-size: 16px;
+  color: #94a3b8;
+  padding: 4px 8px;
+}
+
+@keyframes slideDown {
+  from { transform: translateY(-100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 </style>

@@ -1,1 +1,24 @@
 node_modules
+
+# Maven build output
+*/target/
+target/
+
+# JVM crash logs
+hs_err_pid*.log
+
+# API keys & secrets
+mapAPIKEY.txt
+
+# Claude local settings
+.claude/
+
+# IDE / OS
+.idea/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Test & temp files
+UsersAsukaDesktop1Slingsearxng_test.json
+*.jar.original

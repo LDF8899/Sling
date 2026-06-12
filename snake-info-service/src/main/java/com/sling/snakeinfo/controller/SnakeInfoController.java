@@ -36,6 +36,16 @@ public class SnakeInfoController {
         return Result.success(info);
     }
 
+    /** 根据蛇名精确查询 */
+    @GetMapping("/by-name/{name}")
+    public Result<SnakeInfo> getByName(@PathVariable String name) {
+        SnakeInfo info = snakeInfoService.getByName(name);
+        if (info == null) {
+            return Result.fail(404, "蛇类信息不存在");
+        }
+        return Result.success(info);
+    }
+
     /** 按名称模糊搜索 */
     @GetMapping("/search")
     public Result<List<SnakeInfo>> search(@RequestParam String keyword) {

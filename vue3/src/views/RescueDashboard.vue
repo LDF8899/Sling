@@ -55,9 +55,9 @@
             <el-tag v-if="currentFilter" type="warning" closable @close="currentFilter = ''" size="small">
               {{ statusLabel(currentFilter) }}
             </el-tag>
-            <span class="polling-status" :class="{ active: pollingActive }">
-              <span class="polling-dot" :class="{ active: pollingActive }"></span>
-              {{ pollingActive ? '实时监控中' : '已暂停' }}
+            <span class="polling-status" :class="{ active: wsConnected || pollingActive }">
+              <span class="polling-dot" :class="{ active: wsConnected || pollingActive }"></span>
+              {{ wsConnected ? 'WebSocket 实时' : pollingActive ? '轮询中' : '已暂停' }}
             </span>
           </div>
         </template>
@@ -243,6 +243,56 @@
     </div>
 
     </template><!-- /dispatch tab -->
+
+    <!-- AI 决策建议弹窗 -->
+    <el-dialog
+      v-model="decisionDialogVisible"
+      title="🤖 AI 决策建议"
+      width="560px"
+      :close-on-click-modal="false"
+      destroy-on-close
+    >
+      <div v-if="agentDecision" class="decision-card">
+        <div class="decision-header">
+          <el-tag :type="agentDecision.severity === 'critical' ? 'danger' : agentDecision.severity === 'high' ? 'warning' : 'info'" effect="dark" round size="large">
+            {{ { critical: '致命级', high: '高危', medium: '中等', low: '低风险' }[agentDecision.severity] || agentDecision.severity }}
+          </el-tag>
+          <span class="decision-snake">🐍 {{ agentDecision.snakeName || '待确认' }}</span>
+          <span v-if="agentDecision.venomType" class="decision-venom">毒液: {{ agentDecision.venomType }}</span>
+        </div>
+
+        <div class="decision-section">
+          <h4>📋 决策摘要</h4>
+          <p class="decision-summary">{{ agentDecision.summary }}</p>
+        </div>
+
+        <div class="decision-section" v-if="agentDecision.hospitals?.length">
+          <h4>🏥 推荐医院</h4>
+          <div class="decision-hospital" v-for="(h, i) in agentDecision.hospitals" :key="h.hospitalId">
+            <div class="hospital-rank">{{ i === 0 ? '⭐ 推荐' : i + 1 }}</div>
+            <div class="hospital-info">
+              <div class="hospital-name">{{ h.hospitalName }}</div>
+              <div class="hospital-meta">
+                <span v-if="h.serumAmount > 0">血清 {{ h.serumAmount }} 支</span>
+                <span v-if="h.distanceKm">距离 {{ h.distanceKm }}km</span>
+                <span v-if="h.etaMinutes">预计 {{ h.etaMinutes }} 分钟</span>
+              </div>
+              <div class="hospital-addr" v-if="h.address">{{ h.address }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="decision-section" v-if="agentDecision.firstAidGuide">
+          <h4>🩹 急救指导</h4>
+          <div class="decision-guide">{{ agentDecision.firstAidGuide }}</div>
+        </div>
+      </div>
+
+      <template #footer>
+        <el-button @click="decisionDialogVisible = false">关闭</el-button>
+        <el-button type="primary" @click="decisionDialogVisible = false">确认收到</el-button>
+      </template>
+    </el-dialog>
 
     <!-- ===== 预警管理 Tab ===== -->
     <template v-if="mainTab === 'warning'">
@@ -514,6 +564,7 @@ import SStatCard from '../components/ui/SStatCard.vue'
 const router = useRouter()
 import { emergencyApi, rescueRegionApi, rescueWarningApi, rescueSerumApi } from '../services/api'
 import { useUserStore } from '../store/user'
+import { useWebSocket } from '../composables/useWebSocket'
 
 // 主Tab
 const mainTab = ref('dispatch')
@@ -551,6 +602,13 @@ let pollingTimer = null
 let lastPollTime = Date.now()
 let knownIds = new Set()
 let notificationGranted = false
+
+// WebSocket 连接
+const { connected: wsConnected, onMessage: onWsMessage } = useWebSocket()
+
+// AI 决策建议
+const agentDecision = ref(null)
+const decisionDialogVisible = ref(false)
 
 // 地图
 let map = null
@@ -879,6 +937,90 @@ const pollLatest = async () => {
   } catch (e) {
     // silent fail for polling
   }
+}
+
+// WebSocket 事件处理
+const initWebSocket = () => {
+  // 新 SOS 到达
+  onWsMessage('/topic/sos/new', (msg) => {
+    const event = msg.data
+    if (!event || knownIds.has(event.helpId)) return
+    knownIds.add(event.helpId)
+
+    // 构造列表项
+    const newItem = {
+      id: event.helpId,
+      type: event.type,
+      location: event.location,
+      description: event.description,
+      phone: event.phone,
+      snakeName: event.snakeName,
+      status: 'pending',
+      createTime: event.eventTime ? new Date(event.eventTime) : new Date()
+    }
+
+    helpList.value = [newItem, ...helpList.value]
+    total.value += 1
+    stats.total += 1
+    stats.pending += 1
+
+    const isSnakeBite = event.type === 'snake_bite'
+    playAlertSound(isSnakeBite ? 'snake_bite' : 'normal')
+
+    if (notificationGranted) {
+      new Notification(isSnakeBite ? '⚠️ 蛇咬伤求助！' : '新求助到达', {
+        body: `${typeLabel(event.type)} — ${event.location}`,
+        icon: '/favicon.ico',
+        tag: `help-${event.helpId}`,
+        requireInteraction: isSnakeBite
+      })
+    }
+
+    ElMessage({
+      message: isSnakeBite ? `⚠️ 收到蛇咬伤求助！` : `收到新求助`,
+      type: isSnakeBite ? 'error' : 'warning',
+      duration: isSnakeBite ? 0 : 5000
+    })
+  })
+
+  // Agent 决策结果
+  onWsMessage('/topic/agent/decision', (msg) => {
+    const decision = msg.data
+    if (!decision) return
+    agentDecision.value = decision
+    decisionDialogVisible.value = true
+
+    // 更新列表中对应 SOS 的状态
+    const idx = helpList.value.findIndex(h => h.id === decision.helpId)
+    if (idx >= 0) {
+      helpList.value[idx].status = 'processing'
+      stats.pending = Math.max(0, stats.pending - 1)
+      stats.processing += 1
+    }
+
+    ElNotification({
+      title: '🤖 AI 决策建议',
+      message: decision.summary || '新的决策建议已生成',
+      type: 'info',
+      duration: 0
+    })
+  })
+
+  // SOS 状态变更
+  onWsMessage('/topic/sos/status', (msg) => {
+    const event = msg.data
+    if (!event) return
+    const idx = helpList.value.findIndex(h => h.id === event.helpId)
+    if (idx >= 0) {
+      const oldStatus = helpList.value[idx].status
+      helpList.value[idx].status = event.status
+      // 更新统计
+      if (oldStatus !== event.status) {
+        stats[oldStatus] = Math.max(0, (stats[oldStatus] || 0) - 1)
+        stats[event.status] = (stats[event.status] || 0) + 1
+      }
+    }
+  })
 }
 
 // 请求通知权限
@@ -1587,7 +1729,9 @@ onMounted(async () => {
   initRoleVerify()
   await requestNotification()
   await Promise.all([loadStats(), loadList(), loadRegionTree()])
-  pollingTimer = setInterval(pollLatest, 5000)
+  initWebSocket()
+  // 保留轮询作为 WebSocket 断开时的降级方案
+  pollingTimer = setInterval(pollLatest, 10000)
 })
 
 onUnmounted(() => {
@@ -2104,5 +2248,90 @@ onUnmounted(() => {
   gap: var(--space-3);
   font-size: var(--text-xs);
   color: var(--ink-500);
+}
+
+/* AI 决策卡片 */
+.decision-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.decision-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border-light);
+}
+.decision-snake {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  color: var(--ink-900);
+}
+.decision-venom {
+  font-size: var(--text-sm);
+  color: var(--ink-500);
+  margin-left: auto;
+}
+.decision-section h4 {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--ink-700);
+  margin-bottom: var(--space-2);
+}
+.decision-summary {
+  font-size: var(--text-base);
+  color: var(--ink-900);
+  line-height: var(--leading-relaxed);
+  background: var(--green-50, #f0fdf4);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  border-left: 3px solid var(--green-600);
+}
+.decision-hospital {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: var(--surface-cool);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-2);
+}
+.decision-hospital:first-child {
+  border: 1px solid var(--green-600);
+  background: var(--green-50, #f0fdf4);
+}
+.hospital-rank {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  color: var(--green-700);
+  min-width: 48px;
+}
+.decision-hospital .hospital-info {
+  flex: 1;
+}
+.decision-hospital .hospital-name {
+  font-weight: var(--weight-semibold);
+  color: var(--ink-900);
+  margin-bottom: var(--space-1);
+}
+.decision-hospital .hospital-meta {
+  display: flex;
+  gap: var(--space-3);
+  font-size: var(--text-xs);
+  color: var(--ink-500);
+}
+.decision-hospital .hospital-addr {
+  font-size: var(--text-xs);
+  color: var(--ink-400);
+  margin-top: var(--space-1);
+}
+.decision-guide {
+  font-size: var(--text-sm);
+  color: var(--ink-700);
+  line-height: var(--leading-relaxed);
+  padding: var(--space-3);
+  background: var(--warning-bg, #fef3c7);
+  border-radius: var(--radius-md);
+  border-left: 3px solid var(--warning);
 }
 </style>

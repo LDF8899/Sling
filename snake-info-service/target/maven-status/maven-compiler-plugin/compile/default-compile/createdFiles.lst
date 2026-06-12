@@ -1,8 +1,0 @@
-com\sling\snakeinfo\mapper\SnakeInfoMapper.class
-com\sling\snakeinfo\entity\SnakeInfo.class
-com\sling\snakeinfo\service\impl\SnakeInfoServiceImpl.class
-com\sling\snakeinfo\service\SnakeInfoService.class
-com\sling\snakeinfo\controller\SnakeGraphController.class
-com\sling\snakeinfo\runner\RedisSyncRunner.class
-com\sling\snakeinfo\SnakeInfoApplication.class
-com\sling\snakeinfo\controller\SnakeInfoController.class

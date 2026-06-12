@@ -18,6 +18,7 @@
         <module>hospital-service</module>
         <module>snake-info-service</module>
         <module>emergency-service</module>
+        <module>agent-service</module>
         <module>admin-service</module>
     </modules>
 

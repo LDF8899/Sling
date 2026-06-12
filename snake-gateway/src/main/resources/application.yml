@@ -98,6 +98,12 @@ spring:
           predicates:
             - Path=/api/emergency/**
 
+        # agent-service
+        - id: agent-service-api
+          uri: lb://agent-service
+          predicates:
+            - Path=/api/agent/**
+
         # ============================================
         # 静态资源 / 文件上传路由
         # ============================================

@@ -11,6 +11,11 @@ import java.util.List;
 public interface SnakeInfoService extends IService<SnakeInfo> {
 
     /**
+     * 根据蛇名精确查询
+     */
+    SnakeInfo getByName(String snakeName);
+
+    /**
      * 根据蛇名模糊查询
      */
     List<SnakeInfo> searchByName(String keyword);
